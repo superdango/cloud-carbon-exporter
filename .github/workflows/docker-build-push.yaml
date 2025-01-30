@@ -47,7 +47,10 @@ jobs:
           # This uses the pull request branch name in the event of a pull request (branch merge)
           [ "$VERSION" == "merge" ] && VERSION="pr-${{ github.head_ref }}"
 
-          echo IMAGE_ID=$IMAGE_ID
-          echo VERSION=$VERSION
+          echo IMAGE=$IMAGE_ID:$VERSION
+
           docker tag $IMAGE_NAME $IMAGE_ID:$VERSION
+          docker tag $IMAGE_NAME $IMAGE_ID:${GITHUB_SHA::7}
+
           docker push $IMAGE_ID:$VERSION
+          docker push $IMAGE_ID:${GITHUB_SHA::7}
