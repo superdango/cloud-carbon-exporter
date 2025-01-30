@@ -7,17 +7,21 @@ import (
 	"time"
 )
 
+// DemoCollector implements the cloudcarbon collector interface.
+// It is used to generate fake data for demonstration purpose
 type DemoCollector struct{}
 
+// NewCollector returns a new demo collector
 func NewCollector() *DemoCollector {
 	return &DemoCollector{}
 }
 
+// Collect fake data into the channel
 func (collector *DemoCollector) Collect(ctx context.Context, ch chan cloudcarbonexporter.Metric) error {
-
+	now := time.Now()
 	ch <- cloudcarbonexporter.Metric{
 		Name:  "demo_connected_users",
-		Value: float64(factor()),
+		Value: float64(naturalTrafficInstant(now.Hour(), now.Minute(), rand.IntN(10))),
 		Labels: map[string]string{
 			"app": "demo.carbondriven.dev",
 		},
@@ -25,24 +29,49 @@ func (collector *DemoCollector) Collect(ctx context.Context, ch chan cloudcarbon
 	return nil
 }
 
-func (collector *DemoCollector) Close() error {
-	return nil
-}
+// Close demo collector
+func (collector *DemoCollector) Close() error { return nil }
 
-func factor() int {
-	hour := time.Now().Hour()
-	factor := []int{2, 1, 2, 1, 1, 2, 3, 4, 5, 6, 5, 6, 5, 4, 3, 4, 5, 6, 5, 6, 7, 6, 5, 4, 3}
-
-	if hour < 23 && factor[hour] > factor[hour+1] {
-		return factor[time.Now().Hour()]*100 + time.Now().Minute()*100/60 + rand.Int()%6
-
+// naturalTrafficInstant generate a trafic value with hourly variation
+func naturalTrafficInstant(hour, minute, rand int) int {
+	hourlyTraficCoefficient := map[int]int{
+		0:  300,
+		1:  200,
+		2:  190,
+		3:  200,
+		4:  190,
+		5:  200,
+		6:  300,
+		7:  400,
+		8:  500,
+		9:  600,
+		10: 500,
+		11: 600,
+		12: 500,
+		13: 400,
+		14: 300,
+		15: 400,
+		16: 500,
+		17: 600,
+		18: 500,
+		19: 600,
+		20: 700,
+		21: 600,
+		22: 500,
+		23: 400,
 	}
 
-	if hour < 23 && factor[hour] == factor[hour+1] {
-		return factor[time.Now().Hour()]*100  + rand.Int()%10
+	noise := rand * hourlyTraficCoefficient[hour] / 100
 
+	descending := hourlyTraficCoefficient[hour] > hourlyTraficCoefficient[hour+1]
+	if descending {
+		return hourlyTraficCoefficient[hour] + (60-minute)*100/60 + noise
 	}
 
-	return factor[time.Now().Hour()]*100 - (60-time.Now().Minute())*100/60 + rand.Int()%6
+	// stableCoefficient := hourlyTraficCoefficient[hour] == hourlyTraficCoefficient[hour+1]
+	// if stableCoefficient {
+	// 	return baseValue + noise
+	// }
 
+	return hourlyTraficCoefficient[hour] + minute*100/60 + noise
 }

@@ -8,21 +8,27 @@ import (
 	"net/http"
 	"slices"
 	"strings"
+	"time"
 
 	"golang.org/x/sync/errgroup"
 )
 
-type PrometheusMetricsHandler struct {
+// OpenMetricsHandler implements the http.Handler interface
+type OpenMetricsHandler struct {
 	collectors []Collector
 }
 
-func NewHTTPMetricsHandler(collectors ...Collector) *PrometheusMetricsHandler {
-	return &PrometheusMetricsHandler{
+// NewOpenMetricsHandler create a new OpenMetricsHandler
+func NewOpenMetricsHandler(collectors ...Collector) *OpenMetricsHandler {
+	return &OpenMetricsHandler{
 		collectors: collectors,
 	}
 }
 
-func (rh *PrometheusMetricsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+// ServeHTTP implements the http.Handler interface. It collects all metrics from the configured
+// collector and return them, formatted in the http response.
+func (rh *OpenMetricsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	start := time.Now()
 	metrics := make(chan Metric)
 
 	traceAttr := slog.Attr{}
@@ -40,7 +46,7 @@ func (rh *PrometheusMetricsHandler) ServeHTTP(w http.ResponseWriter, r *http.Req
 	}
 
 	errg.Go(func() error {
-		return OpenMetricsFormat(errgctx, w, metrics)
+		return writeMetrics(errgctx, w, metrics)
 	})
 
 	err := errg.Wait()
@@ -48,11 +54,15 @@ func (rh *PrometheusMetricsHandler) ServeHTTP(w http.ResponseWriter, r *http.Req
 		slog.Error("failed to collect metrics", "err", err.Error(), traceAttr)
 		w.WriteHeader(500)
 		w.Write([]byte(err.Error()))
+		return
 	}
-	slog.Info("metrics have been successfully collected", traceAttr)
+
+	slog.Info("metrics have been successfully collected", traceAttr, "duration_ms", time.Since(start).Milliseconds())
 }
 
-func OpenMetricsFormat(ctx context.Context, w io.Writer, metrics chan Metric) error {
+// writeMetrics write all metrics sent over the channel and write them on the writer.
+// Metrics labels are sorted lexicographically before being written.
+func writeMetrics(ctx context.Context, w io.Writer, metrics chan Metric) error {
 	for {
 		select {
 		case <-ctx.Done():
@@ -67,6 +77,7 @@ func OpenMetricsFormat(ctx context.Context, w io.Writer, metrics chan Metric) er
 				labels = append(labels, fmt.Sprintf(`%s="%s"`, labelName, labelValue))
 			}
 			slices.SortFunc(labels, strings.Compare)
+
 			_, err := fmt.Fprintf(w, "%s{%s} %f\n", metric.Name, strings.Join(labels, ","), metric.Value)
 			if err != nil {
 				return fmt.Errorf("writing metric %s failed: %w", metric.Name, err)

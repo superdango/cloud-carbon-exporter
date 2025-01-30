@@ -21,19 +21,41 @@ func main() {
 	cloudProvider := ""
 	projectID := ""
 	listen := ""
-	logLevel := ""
-	logFormat := ""
 	demoEnabled := false
 
 	flag.StringVar(&cloudProvider, "cloud.provider", "", "cloud provider type (gcp, aws, azure)")
 	flag.StringVar(&projectID, "gcp.projectid", "", "gcp project to export data from")
 	flag.StringVar(&listen, "listen", "0.0.0.0:2922", "addr to listen to")
-	flag.StringVar(&logLevel, "log.level", "info", "log severity (debug, info, warn, error)")
-	flag.StringVar(&logFormat, "log.format", "text", "log format (text, json)")
 	flag.BoolVar(&demoEnabled, "demo.enabled", false, "return fictive demo data")
+
+	initLogging(
+		*flag.String("log.level", "info", "log severity (debug, info, warn, error)"),
+		*flag.String("log.format", "text", "log format (text, json)"),
+	)
 
 	flag.Parse()
 
+	collectors := []cloudcarbonexporter.Collector{initCloudProviderCollector(ctx, cloudProvider, map[string]string{"projectID": projectID})}
+	if demoEnabled {
+		collectors = append(collectors, demo.NewCollector())
+	}
+	defer func() {
+		for _, collector := range collectors {
+			collector.Close()
+		}
+	}()
+
+	mux := http.NewServeMux()
+	mux.Handle("/metrics", cloudcarbonexporter.NewOpenMetricsHandler(collectors...))
+
+	slog.Info("starting cloud carbon exporter", "listen", listen)
+	if err := http.ListenAndServe(listen, mux); err != nil {
+		slog.Error("failed to start cloud carbon exporter", "err", err)
+		os.Exit(1)
+	}
+}
+
+func initLogging(logLevel string, logFormat string) {
 	switch logFormat {
 	case "text":
 		slog.SetDefault(slog.New(tint.NewHandler(os.Stdout, &tint.Options{
@@ -57,41 +79,34 @@ func main() {
 			},
 		})))
 	}
+}
 
-	var collector cloudcarbonexporter.Collector
-	var err error
+func initCloudProviderCollector(ctx context.Context, cloudProvider string, params map[string]string) cloudcarbonexporter.Collector {
 	switch cloudProvider {
 	case "gcp":
-		if projectID == "" {
+		if params["projectID"] == "" {
 			slog.Error("project id is not set")
 			flag.PrintDefaults()
 			os.Exit(1)
 		}
-		collector, err = gcp.NewCollector(ctx, projectID)
+		collector, err := gcp.NewCollector(ctx, params["projectID"])
 		if err != nil {
-			slog.Error("failed to create gcp collector", "project_id", projectID, "err", err)
+			slog.Error("failed to create gcp collector", "project_id", params["projectID"], "err", err)
 			os.Exit(1)
 		}
+		return collector
+
 	case "":
 		slog.Error("cloud provider is not set")
 		flag.PrintDefaults()
 		os.Exit(1)
+
 	default:
 		slog.Error("cloud provider is not supported yet", "cloud.provider", cloudProvider)
 		os.Exit(1)
 	}
 
-	collectors := []cloudcarbonexporter.Collector{collector}
-	if demoEnabled {
-		collectors = append(collectors, demo.NewCollector())
-	}
-	http.Handle("/metrics", cloudcarbonexporter.NewHTTPMetricsHandler(collectors...))
-
-	slog.Info("starting cloud carbon exporter", "listen", listen)
-	if err := http.ListenAndServe(listen, nil); err != nil {
-		slog.Error("failed to start cloud carbon exporter", "err", err)
-		os.Exit(1)
-	}
+	return nil
 }
 
 func slogLevel(level string) slog.Level {

@@ -10,11 +10,15 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+// Collector implements the cloudcarbon collector interface. It compute metrics by listing
+// resources from Google Cloud Assets Inventory then getting their signals from Cloud
+// Monitoring to finely compute the realtime energy draw
 type Collector struct {
 	inventory  *assetInventory
 	monitoring *monitoringService
 }
 
+// NewCollector returns a new Collector
 func NewCollector(ctx context.Context, projectID string) (*Collector, error) {
 	inventory, err := newInventoryService(ctx, projectID)
 	if err != nil {
@@ -32,22 +36,17 @@ func NewCollector(ctx context.Context, projectID string) (*Collector, error) {
 	}, nil
 }
 
+// Collect metrics from Google APIs and estimate energy draw of all resources found
 func (collector *Collector) Collect(ctx context.Context, ch chan cloudcarbonexporter.Metric) error {
 	models := getModels()
 
-	resources, err := collector.inventory.List(ctx)
+	resources, err := collector.inventory.CollectResources(ctx, ch)
 	if err != nil {
 		return fmt.Errorf("failed to list gcp inventory resources: %w", err)
 	}
 
-	for _, r := range resources {
-		if r.Metric != nil {
-			ch <- *r.Metric
-		}
-	}
-
 	errg, errgctx := errgroup.WithContext(ctx)
-	for _, resourceKind := range resources.DistinctKinds() {
+	for _, resourceKind := range resources.DiscoveredKinds() {
 		for metricID, query := range models.getResourceQueries(resourceKind) {
 			resourceKind := resourceKind
 			query := query
@@ -63,7 +62,7 @@ func (collector *Collector) Collect(ctx context.Context, ch chan cloudcarbonexpo
 						resource.Location = "global"
 						resource.Labels = nil
 					}
-					ch <- models.getWattTransformer(resourceKind, metricID)(cloudcarbonexporter.Metric{
+					ch <- models.wattMetricFunc(resourceKind, metricID)(cloudcarbonexporter.Metric{
 						Name:  "estimated_watts",
 						Value: metric.Value,
 						Labels: mergeLabels(metric.Labels, resource.Labels, map[string]string{
@@ -86,6 +85,7 @@ func (collector *Collector) Collect(ctx context.Context, ch chan cloudcarbonexpo
 	return errg.Wait()
 }
 
+// Close collector
 func (collector *Collector) Close() error {
 	return collector.inventory.Close()
 }

@@ -32,12 +32,10 @@ func (inventory *assetInventory) Close() error {
 	return inventory.client.Close()
 }
 
-func (inventory *assetInventory) List(ctx context.Context) (cloudcarbonexporter.Resources, error) {
+func (inventory *assetInventory) CollectResources(ctx context.Context, metricsCh chan cloudcarbonexporter.Metric) (cloudcarbonexporter.Resources, error) {
 	models := getModels()
 	req := &assetpb.ListAssetsRequest{
-		Parent: fmt.Sprintf("projects/%s", inventory.projectID),
-		// AssetTypes:  SUPPORTED_RESOURCES_LIST(), // TODO: try to filter via the API
-		// No RESOURCE found that matches asset type for consumer project
+		Parent:      fmt.Sprintf("projects/%s", inventory.projectID),
 		ContentType: assetpb.ContentType_RESOURCE,
 	}
 	resources := []cloudcarbonexporter.Resource{
@@ -55,7 +53,6 @@ func (inventory *assetInventory) List(ctx context.Context) (cloudcarbonexporter.
 			return nil, fmt.Errorf("failed to iterate on the next asset: %w", err)
 		}
 
-		// TODO: filter ressource directly in the api call
 		if !models.isSupportedRessource(response.AssetType) {
 			slog.Debug("resource not supported", "kind", response.AssetType)
 			continue
@@ -65,13 +62,13 @@ func (inventory *assetInventory) List(ctx context.Context) (cloudcarbonexporter.
 			Kind:     response.AssetType,
 			Name:     response.Resource.Data.GetFields()["name"].GetStringValue(),
 			Location: response.Resource.Location,
-			Labels:   toStringMap(response.Resource.Data.AsMap()["labels"]),
+			Labels:   mapToStringMap(response.Resource.Data.AsMap()["labels"]),
 			Source:   response.Resource.Data.AsMap(),
 		}
 
 		if metricFunc, found := getModels().assets[r.Kind]; found {
-			slog.Debug("resource from assets is sufficient for metric calculation", "kind", r.Kind)
-			r.Metric = metricFunc(r)
+			slog.Debug("metric generated directly from base resource", "kind", r.Kind, "name", r.Name)
+			metricsCh <- metricFunc(r)
 		}
 
 		resources = append(resources, r)
@@ -80,7 +77,7 @@ func (inventory *assetInventory) List(ctx context.Context) (cloudcarbonexporter.
 	return resources, nil
 }
 
-func toStringMap(m any) map[string]string {
+func mapToStringMap(m any) map[string]string {
 	mapOfAny, ok := m.(map[string]any)
 	if !ok {
 		return make(map[string]string)
