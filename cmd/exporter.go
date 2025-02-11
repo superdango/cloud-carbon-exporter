@@ -2,6 +2,7 @@ package main
 
 import (
 	"cloudcarbonexporter"
+	"cloudcarbonexporter/internal/aws"
 	"cloudcarbonexporter/internal/demo"
 	"cloudcarbonexporter/internal/gcp"
 	"context"
@@ -11,6 +12,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/lmittmann/tint"
 	"github.com/mattn/go-isatty"
 )
@@ -95,6 +97,15 @@ func initCloudProviderCollector(ctx context.Context, cloudProvider string, param
 			os.Exit(1)
 		}
 		return collector
+
+	case "aws":
+		config, err := config.LoadDefaultConfig(ctx)
+		if err != nil {
+			slog.Error("failed to create aws collector", "err", err)
+			os.Exit(1)
+		}
+
+		return aws.NewCollector(ctx, aws.Config(config))
 
 	case "":
 		slog.Error("cloud provider is not set")

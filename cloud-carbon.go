@@ -72,3 +72,16 @@ func (m Metric) Clone() Metric {
 		Labels: copiedLabel,
 	}
 }
+
+func MergeLabels(labels ...map[string]string) map[string]string {
+	result := make(map[string]string)
+	for _, l := range labels {
+		for k, v := range l {
+			if v == "" {
+				continue
+			}
+			result[k] = v
+		}
+	}
+	return result
+}

@@ -22,9 +22,9 @@ type model map[string]signal
 
 // signal is used to convert measurement from a resource into watts
 type signal struct {
-	resourceNameField  string
-	query         string
-	wattConverter func(metric cloudcarbonexporter.Metric) cloudcarbonexporter.Metric
+	resourceNameField string
+	query             string
+	wattConverter     func(metric cloudcarbonexporter.Metric) cloudcarbonexporter.Metric
 }
 
 // getModelsVersion returns the current model versions
@@ -60,7 +60,7 @@ func getModels() models {
 					ResourceName: resource.Name,
 					Name:         "estimated_watts",
 					Value:        watts,
-					Labels: mergeLabels(resource.Labels, map[string]string{
+					Labels: cloudcarbonexporter.MergeLabels(resource.Labels, map[string]string{
 						"model_version": getModelsVersion(),
 						"location":      resource.Location,
 						"resource_kind": resource.Kind,
@@ -79,7 +79,7 @@ func getModels() models {
 			"serviceruntime.googleapis.com/api": {
 				"googleapis_request_count": {
 					resourceNameField: "service",
-					query:        `avg by (service,location)(rate(serviceruntime_googleapis_com:api_request_count{monitored_resource="consumed_api"}[5m]))`,
+					query:             `avg by (service,location)(rate(serviceruntime_googleapis_com:api_request_count{monitored_resource="consumed_api"}[5m]))`,
 					wattConverter: func(metric cloudcarbonexporter.Metric) cloudcarbonexporter.Metric {
 						metric.Value = metric.Value / 100_000
 						return metric
@@ -90,7 +90,7 @@ func getModels() models {
 			"storage.googleapis.com/Bucket": {
 				"bucket_total_bytes": {
 					resourceNameField: "bucket_name",
-					query:        `avg by (bucket_name,location,storage_class,type)(avg_over_time(storage_googleapis_com:storage_v2_total_bytes{monitored_resource="gcs_bucket"}[5m]))`,
+					query:             `avg by (bucket_name,location,storage_class,type)(avg_over_time(storage_googleapis_com:storage_v2_total_bytes{monitored_resource="gcs_bucket"}[5m]))`,
 					wattConverter: func(metric cloudcarbonexporter.Metric) cloudcarbonexporter.Metric {
 						metric.Value = metric.Value / 1_000_000
 						return metric
@@ -98,7 +98,7 @@ func getModels() models {
 				},
 				"bucket_request_count": {
 					resourceNameField: "bucket_name",
-					query:        `avg by (bucket_name,location)(rate(storage_googleapis_com:api_request_count{monitored_resource="gcs_bucket"}[5m]))`,
+					query:             `avg by (bucket_name,location)(rate(storage_googleapis_com:api_request_count{monitored_resource="gcs_bucket"}[5m]))`,
 					wattConverter: func(metric cloudcarbonexporter.Metric) cloudcarbonexporter.Metric {
 						metric.Value = metric.Value / 100_000
 						return metric
@@ -109,14 +109,14 @@ func getModels() models {
 			"compute.googleapis.com/Instance": {
 				"instance_cpu_usage_time": {
 					resourceNameField: "instance_name",
-					query:        `avg by (instance_name)(rate(compute_googleapis_com:instance_cpu_usage_time{monitored_resource="gce_instance"}[5m]))`, // cpu/second
+					query:             `avg by (instance_name)(rate(compute_googleapis_com:instance_cpu_usage_time{monitored_resource="gce_instance"}[5m]))`, // cpu/second
 					wattConverter: func(metric cloudcarbonexporter.Metric) cloudcarbonexporter.Metric {
 						return metric
 					},
 				},
 				"instance_cpu_reserved_cores": {
 					resourceNameField: "instance_name",
-					query:        `sum by (instance_name)(avg_over_time(compute_googleapis_com:instance_cpu_reserved_cores{monitored_resource="gce_instance"}[5m]))`,
+					query:             `sum by (instance_name)(avg_over_time(compute_googleapis_com:instance_cpu_reserved_cores{monitored_resource="gce_instance"}[5m]))`,
 					wattConverter: func(metric cloudcarbonexporter.Metric) cloudcarbonexporter.Metric {
 						metric.Value = metric.Value * 10
 						return metric
@@ -127,7 +127,7 @@ func getModels() models {
 			"run.googleapis.com/Service": {
 				"container_cpu_allocation_time": {
 					resourceNameField: "service_name",
-					query:        `sum by (service_name)(rate(run_googleapis_com:container_cpu_allocation_time{monitored_resource="cloud_run_revision"}[5m]))`, //cpu/second
+					query:             `sum by (service_name)(rate(run_googleapis_com:container_cpu_allocation_time{monitored_resource="cloud_run_revision"}[5m]))`, //cpu/second
 					wattConverter: func(metric cloudcarbonexporter.Metric) cloudcarbonexporter.Metric {
 						return metric
 					},
