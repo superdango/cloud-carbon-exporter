@@ -57,9 +57,9 @@ func getModels() models {
 				}
 
 				return cloudcarbonexporter.Metric{
-					ResourceName: resource.Name,
-					Name:         "estimated_watts",
-					Value:        watts,
+					ResourceID: resource.ID,
+					Name:       "estimated_watts",
+					Value:      watts,
 					Labels: cloudcarbonexporter.MergeLabels(resource.Labels, map[string]string{
 						"model_version": getModelsVersion(),
 						"location":      resource.Location,

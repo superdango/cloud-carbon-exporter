@@ -2,98 +2,88 @@ package aws
 
 import (
 	"cloudcarbonexporter"
-	"cloudcarbonexporter/internal/must"
-	"fmt"
+	"log/slog"
+	"os"
+	"reflect"
 )
 
-// models holds every calculation methods for all resource kind and metrics. If signals
-// comes from monitoring api then use "monitoring" models. If resource is directly coming
-// from Asset inventory then use "assets" models
-type models struct {
-	monitoring map[string]model
-}
+// model holds every calculation methods for all resource kind and metrics. If signals
+// comes from monitoring api then use "monitoring" model. If resource is directly coming
+// from Asset inventory then use "assets" model
+type model map[string]func(r *Resource, metrics chan cloudcarbonexporter.Metric)
 
-// model holds the calculation methods for a monitored resource
-type model map[string]signal
-
-// signal is used to convert measurement from a resource into watts
-type signal struct {
-	resourceNameField string
-	query             string
-	wattConverter     func(metric cloudcarbonexporter.Metric) cloudcarbonexporter.Metric
-}
-
-// getModelsVersion returns the current model versions
-func getModelsVersion() string {
+// getModelVersion returns the current model versions
+func getModelVersion() string {
 	return "v0.0.1"
 }
 
-// getModels returns the current model
-func getModels() models {
-	return models{
-		monitoring: map[string]model{
-			"ec2/instance": {
-				"cpu_credit_usage": {
-					resourceNameField: "service",
-					query:             `avg by (service,location)(rate(serviceruntime_googleapis_com:api_request_count{monitored_resource="consumed_api"}[5m]))`,
-					wattConverter: func(metric cloudcarbonexporter.Metric) cloudcarbonexporter.Metric {
-						metric.Value = metric.Value / 100_000
-						return metric
-					},
-				},
-			},
+// getModel returns the current model
+func getModel() model {
+	return model{
+		"ec2/instance": func(r *Resource, metrics chan cloudcarbonexporter.Metric) {
+			instance := mustcast[EC2InstanceRefinedData](r.Source["ec2_instance_data"])
+			monitoring := mustcast[EC2InstanceCloudwatchRefinedData](r.Source["ec2_instance_cloudwatch_data"])
+
+			if !instance.Running {
+				return
+			}
+
+			watts := 10*float64(instance.CPU) +
+				float64(instance.CPU)*float64(monitoring.CPUUtilizationPercent/100)
+
+			metrics <- generateMetric(r, watts)
+		},
+		"ec2/volume": func(r *Resource, metrics chan cloudcarbonexporter.Metric) {
+			metrics <- generateMetric(r, 1.0)
+		},
+		"s3": func(r *Resource, metrics chan cloudcarbonexporter.Metric) {
+			slog.Debug("resource", "r", r)
+			metrics <- generateMetric(r, 1.0 /*watts*/)
 		},
 	}
 }
 
 // isSupportedRessource returns true if model exists for the resource kind
-func (m models) isSupportedRessource(resourceKind string) bool {
-	if _, ok := m.monitoring[resourceKind]; ok {
+func (m model) isSupportedRessource(resourceKind string) bool {
+	if _, ok := m[resourceKind]; ok {
 		return true
 	}
 
 	return false
 }
 
-// getResourceQueries returns all monitoring queries to send to retreive resource signals
-func (m models) getResourceQueries(resourceKind string) map[string]string {
-	queries := make(map[string]string)
-	for resource, model := range m.monitoring {
-		if resource == resourceKind {
-			for query, signal := range model {
-				queries[query] = signal.query
-			}
-		}
+func mustcast[T any](o any) T {
+	if o == nil {
+		t := new(T)
+		return *t
 	}
-	return queries
+
+	casted, ok := o.(T)
+	if !ok {
+		slog.Error("cast failed, should not happen", "expected", reflect.TypeOf(new(T)), "got", reflect.TypeOf(o))
+		os.Exit(1)
+	}
+
+	return casted
 }
 
-// wattMetricFunc return the function use to estimate watts from a resource metric
-func (m models) wattMetricFunc(resourceKind string, metricID string) func(value cloudcarbonexporter.Metric) cloudcarbonexporter.Metric {
-	for resource, model := range m.monitoring {
-		if resource == resourceKind {
-			for metric, signal := range model {
-				if metric == metricID {
-					return signal.wattConverter
-				}
-			}
-		}
+func generateMetric(r *Resource, watts float64) cloudcarbonexporter.Metric {
+	return cloudcarbonexporter.Metric{
+		Name:       "estimated_watts",
+		ResourceID: r.ID,
+		Labels:     generateMetricLabels(r),
+		Value:      watts,
 	}
-	must.Fail(fmt.Sprintf("no transformer available for the resource kind: %s and metric id: %s", resourceKind, metricID))
-	return nil
 }
 
-// getResourceNameField return the metric field containing the resource name
-func (m models) getResourceNameField(resourceKind string, metricID string) string {
-	for resource, model := range m.monitoring {
-		if resource == resourceKind {
-			for metric, signal := range model {
-				if metric == metricID {
-					return signal.resourceNameField
-				}
-			}
-		}
-	}
-	must.Fail(fmt.Sprintf("no resource name available for the resource kind: %s and metric id: %s", resourceKind, metricID))
-	return ""
+func generateMetricLabels(r *Resource) map[string]string {
+	return cloudcarbonexporter.MergeLabels(r.Labels, map[string]string{
+		"cloud_provider": "aws",
+		"resource_id":    r.Arn.ResourceID,
+		"resource_type":  r.Arn.ResourceType,
+		"region":         r.Arn.Region,
+		"account_id":     r.Arn.AccountID,
+		"service":        r.Arn.Service,
+		"model_version":  getModelVersion(),
+	})
 }

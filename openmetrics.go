@@ -56,8 +56,7 @@ func (rh *OpenMetricsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	err := errg.Wait()
 	if err != nil {
 		slog.Error("failed to collect metrics", "err", err.Error(), traceAttr)
-		w.WriteHeader(500)
-		_, _ = w.Write([]byte(err.Error()))
+		http.Error(w, err.Error(), 500)
 		return
 	}
 

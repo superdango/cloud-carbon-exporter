@@ -24,18 +24,19 @@ func main() {
 	projectID := ""
 	listen := ""
 	demoEnabled := false
+	logLevel := ""
+	logFormat := ""
 
 	flag.StringVar(&cloudProvider, "cloud.provider", "", "cloud provider type (gcp, aws, azure)")
 	flag.StringVar(&projectID, "gcp.projectid", "", "gcp project to export data from")
 	flag.StringVar(&listen, "listen", "0.0.0.0:2922", "addr to listen to")
 	flag.BoolVar(&demoEnabled, "demo.enabled", false, "return fictive demo data")
-
-	initLogging(
-		*flag.String("log.level", "info", "log severity (debug, info, warn, error)"),
-		*flag.String("log.format", "text", "log format (text, json)"),
-	)
+	flag.StringVar(&logLevel, "log.level", "info", "log severity (debug, info, warn, error)")
+	flag.StringVar(&logFormat, "log.format", "text", "log format (text, json)")
 
 	flag.Parse()
+
+	initLogging(logLevel, logFormat)
 
 	collectors := []cloudcarbonexporter.Collector{initCloudProviderCollector(ctx, cloudProvider, map[string]string{"projectID": projectID})}
 	if demoEnabled {

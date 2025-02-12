@@ -3,13 +3,13 @@ package aws
 import (
 	"cloudcarbonexporter"
 	"context"
-	"encoding/json"
 	"fmt"
+	"reflect"
 	"strings"
 
+	"log/slog"
+
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/service/cloudwatch"
-	cloudwatchtypes "github.com/aws/aws-sdk-go-v2/service/cloudwatch/types"
 	"github.com/aws/aws-sdk-go-v2/service/resourcegroupstaggingapi"
 	resourcetypes "github.com/aws/aws-sdk-go-v2/service/resourcegroupstaggingapi/types"
 	"golang.org/x/sync/errgroup"
@@ -21,7 +21,8 @@ type config struct {
 }
 
 type Collector struct {
-	config *config
+	config   *config
+	refiners []Refiner
 }
 
 type Option func(c *config)
@@ -38,6 +39,12 @@ func Regions(regions ...string) Option {
 	}
 }
 
+// Refiner adds data on the fly to discovered resource like monitoring or apis
+type Refiner interface {
+	Refine(ctx context.Context, r *Resource) error
+	Supports(r *Resource) bool
+}
+
 func NewCollector(ctx context.Context, opts ...Option) *Collector {
 	c := &config{
 		regions: []string{"eu-west-1", "eu-west-3"},
@@ -49,64 +56,72 @@ func NewCollector(ctx context.Context, opts ...Option) *Collector {
 
 	return &Collector{
 		config: c,
+		refiners: []Refiner{
+			NewEC2InstanceRefiner(c.awscfg),
+			NewEC2InstanceCloudwatchRefiner(c.awscfg),
+		},
 	}
 }
 
-type arn struct {
-	namespace string
-	service   string
-	region    string
-	accountID string
-	kind      string
-	id        string
+type ARN struct {
+	Partition    string
+	Service      string
+	Region       string
+	AccountID    string
+	ResourceType string
+	ResourceID   string
 }
 
-func newArn(arnstr string) (*arn, error) {
-	arn := &arn{}
+func NewARN(arnstr string) (*ARN, error) {
+	arn := &ARN{}
 
 	splitted := strings.Split(arnstr, ":")
 	if len(splitted) != 6 {
 		return nil, fmt.Errorf("invalid arn format: %s", arnstr)
 	}
-	arn.namespace = splitted[1]
-	arn.service = splitted[2]
-	arn.region = splitted[3]
-	arn.accountID = splitted[4]
+	arn.Partition = splitted[1]
+	arn.Service = splitted[2]
+	arn.Region = splitted[3]
+	arn.AccountID = splitted[4]
 
-	splittedID := strings.SplitN(splitted[5], "/", 2)
-	if len(splittedID) == 1 {
-		arn.id = splittedID[0]
+	resourceComponent := strings.SplitN(splitted[5], "/", 2)
+	switch len(resourceComponent) {
+	case 1:
+		arn.ResourceID = resourceComponent[0]
 		return arn, nil
-	}
-
-	if len(splittedID) == 2 {
-		arn.kind = splittedID[0]
-		arn.id = splittedID[1]
+	case 2:
+		arn.ResourceType = resourceComponent[0]
+		arn.ResourceID = resourceComponent[1]
 		return arn, nil
+	default:
+		return nil, fmt.Errorf("invalid arn resource id format: %s", splitted[5])
 	}
-
-	return arn, nil
 }
 
-func (a *arn) Type() string {
-	if a.kind == "" {
-		return a.service
+func (a *ARN) FullType() string {
+	if a.ResourceType == "" {
+		return a.Service
 	}
 
-	return fmt.Sprintf("%s/%s", a.service, a.kind)
+	return fmt.Sprintf("%s/%s", a.Service, a.ResourceType)
 }
 
 func parseTypeTags(tags []resourcetypes.Tag) map[string]string {
 	m := make(map[string]string, len(tags))
 
 	for _, t := range tags {
-		m[*t.Key] = *t.Value
+		m[fmt.Sprintf("tag_%s", *t.Key)] = *t.Value
 	}
 
 	return m
 }
 
-func (c *Collector) discoverResources(ctx context.Context, resources chan cloudcarbonexporter.Resource) error {
+type Resource struct {
+	cloudcarbonexporter.Resource
+	Arn *ARN
+}
+
+func (c *Collector) discoverResources(ctx context.Context, resources chan *Resource) error {
 	defer close(resources)
 
 	for _, region := range c.config.regions {
@@ -123,17 +138,27 @@ func (c *Collector) discoverResources(ctx context.Context, resources chan cloudc
 			if err != nil {
 				return fmt.Errorf("failed to get resources: %w", err)
 			}
-			for _, mapping := range page.ResourceTagMappingList {
-				arn, err := newArn(*mapping.ResourceARN)
+
+			for _, resourcetag := range page.ResourceTagMappingList {
+				arn, err := NewARN(*resourcetag.ResourceARN)
 				if err != nil {
 					return fmt.Errorf("failed to parse resource arn: %w", err)
 				}
 
-				resources <- cloudcarbonexporter.Resource{
-					Kind:     arn.Type(),
-					Name:     arn.id,
-					Location: arn.region,
-					Labels:   parseTypeTags(mapping.Tags),
+				if !getModel().isSupportedRessource(arn.FullType()) {
+					slog.Debug("unsupported resource", "type", arn.FullType())
+					continue
+				}
+
+				resources <- &Resource{
+					Arn: arn,
+					Resource: cloudcarbonexporter.Resource{
+						Kind:     arn.FullType(),
+						ID:       arn.ResourceID,
+						Location: arn.Region,
+						Labels:   parseTypeTags(resourcetag.Tags),
+						Source:   make(map[string]any),
+					},
 				}
 			}
 		}
@@ -142,38 +167,49 @@ func (c *Collector) discoverResources(ctx context.Context, resources chan cloudc
 	return nil
 }
 
-func (c *Collector) getResourcesMetrics(ctx context.Context, resources chan cloudcarbonexporter.Resource) error {
-
-	return nil
-}
-
 func (c *Collector) Collect(ctx context.Context, metrics chan cloudcarbonexporter.Metric) error {
 	defer close(metrics)
 
-	resources := make(chan cloudcarbonexporter.Resource)
+	resources := make(chan *Resource)
 
 	errg, errgctx := errgroup.WithContext(ctx)
-
+	errg.SetLimit(5)
 	errg.Go(func() error {
 		return c.discoverResources(errgctx, resources)
 	})
 
-	err := errg.Wait()
-	if err != nil {
-		return err
-	}
-	cwapi := cloudwatch.NewFromConfig(c.config.awscfg)
-	paginator := cloudwatch.NewListMetricsPaginator(cwapi, &cloudwatch.ListMetricsInput{RecentlyActive: cloudwatchtypes.RecentlyActivePt3h})
+	for {
+		select {
+		case <-errgctx.Done():
+			return errgctx.Err()
+		case r, ok := <-resources:
+			if !ok {
+				return errg.Wait()
+			}
+			errg.Go(func() error {
+				if err := c.applyRefiners(errgctx, r); err != nil {
+					return err
+				}
 
-	for paginator.HasMorePages() {
-		output, err := paginator.NextPage(ctx)
-		if err != nil {
-			return fmt.Errorf("failed to list cloudwatch metrics: %w", err)
+				getModel()[r.Arn.FullType()](r, metrics)
+
+				return nil
+			})
 		}
+	}
+}
 
-		for _, m := range output.Metrics {
-			dim, _ := json.Marshal(m.Dimensions)
-			fmt.Println(*m.MetricName, *m.Namespace, string(dim))
+func (c *Collector) applyRefiners(ctx context.Context, r *Resource) error {
+	for _, refiner := range c.refiners {
+		if refiner.Supports(r) {
+			err := refiner.Refine(ctx, r)
+			if err != nil {
+				return fmt.Errorf("failed to refine resource id %s: %w", r.ID, err)
+			}
+			slog.Debug("resource refined",
+				"type", r.Arn.FullType(),
+				"id", r.ID,
+				"refiner", reflect.TypeOf(refiner))
 		}
 	}
 	return nil

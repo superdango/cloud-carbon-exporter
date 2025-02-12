@@ -57,7 +57,7 @@ func (collector *Collector) Collect(ctx context.Context, ch chan cloudcarbonexpo
 					return fmt.Errorf("failed to query monitoring resource kind: %s: %w", resourceKind, err)
 				}
 				for _, metric := range metrics {
-					resource, found := resources.Find(resourceKind, metric.ResourceName)
+					resource, found := resources.Find(resourceKind, metric.ResourceID)
 					if !found {
 						resource.Location = "global"
 						resource.Labels = nil
@@ -72,7 +72,7 @@ func (collector *Collector) Collect(ctx context.Context, ch chan cloudcarbonexpo
 							"metric_id":     metricID,
 						}),
 					})
-					slog.Debug("metric sent over channel", "name", metric.Name, "labels", metric.Labels, "resource_name", resource.Name)
+					slog.Debug("metric sent over channel", "name", metric.Name, "labels", metric.Labels, "resource_name", resource.ID)
 				}
 				slog.Debug("sent gcp monitoring query range", "query", query, "duration_ms", time.Since(start).Milliseconds())
 				return nil

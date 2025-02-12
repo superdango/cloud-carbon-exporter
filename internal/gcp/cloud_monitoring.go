@@ -65,9 +65,9 @@ func (service *monitoringService) query(ctx context.Context, promql string, reso
 
 		_, value := result.valueAt(result.len() - 1)
 		metrics[i] = cloudcarbonexporter.Metric{
-			Labels:       result.Metric,
-			Value:        value,
-			ResourceName: resourceName,
+			Labels:     result.Metric,
+			Value:      value,
+			ResourceID: resourceName,
 		}
 	}
 

@@ -7,7 +7,9 @@ require (
 	github.com/aws/aws-sdk-go-v2 v1.36.1
 	github.com/aws/aws-sdk-go-v2/config v1.29.6
 	github.com/aws/aws-sdk-go-v2/service/cloudwatch v1.43.14
+	github.com/aws/aws-sdk-go-v2/service/ec2 v1.203.0
 	github.com/aws/aws-sdk-go-v2/service/resourcegroupstaggingapi v1.25.18
+	github.com/jellydator/ttlcache/v3 v3.3.0
 	github.com/lmittmann/tint v1.0.6
 	github.com/mattn/go-isatty v0.0.20
 	github.com/mitchellh/mapstructure v1.5.0
