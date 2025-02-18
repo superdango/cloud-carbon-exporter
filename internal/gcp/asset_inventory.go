@@ -1,10 +1,11 @@
 package gcp
 
 import (
-	"cloudcarbonexporter"
 	"context"
 	"fmt"
 	"log/slog"
+
+	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
 
 	asset "cloud.google.com/go/asset/apiv1"
 	"cloud.google.com/go/asset/apiv1/assetpb"
@@ -60,14 +61,14 @@ func (inventory *assetInventory) CollectResources(ctx context.Context, metricsCh
 
 		r := cloudcarbonexporter.Resource{
 			Kind:     response.AssetType,
-			Name:     response.Resource.Data.GetFields()["name"].GetStringValue(),
+			ID:       response.Resource.Data.GetFields()["name"].GetStringValue(),
 			Location: response.Resource.Location,
 			Labels:   mapToStringMap(response.Resource.Data.AsMap()["labels"]),
 			Source:   response.Resource.Data.AsMap(),
 		}
 
 		if metricFunc, found := getModels().assets[r.Kind]; found {
-			slog.Debug("metric generated directly from base resource", "kind", r.Kind, "name", r.Name)
+			slog.Debug("metric generated directly from base resource", "kind", r.Kind, "id", r.ID)
 			metricsCh <- metricFunc(r)
 		}
 

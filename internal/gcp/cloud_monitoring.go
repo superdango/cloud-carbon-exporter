@@ -1,14 +1,15 @@
 package gcp
 
 import (
-	"cloudcarbonexporter"
-	"cloudcarbonexporter/internal/must"
+	"github.com/superdango/cloud-carbon-exporter"
 	"context"
 	"fmt"
 	"log/slog"
 	"reflect"
 	"strconv"
 	"time"
+
+	"github.com/superdango/cloud-carbon-exporter/internal/must"
 
 	"github.com/mitchellh/mapstructure"
 	"google.golang.org/api/monitoring/v1"
@@ -65,9 +66,9 @@ func (service *monitoringService) query(ctx context.Context, promql string, reso
 
 		_, value := result.valueAt(result.len() - 1)
 		metrics[i] = cloudcarbonexporter.Metric{
-			Labels:       result.Metric,
-			Value:        value,
-			ResourceName: resourceName,
+			Labels:     result.Metric,
+			Value:      value,
+			ResourceID: resourceName,
 		}
 	}
 

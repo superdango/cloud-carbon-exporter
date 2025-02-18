@@ -1,5 +1,5 @@
 
-FROM golang:1.23.4-bookworm AS build-env
+FROM golang:1.24-bookworm AS build-env
 RUN  go env -w GOCACHE=/go-cache
 RUN  go env -w GOMODCACHE=/gomod-cache
 
@@ -13,7 +13,7 @@ RUN --mount=type=cache,target=/gomod-cache --mount=type=cache,target=/go-cache \
     && go vet ./...         \
     && staticcheck ./...    \
     && go test -v ./...        \
-    && go build -o /cloud-carbon-exporter cloudcarbonexporter/cmd
+    && go build -o /cloud-carbon-exporter -ldflags="-s -w" github.com/superdango/cloud-carbon-exporter/cmd
 
 # Final stage
 FROM gcr.io/distroless/cc-debian12:nonroot

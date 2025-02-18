@@ -1,7 +1,7 @@
 package gcp
 
 import (
-	"cloudcarbonexporter"
+	"github.com/superdango/cloud-carbon-exporter"
 	"context"
 	"fmt"
 	"log/slog"
@@ -57,7 +57,7 @@ func (collector *Collector) Collect(ctx context.Context, ch chan cloudcarbonexpo
 					return fmt.Errorf("failed to query monitoring resource kind: %s: %w", resourceKind, err)
 				}
 				for _, metric := range metrics {
-					resource, found := resources.Find(resourceKind, metric.ResourceName)
+					resource, found := resources.Find(resourceKind, metric.ResourceID)
 					if !found {
 						resource.Location = "global"
 						resource.Labels = nil
@@ -65,14 +65,14 @@ func (collector *Collector) Collect(ctx context.Context, ch chan cloudcarbonexpo
 					ch <- models.wattMetricFunc(resourceKind, metricID)(cloudcarbonexporter.Metric{
 						Name:  "estimated_watts",
 						Value: metric.Value,
-						Labels: mergeLabels(metric.Labels, resource.Labels, map[string]string{
+						Labels: cloudcarbonexporter.MergeLabels(metric.Labels, resource.Labels, map[string]string{
 							"model_version": getModelsVersion(),
 							"location":      resource.Location,
 							"resource_kind": resourceKind,
 							"metric_id":     metricID,
 						}),
 					})
-					slog.Debug("metric sent over channel", "name", metric.Name, "labels", metric.Labels, "resource_name", resource.Name)
+					slog.Debug("metric sent over channel", "name", metric.Name, "labels", metric.Labels, "resource_name", resource.ID)
 				}
 				slog.Debug("sent gcp monitoring query range", "query", query, "duration_ms", time.Since(start).Milliseconds())
 				return nil
@@ -88,17 +88,4 @@ func (collector *Collector) Collect(ctx context.Context, ch chan cloudcarbonexpo
 // Close collector
 func (collector *Collector) Close() error {
 	return collector.inventory.Close()
-}
-
-func mergeLabels(labels ...map[string]string) map[string]string {
-	result := make(map[string]string)
-	for _, l := range labels {
-		for k, v := range l {
-			if v == "" {
-				continue
-			}
-			result[k] = v
-		}
-	}
-	return result
 }

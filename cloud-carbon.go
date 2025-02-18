@@ -16,8 +16,8 @@ type Collector interface {
 type Resource struct {
 	// Kind is the type of the resource
 	Kind string
-	// Name of the resource
-	Name string
+	// ID of the resource
+	ID string
 	// Location can be global, region, zone, etc.
 	Location string
 	// Labels describing the resource
@@ -44,7 +44,7 @@ func (resources Resources) DiscoveredKinds() []string {
 // Find resource by kind and name. Return false is resource is not found.
 func (r Resources) Find(kind, name string) (Resource, bool) {
 	for _, resource := range r {
-		if resource.Kind == kind && resource.Name == name {
+		if resource.Kind == kind && resource.ID == name {
 			return resource, true
 		}
 	}
@@ -54,10 +54,10 @@ func (r Resources) Find(kind, name string) (Resource, bool) {
 
 // Metric olds the name and value of a measurement in addition to its labels.
 type Metric struct {
-	Name         string
-	ResourceName string
-	Labels       map[string]string
-	Value        float64
+	Name       string
+	ResourceID string
+	Labels     map[string]string
+	Value      float64
 }
 
 // Clone return a deep copy of a metric.
@@ -71,4 +71,17 @@ func (m Metric) Clone() Metric {
 		Value:  m.Value,
 		Labels: copiedLabel,
 	}
+}
+
+func MergeLabels(labels ...map[string]string) map[string]string {
+	result := make(map[string]string)
+	for _, l := range labels {
+		for k, v := range l {
+			if v == "" {
+				continue
+			}
+			result[k] = v
+		}
+	}
+	return result
 }

@@ -15,13 +15,15 @@ import (
 
 // OpenMetricsHandler implements the http.Handler interface
 type OpenMetricsHandler struct {
-	collectors []Collector
+	defaultTimeout time.Duration
+	collectors     []Collector
 }
 
 // NewOpenMetricsHandler create a new OpenMetricsHandler
 func NewOpenMetricsHandler(collectors ...Collector) *OpenMetricsHandler {
 	return &OpenMetricsHandler{
-		collectors: collectors,
+		defaultTimeout: 10 * time.Second,
+		collectors:     collectors,
 	}
 }
 
@@ -37,6 +39,8 @@ func (rh *OpenMetricsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	}
 
 	errg, errgctx := errgroup.WithContext(r.Context())
+	errgctx, cancel := context.WithTimeout(errgctx, rh.defaultTimeout)
+	defer cancel()
 
 	for _, collector := range rh.collectors {
 		collector := collector
@@ -52,8 +56,7 @@ func (rh *OpenMetricsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	err := errg.Wait()
 	if err != nil {
 		slog.Error("failed to collect metrics", "err", err.Error(), traceAttr)
-		w.WriteHeader(500)
-		w.Write([]byte(err.Error()))
+		http.Error(w, err.Error(), 500)
 		return
 	}
 

@@ -1,9 +1,7 @@
 package main
 
 import (
-	"cloudcarbonexporter"
-	"cloudcarbonexporter/internal/demo"
-	"cloudcarbonexporter/internal/gcp"
+	"github.com/superdango/cloud-carbon-exporter"
 	"context"
 	"flag"
 	"log/slog"
@@ -11,6 +9,11 @@ import (
 	"os"
 	"strings"
 
+	"github.com/superdango/cloud-carbon-exporter/internal/aws"
+	"github.com/superdango/cloud-carbon-exporter/internal/demo"
+	"github.com/superdango/cloud-carbon-exporter/internal/gcp"
+
+	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/lmittmann/tint"
 	"github.com/mattn/go-isatty"
 )
@@ -22,18 +25,19 @@ func main() {
 	projectID := ""
 	listen := ""
 	demoEnabled := false
+	logLevel := ""
+	logFormat := ""
 
 	flag.StringVar(&cloudProvider, "cloud.provider", "", "cloud provider type (gcp, aws, azure)")
 	flag.StringVar(&projectID, "gcp.projectid", "", "gcp project to export data from")
 	flag.StringVar(&listen, "listen", "0.0.0.0:2922", "addr to listen to")
 	flag.BoolVar(&demoEnabled, "demo.enabled", false, "return fictive demo data")
-
-	initLogging(
-		*flag.String("log.level", "info", "log severity (debug, info, warn, error)"),
-		*flag.String("log.format", "text", "log format (text, json)"),
-	)
+	flag.StringVar(&logLevel, "log.level", "info", "log severity (debug, info, warn, error)")
+	flag.StringVar(&logFormat, "log.format", "text", "log format (text, json)")
 
 	flag.Parse()
+
+	initLogging(logLevel, logFormat)
 
 	collectors := []cloudcarbonexporter.Collector{initCloudProviderCollector(ctx, cloudProvider, map[string]string{"projectID": projectID})}
 	if demoEnabled {
@@ -95,6 +99,15 @@ func initCloudProviderCollector(ctx context.Context, cloudProvider string, param
 			os.Exit(1)
 		}
 		return collector
+
+	case "aws":
+		config, err := config.LoadDefaultConfig(ctx)
+		if err != nil {
+			slog.Error("failed to create aws collector", "err", err)
+			os.Exit(1)
+		}
+
+		return aws.NewCollector(ctx, aws.Config(config))
 
 	case "":
 		slog.Error("cloud provider is not set")
