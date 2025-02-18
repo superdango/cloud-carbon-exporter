@@ -4,9 +4,8 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-	"strings"
 
-	"github.com/superdango/cloud-carbon-exporter"
+	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
 
 	"log/slog"
 
@@ -22,13 +21,15 @@ type config struct {
 }
 
 type Collector struct {
-	config   *config
-	refiners []Refiner
+	config       *config
+	refiners     []Refiner
+	intensityMap cloudcarbonexporter.CarbonIntensityMap
+	energyModel  model
 }
 
 type Option func(c *config)
 
-func Config(cfg aws.Config) Option {
+func AWSConfig(cfg aws.Config) Option {
 	return func(c *config) {
 		c.awscfg = cfg
 	}
@@ -48,7 +49,7 @@ type Refiner interface {
 
 func NewCollector(ctx context.Context, opts ...Option) *Collector {
 	c := &config{
-		regions: []string{"eu-west-1", "eu-west-3"},
+		regions: []string{"eu-west-1", "eu-west-3", "us-west-1"},
 	}
 
 	for _, opt := range opts {
@@ -56,65 +57,17 @@ func NewCollector(ctx context.Context, opts ...Option) *Collector {
 	}
 
 	return &Collector{
-		config: c,
+		config:       c,
+		intensityMap: NewCarbonIntensityMap(),
+		energyModel:  newModel(),
 		refiners: []Refiner{
 			NewEC2InstanceRefiner(c.awscfg),
 			NewEC2InstanceCloudwatchRefiner(c.awscfg),
+			NewEC2SnapshotRefiner(c.awscfg),
+			NewS3BucketRefiner(c.awscfg),
+			NewS3BucketCloudwatchRefiner(c.awscfg),
 		},
 	}
-}
-
-type ARN struct {
-	Partition    string
-	Service      string
-	Region       string
-	AccountID    string
-	ResourceType string
-	ResourceID   string
-}
-
-func NewARN(arnstr string) (*ARN, error) {
-	arn := &ARN{}
-
-	splitted := strings.Split(arnstr, ":")
-	if len(splitted) != 6 {
-		return nil, fmt.Errorf("invalid arn format: %s", arnstr)
-	}
-	arn.Partition = splitted[1]
-	arn.Service = splitted[2]
-	arn.Region = splitted[3]
-	arn.AccountID = splitted[4]
-
-	resourceComponent := strings.SplitN(splitted[5], "/", 2)
-	switch len(resourceComponent) {
-	case 1:
-		arn.ResourceID = resourceComponent[0]
-		return arn, nil
-	case 2:
-		arn.ResourceType = resourceComponent[0]
-		arn.ResourceID = resourceComponent[1]
-		return arn, nil
-	default:
-		return nil, fmt.Errorf("invalid arn resource id format: %s", splitted[5])
-	}
-}
-
-func (a *ARN) FullType() string {
-	if a.ResourceType == "" {
-		return a.Service
-	}
-
-	return fmt.Sprintf("%s/%s", a.Service, a.ResourceType)
-}
-
-func parseTypeTags(tags []resourcetypes.Tag) map[string]string {
-	m := make(map[string]string, len(tags))
-
-	for _, t := range tags {
-		m[fmt.Sprintf("tag_%s", *t.Key)] = *t.Value
-	}
-
-	return m
 }
 
 type Resource struct {
@@ -122,6 +75,39 @@ type Resource struct {
 	Arn *ARN
 }
 
+func (c *Collector) Collect(ctx context.Context, outMetricsCh chan cloudcarbonexporter.Metric) error {
+	defer close(outMetricsCh)
+
+	resources := make(chan *Resource)
+
+	errg, errgctx := errgroup.WithContext(ctx)
+	errg.SetLimit(5)
+	errg.Go(func() error {
+		return c.discoverResources(errgctx, resources)
+	})
+
+	for {
+		select {
+		case <-errgctx.Done():
+			return errg.Wait()
+		case r, ok := <-resources:
+			if !ok {
+				return errg.Wait()
+			}
+			errg.Go(func() error {
+				if err := c.applyRefiners(errgctx, r); err != nil {
+					return err
+				}
+
+				c.computeResourceMetrics(r, outMetricsCh)
+
+				return nil
+			})
+		}
+	}
+}
+
+// discoverResources list all supported resources that have been tagged in configured regions
 func (c *Collector) discoverResources(ctx context.Context, resources chan *Resource) error {
 	defer close(resources)
 
@@ -146,8 +132,8 @@ func (c *Collector) discoverResources(ctx context.Context, resources chan *Resou
 					return fmt.Errorf("failed to parse resource arn: %w", err)
 				}
 
-				if !getModel().isSupportedRessource(arn.FullType()) {
-					slog.Debug("unsupported resource", "type", arn.FullType())
+				if !c.energyModel.isSupportedRessource(arn.FullType()) {
+					slog.Debug("resource not supported", "type", arn.FullType())
 					continue
 				}
 
@@ -157,7 +143,7 @@ func (c *Collector) discoverResources(ctx context.Context, resources chan *Resou
 						Kind:     arn.FullType(),
 						ID:       arn.ResourceID,
 						Location: arn.Region,
-						Labels:   parseTypeTags(resourcetag.Tags),
+						Labels:   parseTags(resourcetag.Tags),
 						Source:   make(map[string]any),
 					},
 				}
@@ -168,36 +154,14 @@ func (c *Collector) discoverResources(ctx context.Context, resources chan *Resou
 	return nil
 }
 
-func (c *Collector) Collect(ctx context.Context, metrics chan cloudcarbonexporter.Metric) error {
-	defer close(metrics)
-
-	resources := make(chan *Resource)
-
-	errg, errgctx := errgroup.WithContext(ctx)
-	errg.SetLimit(5)
-	errg.Go(func() error {
-		return c.discoverResources(errgctx, resources)
-	})
-
-	for {
-		select {
-		case <-errgctx.Done():
-			return errgctx.Err()
-		case r, ok := <-resources:
-			if !ok {
-				return errg.Wait()
-			}
-			errg.Go(func() error {
-				if err := c.applyRefiners(errgctx, r); err != nil {
-					return err
-				}
-
-				getModel()[r.Arn.FullType()](r, metrics)
-
-				return nil
-			})
-		}
+func (c *Collector) computeResourceMetrics(r *Resource, outMetricsCh chan cloudcarbonexporter.Metric) {
+	wattMetric := c.energyModel.ComputeResourceEnergyDraw(r)
+	if wattMetric == nil {
+		return
 	}
+
+	outMetricsCh <- *wattMetric
+	outMetricsCh <- c.intensityMap.ComputeCO2eq(*wattMetric)
 }
 
 func (c *Collector) applyRefiners(ctx context.Context, r *Resource) error {
@@ -218,4 +182,14 @@ func (c *Collector) applyRefiners(ctx context.Context, r *Resource) error {
 
 func (c *Collector) Close() error {
 	return nil
+}
+
+func parseTags(tags []resourcetypes.Tag) map[string]string {
+	m := make(map[string]string, len(tags))
+
+	for _, t := range tags {
+		m[fmt.Sprintf("tag_%s", *t.Key)] = *t.Value
+	}
+
+	return m
 }

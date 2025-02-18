@@ -3,12 +3,12 @@ package gcp
 import (
 	"context"
 	"fmt"
-	"github.com/superdango/cloud-carbon-exporter"
 	"log/slog"
 	"reflect"
 	"strconv"
 	"time"
 
+	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
 	"github.com/superdango/cloud-carbon-exporter/internal/must"
 
 	"github.com/mitchellh/mapstructure"

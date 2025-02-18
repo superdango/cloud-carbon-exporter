@@ -3,11 +3,12 @@ package main
 import (
 	"context"
 	"flag"
-	"github.com/superdango/cloud-carbon-exporter"
 	"log/slog"
 	"net/http"
 	"os"
 	"strings"
+
+	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
 
 	"github.com/superdango/cloud-carbon-exporter/internal/aws"
 	"github.com/superdango/cloud-carbon-exporter/internal/demo"
@@ -93,6 +94,7 @@ func initCloudProviderCollector(ctx context.Context, cloudProvider string, param
 			flag.PrintDefaults()
 			os.Exit(1)
 		}
+		slog.Debug("creating gcp collector", "projectID", params["projectID"])
 		collector, err := gcp.NewCollector(ctx, params["projectID"])
 		if err != nil {
 			slog.Error("failed to create gcp collector", "project_id", params["projectID"], "err", err)
@@ -107,7 +109,7 @@ func initCloudProviderCollector(ctx context.Context, cloudProvider string, param
 			os.Exit(1)
 		}
 
-		return aws.NewCollector(ctx, aws.Config(config))
+		return aws.NewCollector(ctx, aws.AWSConfig(config))
 
 	case "":
 		slog.Error("cloud provider is not set")
