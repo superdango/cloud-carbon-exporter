@@ -1,6 +1,6 @@
-module cloudcarbonexporter
+module github.com/superdango/cloud-carbon-exporter
 
-go 1.23.4
+go 1.24
 
 require (
 	cloud.google.com/go/asset v1.20.4

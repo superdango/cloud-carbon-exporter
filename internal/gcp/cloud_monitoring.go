@@ -1,14 +1,15 @@
 package gcp
 
 import (
-	"cloudcarbonexporter"
-	"cloudcarbonexporter/internal/must"
+	"github.com/superdango/cloud-carbon-exporter"
 	"context"
 	"fmt"
 	"log/slog"
 	"reflect"
 	"strconv"
 	"time"
+
+	"github.com/superdango/cloud-carbon-exporter/internal/must"
 
 	"github.com/mitchellh/mapstructure"
 	"google.golang.org/api/monitoring/v1"

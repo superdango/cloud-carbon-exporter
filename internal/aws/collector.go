@@ -1,11 +1,12 @@
 package aws
 
 import (
-	"cloudcarbonexporter"
 	"context"
 	"fmt"
 	"reflect"
 	"strings"
+
+	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
 
 	"log/slog"
 

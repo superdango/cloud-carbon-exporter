@@ -1,12 +1,13 @@
 package gcp
 
 import (
-	"cloudcarbonexporter"
-	"cloudcarbonexporter/internal/must"
+	"github.com/superdango/cloud-carbon-exporter"
 	"fmt"
 	"log/slog"
 	"path/filepath"
 	"strconv"
+
+	"github.com/superdango/cloud-carbon-exporter/internal/must"
 )
 
 // models holds every calculation methods for all resource kind and metrics. If signals

@@ -1,16 +1,17 @@
 package main
 
 import (
-	"cloudcarbonexporter"
-	"cloudcarbonexporter/internal/aws"
-	"cloudcarbonexporter/internal/demo"
-	"cloudcarbonexporter/internal/gcp"
+	"github.com/superdango/cloud-carbon-exporter"
 	"context"
 	"flag"
 	"log/slog"
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/superdango/cloud-carbon-exporter/internal/aws"
+	"github.com/superdango/cloud-carbon-exporter/internal/demo"
+	"github.com/superdango/cloud-carbon-exporter/internal/gcp"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/lmittmann/tint"

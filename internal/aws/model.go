@@ -1,10 +1,11 @@
 package aws
 
 import (
-	"cloudcarbonexporter"
 	"log/slog"
 	"os"
 	"reflect"
+
+	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
 )
 
 // model holds every calculation methods for all resource kind and metrics. If signals

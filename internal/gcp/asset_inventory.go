@@ -1,10 +1,11 @@
 package gcp
 
 import (
-	"cloudcarbonexporter"
 	"context"
 	"fmt"
 	"log/slog"
+
+	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
 
 	asset "cloud.google.com/go/asset/apiv1"
 	"cloud.google.com/go/asset/apiv1/assetpb"

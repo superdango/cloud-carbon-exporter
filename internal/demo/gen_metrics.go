@@ -1,10 +1,11 @@
 package demo
 
 import (
-	"cloudcarbonexporter"
 	"context"
 	"math/rand/v2"
 	"time"
+
+	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
 )
 
 // DemoCollector implements the cloudcarbon collector interface.
