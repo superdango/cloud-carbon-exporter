@@ -1,8 +1,8 @@
 package gcp
 
 import (
-	"github.com/superdango/cloud-carbon-exporter"
 	"fmt"
+	"github.com/superdango/cloud-carbon-exporter"
 	"log/slog"
 	"path/filepath"
 	"strconv"

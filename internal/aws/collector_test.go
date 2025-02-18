@@ -1,9 +1,8 @@
 package aws
 
 import (
-	"testing"
-
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestNewArn(t *testing.T) {

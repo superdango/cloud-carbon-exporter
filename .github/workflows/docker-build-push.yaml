@@ -12,6 +12,13 @@ env:
   IMAGE_NAME: cloud-carbon-exporter
 
 jobs:
+  go-fmt:
+    runs-on: golang
+    steps:
+      - uses: actions/checkout@v4
+      - name: validate go formatting
+        run: if [ "$(go fmt ./... | wc -l)" -gt 0 ]; then  exit 1; fi
+
   docker-build-push:
     runs-on: ubuntu-latest
     permissions:

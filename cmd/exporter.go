@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/superdango/cloud-carbon-exporter"
 	"context"
 	"flag"
+	"github.com/superdango/cloud-carbon-exporter"
 	"log/slog"
 	"net/http"
 	"os"
