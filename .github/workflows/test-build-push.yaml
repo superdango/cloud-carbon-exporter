@@ -1,5 +1,4 @@
-#
-name: docker build / push
+name: test, build and push
 on:
   push:
     branches:
@@ -12,8 +11,23 @@ env:
   IMAGE_NAME: cloud-carbon-exporter
 
 jobs:
+  go-fmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # if go fmt format files, it returns one line by modified files on stdout.
+      # If line count is greater than 0, exit with error code 1 to stop the workflow.
+      - name: validate go formatting
+        uses: docker://golang:latest
+        with:
+          entrypoint: /bin/bash
+          # args: -c "if [ \"$(go fmt ./... | wc -l)\" -gt 0 ]; then echo \"Source code not formatted\" && exit 1; fi"
+          args: -c "exit $(go fmt ./... | wc -l)"
+
   docker-build-push:
     runs-on: ubuntu-latest
+    needs: go-fmt
     permissions:
       packages: write
       contents: read
