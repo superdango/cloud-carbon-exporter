@@ -21,6 +21,7 @@ jobs:
 
   docker-build-push:
     runs-on: ubuntu-latest
+    needs: go-fmt
     permissions:
       packages: write
       contents: read
