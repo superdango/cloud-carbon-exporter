@@ -13,7 +13,7 @@ RUN --mount=type=cache,target=/gomod-cache --mount=type=cache,target=/go-cache \
     && go vet ./...         \
     && staticcheck ./...    \
     && go test -v ./...        \
-    && go build -o /cloud-carbon-exporter go build -o exporter -ldflags="-s -w" github.com/superdango/cloud-carbon-exporter/cmd
+    && go build -o /cloud-carbon-exporter -ldflags="-s -w" github.com/superdango/cloud-carbon-exporter/cmd
 
 # Final stage
 FROM gcr.io/distroless/cc-debian12:nonroot
