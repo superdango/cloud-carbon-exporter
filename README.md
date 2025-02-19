@@ -1,22 +1,24 @@
 # Cloud Carbon Exporter
 
+> This work is currently in progress. Do not use before the official release announcement around May 2025. Nothing stable, data is wrong, everything broken, don't contribute yet. Thanks !
+
 Your cloud energy draw and carbon emissions in realtime.
 
 The exporter enables your Cloud team to adhere in [Carbon Driven Development](#) principles.
 
 ## How it works
 
-This exporter will discover all resources running in a specified project or account and estimate the energy ⚡ (watt) used by them and calculate the associated CO₂eq emissions ☁️ based on their location.
+This exporter will discover all resources running in a specified Cloud project or account and estimate the energy ⚡ (watt) used by them and calculate the associated CO₂eq emissions ☁️ based on their location.
 
 ### Estimated Watts
 
-Each resource discovered by the exporter is embellished with additional data from specific apis or cloud monitoring. Those vitality signals are used by a calculation model to precisly estimate the current energy usage (CPU load, Storage used, requests/seconds, etc.)
+Each resource discovered by the exporter is embellished with additional data from specific apis or cloud monitoring. Those health signals are used by a calculation model to precisely estimate the current energy usage (CPU load, Storage used, requests/seconds, etc.)
 
 ### Estimated CO₂eq/second
 
 Once the watt estimation is complete, we match the resource's location with a carbon coefficient to calculate the CO₂ equivalent (CO₂eq).
 
-The model is based on public [data shared by cloud providers.](https://github.com/GoogleCloudPlatform/region-carbon-info).
+The model is based on various [public data shared by cloud providers.](https://github.com/GoogleCloudPlatform/region-carbon-info).
 
 ### Demo
 
