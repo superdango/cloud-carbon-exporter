@@ -14,5 +14,9 @@ func Assert(cond bool, failMessage string) {
 }
 
 func Fail(message string) {
-	Assert(false, fmt.Sprintf("assertion failed: %s", message))
+	Assert(false, message)
+}
+
+func NoError(err error) {
+	Assert(err == nil, fmt.Sprintf("error catched: %s", err))
 }

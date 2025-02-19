@@ -4,6 +4,8 @@ import (
 	"context"
 	"slices"
 	"strings"
+
+	"github.com/superdango/cloud-carbon-exporter/internal/must"
 )
 
 // Collector collects metrics and send them directly to metrics channel
@@ -84,4 +86,57 @@ func MergeLabels(labels ...map[string]string) map[string]string {
 		}
 	}
 	return result
+}
+
+// CarbonIntensityMap regroups carbon intensity by location
+type CarbonIntensityMap map[string]float64
+
+func (intensity CarbonIntensityMap) Average(location ...string) float64 {
+	avg := 0.0
+	adds := 0.0
+	for loc, co2eqsec := range intensity {
+		if !hasOnePrefix(loc, location...) {
+			continue
+		}
+		avg = avg + co2eqsec
+		adds = adds + 1.0
+	}
+	avg = avg / adds
+	return avg
+}
+
+func hasOnePrefix(s string, prefixes ...string) bool {
+	if len(prefixes) == 0 {
+		return true
+	}
+	for _, p := range prefixes {
+		if strings.HasPrefix(s, p) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (intensity CarbonIntensityMap) Get(location string) float64 {
+	locationsize := 0
+	locationIntensity, found := intensity["global"]
+	must.Assert(found, "global coefficient not set")
+
+	for l, carbonIntensity := range intensity {
+		if strings.HasPrefix(location, l) {
+			if len(l) > locationsize {
+				locationsize = len(l)
+				locationIntensity = carbonIntensity
+			}
+		}
+	}
+	return locationIntensity
+}
+
+func (intensityMap CarbonIntensityMap) ComputeCO2eq(wattMetric Metric) Metric {
+	emissionMetric := wattMetric.Clone()
+	emissionMetric.Name = "estimated_g_co2eq_second"
+	emissionMetric.Value = intensityMap.Get(wattMetric.Labels["location"]) * wattMetric.Value
+	return emissionMetric
 }

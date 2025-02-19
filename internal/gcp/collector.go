@@ -3,9 +3,10 @@ package gcp
 import (
 	"context"
 	"fmt"
-	"github.com/superdango/cloud-carbon-exporter"
 	"log/slog"
 	"time"
+
+	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
 
 	"golang.org/x/sync/errgroup"
 )
@@ -14,8 +15,9 @@ import (
 // resources from Google Cloud Assets Inventory then getting their signals from Cloud
 // Monitoring to finely compute the realtime energy draw
 type Collector struct {
-	inventory  *assetInventory
-	monitoring *monitoringService
+	inventory    *assetInventory
+	monitoring   *monitoringService
+	intensityMap cloudcarbonexporter.CarbonIntensityMap
 }
 
 // NewCollector returns a new Collector
@@ -31,8 +33,9 @@ func NewCollector(ctx context.Context, projectID string) (*Collector, error) {
 	}
 
 	return &Collector{
-		inventory:  inventory,
-		monitoring: monitoring,
+		intensityMap: NewCarbonIntensityMap(),
+		inventory:    inventory,
+		monitoring:   monitoring,
 	}, nil
 }
 
@@ -62,17 +65,27 @@ func (collector *Collector) Collect(ctx context.Context, ch chan cloudcarbonexpo
 						resource.Location = "global"
 						resource.Labels = nil
 					}
-					ch <- models.wattMetricFunc(resourceKind, metricID)(cloudcarbonexporter.Metric{
+					wattMetric := models.wattMetricFunc(resourceKind, metricID)(cloudcarbonexporter.Metric{
 						Name:  "estimated_watts",
 						Value: metric.Value,
 						Labels: cloudcarbonexporter.MergeLabels(metric.Labels, resource.Labels, map[string]string{
-							"model_version": getModelsVersion(),
-							"location":      resource.Location,
-							"resource_kind": resourceKind,
-							"metric_id":     metricID,
+							"model_version":  getModelsVersion(),
+							"cloud_provider": "gcp",
+							"location":       resource.Location,
+							"resource_id":    resource.ID,
+							"resource_kind":  resourceKind,
+							"metric_id":      metricID,
 						}),
 					})
+					ch <- wattMetric
+
+					co2eqMetric := wattMetric.Clone()
+					co2eqMetric.Name = "estimated_g_co2eq_second"
+					co2eqMetric.Value = wattMetric.Value * collector.intensityMap.Get(wattMetric.Labels["location"])
+					ch <- co2eqMetric
+
 					slog.Debug("metric sent over channel", "name", metric.Name, "labels", metric.Labels, "resource_name", resource.ID)
+
 				}
 				slog.Debug("sent gcp monitoring query range", "query", query, "duration_ms", time.Since(start).Milliseconds())
 				return nil
