@@ -16,14 +16,14 @@ import (
 // OpenMetricsHandler implements the http.Handler interface
 type OpenMetricsHandler struct {
 	defaultTimeout time.Duration
-	collectors     []Collector
+	collector      *Collector
 }
 
 // NewOpenMetricsHandler create a new OpenMetricsHandler
-func NewOpenMetricsHandler(collectors ...Collector) *OpenMetricsHandler {
+func NewOpenMetricsHandler(collector *Collector) *OpenMetricsHandler {
 	return &OpenMetricsHandler{
 		defaultTimeout: 10 * time.Second,
-		collectors:     collectors,
+		collector:      collector,
 	}
 }
 
@@ -42,12 +42,9 @@ func (rh *OpenMetricsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	errgctx, cancel := context.WithTimeout(errgctx, rh.defaultTimeout)
 	defer cancel()
 
-	for _, collector := range rh.collectors {
-		collector := collector
-		errg.Go(func() error {
-			return collector.Collect(errgctx, metrics)
-		})
-	}
+	errg.Go(func() error {
+		return rh.collector.Collect(errgctx, metrics)
+	})
 
 	errg.Go(func() error {
 		return writeMetrics(errgctx, w, metrics)

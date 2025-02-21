@@ -94,7 +94,7 @@ func generateWattMetric(r *Resource, watts float64) *cloudcarbonexporter.Metric 
 func generateMetricLabels(r *Resource) map[string]string {
 	return cloudcarbonexporter.MergeLabels(r.Labels, map[string]string{
 		"cloud_provider": "aws",
-		"location":       r.Location,
+		"location":       r.Region,
 		"resource_id":    r.Arn.ResourceID,
 		"resource_type":  r.Arn.ResourceType,
 		"region":         r.Arn.Region,
