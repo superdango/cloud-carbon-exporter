@@ -2,56 +2,146 @@ package cloudcarbonexporter
 
 import (
 	"context"
-	"slices"
+	"fmt"
+	"io"
 	"strings"
 
 	"github.com/superdango/cloud-carbon-exporter/internal/must"
+	"golang.org/x/sync/errgroup"
 )
 
-// Collector collects metrics and send them directly to metrics channel
-type Collector interface {
-	Collect(ctx context.Context, metrics chan Metric) error
-	Close() error
+type CollectorOptions func(c *Collector)
+
+func WithExplorer(explorer Explorer) CollectorOptions {
+	return func(c *Collector) {
+		c.explorers = append(c.explorers, explorer)
+	}
+}
+
+func WithRefiners(refiners ...Refiner) CollectorOptions {
+	return func(c *Collector) {
+		c.refiners = append(c.refiners, refiners...)
+	}
+}
+
+func WithModels(models ...Model) CollectorOptions {
+	return func(c *Collector) {
+		c.models = models
+	}
+}
+
+type Collector struct {
+	explorers []Explorer
+	refiners  []Refiner
+	models    []Model
+}
+
+func NewCollector(opts ...CollectorOptions) *Collector {
+	collector := &Collector{
+		explorers: make([]Explorer, 0),
+		refiners:  make([]Refiner, 0),
+		models:    make([]Model, 0),
+	}
+	for _, option := range opts {
+		option(collector)
+	}
+	return collector
+}
+
+func (c *Collector) SetOpt(option CollectorOptions) {
+	option(c)
+}
+
+func (c *Collector) Collect(ctx context.Context, metrics chan Metric) error {
+	defer close(metrics)
+
+	resources := make(chan *Resource)
+
+	errg, errgctx := errgroup.WithContext(ctx)
+	errg.SetLimit(5)
+	errg.Go(func() error {
+		return c.explore(errgctx, resources)
+	})
+
+	for {
+		select {
+		case <-errgctx.Done():
+			return errg.Wait()
+		case r, ok := <-resources:
+			if !ok {
+				return errg.Wait()
+			}
+			errg.Go(func() error {
+				if err := c.refine(errgctx, r); err != nil {
+					return err
+				}
+
+				for _, model := range c.models {
+					for _, metric := range model.ComputeMetrics(r) {
+						metrics <- metric
+					}
+				}
+
+				return nil
+			})
+		}
+	}
+}
+
+func (c *Collector) Close() error {
+	for _, explorer := range c.explorers {
+		if err := explorer.Close(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (c *Collector) explore(ctx context.Context, resources chan *Resource) error {
+	defer close(resources)
+	for _, explorer := range c.explorers {
+		err := explorer.Find(ctx, resources)
+		if err != nil {
+			return fmt.Errorf("failed to collect resources: %w", err)
+		}
+	}
+	return nil
+}
+
+func (c *Collector) refine(ctx context.Context, resource *Resource) error {
+	for _, refiner := range c.refiners {
+		err := refiner.Refine(ctx, resource)
+		if err != nil {
+			return fmt.Errorf("failed to refine resource %s: %w", resource.Kind, err)
+		}
+	}
+	return nil
+}
+
+type Explorer interface {
+	Find(ctx context.Context, resources chan *Resource) error
+	io.Closer
+}
+
+type Refiner interface {
+	Refine(ctx context.Context, resource *Resource) error
+	Supports(r *Resource) bool
 }
 
 // Resource is the representation of a Cloud asset potentially drawing energy
 type Resource struct {
+	// CloudProvider hosting the resource
+	CloudProvider string
 	// Kind is the type of the resource
 	Kind string
 	// ID of the resource
 	ID string
-	// Location can be global, region, zone, etc.
-	Location string
+	// Region can be global, region, zone, etc.
+	Region string
 	// Labels describing the resource
 	Labels map[string]string
 	// Source is the raw data collected from the source
 	Source map[string]any
-}
-
-// Resources is a set of resources
-type Resources []Resource
-
-// DiscoveredKinds returns the list of kind found in the resources set
-func (resources Resources) DiscoveredKinds() []string {
-	distinctResources := make([]string, 0)
-
-	for _, resource := range resources {
-		distinctResources = append(distinctResources, resource.Kind)
-	}
-
-	slices.SortFunc(distinctResources, strings.Compare)
-	return slices.Compact(distinctResources)
-}
-
-// Find resource by kind and name. Return false is resource is not found.
-func (r Resources) Find(kind, name string) (Resource, bool) {
-	for _, resource := range r {
-		if resource.Kind == kind && resource.ID == name {
-			return resource, true
-		}
-	}
-
-	return Resource{}, false
 }
 
 // Metric olds the name and value of a measurement in addition to its labels.
@@ -137,6 +227,22 @@ func (intensity CarbonIntensityMap) Get(location string) float64 {
 func (intensityMap CarbonIntensityMap) ComputeCO2eq(wattMetric Metric) Metric {
 	emissionMetric := wattMetric.Clone()
 	emissionMetric.Name = "estimated_g_co2eq_second"
-	emissionMetric.Value = intensityMap.Get(wattMetric.Labels["location"]) * wattMetric.Value
+	emissionMetric.Value = intensityMap.Get(wattMetric.Labels["region"]) * wattMetric.Value
 	return emissionMetric
+}
+
+// EnergyModel holds every calculation methods for all supported resources.
+type EnergyModel map[string]func(r *Resource) *Metric
+
+func (m EnergyModel) EstimateWatts(r *Resource) *Metric {
+	if formula, found := m[r.Kind]; found {
+		return formula(r)
+	}
+
+	return nil
+}
+
+type Model interface {
+	ComputeMetrics(r *Resource) []Metric
+	Supports(r *Resource) bool
 }

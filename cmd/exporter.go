@@ -13,6 +13,7 @@ import (
 	"github.com/superdango/cloud-carbon-exporter/internal/aws"
 	"github.com/superdango/cloud-carbon-exporter/internal/demo"
 	"github.com/superdango/cloud-carbon-exporter/internal/gcp"
+	"github.com/superdango/cloud-carbon-exporter/model"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/lmittmann/tint"
@@ -25,14 +26,14 @@ func main() {
 	cloudProvider := ""
 	projectID := ""
 	listen := ""
-	demoEnabled := false
+	demoEnabled := ""
 	logLevel := ""
 	logFormat := ""
 
 	flag.StringVar(&cloudProvider, "cloud.provider", "", "cloud provider type (gcp, aws, azure)")
 	flag.StringVar(&projectID, "gcp.projectid", "", "gcp project to export data from")
 	flag.StringVar(&listen, "listen", "0.0.0.0:2922", "addr to listen to")
-	flag.BoolVar(&demoEnabled, "demo.enabled", false, "return fictive demo data")
+	flag.StringVar(&demoEnabled, "demo.enabled", "false", "return fictive demo data")
 	flag.StringVar(&logLevel, "log.level", "info", "log severity (debug, info, warn, error)")
 	flag.StringVar(&logFormat, "log.format", "text", "log format (text, json)")
 
@@ -40,18 +41,17 @@ func main() {
 
 	initLogging(logLevel, logFormat)
 
-	collectors := []cloudcarbonexporter.Collector{initCloudProviderCollector(ctx, cloudProvider, map[string]string{"projectID": projectID})}
-	if demoEnabled {
-		collectors = append(collectors, demo.NewCollector())
+	params := map[string]string{
+		"projectID":    projectID,
+		"demo_enabled": demoEnabled,
 	}
-	defer func() {
-		for _, collector := range collectors {
-			collector.Close()
-		}
-	}()
+
+	collector := cloudcarbonexporter.NewCollector(InitCollectorOptions(ctx, cloudProvider, params)...)
+
+	defer collector.Close()
 
 	mux := http.NewServeMux()
-	mux.Handle("/metrics", cloudcarbonexporter.NewOpenMetricsHandler(collectors...))
+	mux.Handle("/metrics", cloudcarbonexporter.NewOpenMetricsHandler(collector))
 
 	slog.Info("starting cloud carbon exporter", "listen", listen)
 	if err := http.ListenAndServe(listen, mux); err != nil {
@@ -86,42 +86,59 @@ func initLogging(logLevel string, logFormat string) {
 	}
 }
 
-func initCloudProviderCollector(ctx context.Context, cloudProvider string, params map[string]string) cloudcarbonexporter.Collector {
-	switch cloudProvider {
-	case "gcp":
-		if params["projectID"] == "" {
-			slog.Error("project id is not set")
-			flag.PrintDefaults()
-			os.Exit(1)
-		}
-		slog.Debug("creating gcp collector", "projectID", params["projectID"])
-		collector, err := gcp.NewCollector(ctx, params["projectID"])
-		if err != nil {
-			slog.Error("failed to create gcp collector", "project_id", params["projectID"], "err", err)
-			os.Exit(1)
-		}
-		return collector
+func InitCollectorOptions(ctx context.Context, cloudProvider string, params map[string]string) []cloudcarbonexporter.CollectorOptions {
+	return []cloudcarbonexporter.CollectorOptions{
+		func(c *cloudcarbonexporter.Collector) {
+			if params["demo_enabled"] == "true" {
+				c.SetOpt(cloudcarbonexporter.WithExplorer(demo.NewExplorer()))
+				c.SetOpt(cloudcarbonexporter.WithModels(new(model.Demo)))
+			}
+		},
+		func(c *cloudcarbonexporter.Collector) {
+			switch cloudProvider {
+			case "gcp":
+				if params["projectID"] == "" {
+					slog.Error("project id is not set")
+					flag.PrintDefaults()
+					os.Exit(1)
+				}
+				model := model.NewGoogleCloudPlatform()
+				gcpExplorer, err := gcp.NewExplorer(ctx,
+					gcp.WithProjectID(params["projectID"]),
+					gcp.WithSupportsFunc(model.Supports),
+				)
+				if err != nil {
+					slog.Error("failed to create gcp explorer", "project_id", params["projectID"], "err", err)
+					os.Exit(1)
+				}
+				c.SetOpt(cloudcarbonexporter.WithExplorer(gcpExplorer))
+				c.SetOpt(cloudcarbonexporter.WithModels(model))
 
-	case "aws":
-		config, err := config.LoadDefaultConfig(ctx)
-		if err != nil {
-			slog.Error("failed to create aws collector", "err", err)
-			os.Exit(1)
-		}
+			case "aws":
+				config, err := config.LoadDefaultConfig(ctx)
+				if err != nil {
+					slog.Error("failed to create aws explorer", "err", err)
+					os.Exit(1)
+				}
 
-		return aws.NewCollector(ctx, aws.AWSConfig(config))
+				model := model.NewAmazonWebServices()
+				c.SetOpt(cloudcarbonexporter.WithModels(model))
+				c.SetOpt(cloudcarbonexporter.WithExplorer(aws.NewExplorer(ctx,
+					aws.Config(config),
+					aws.SupportsFunc(model.Supports)),
+				))
 
-	case "":
-		slog.Error("cloud provider is not set")
-		flag.PrintDefaults()
-		os.Exit(1)
+			case "":
+				slog.Error("cloud provider is not set")
+				flag.PrintDefaults()
+				os.Exit(1)
 
-	default:
-		slog.Error("cloud provider is not supported yet", "cloud.provider", cloudProvider)
-		os.Exit(1)
+			default:
+				slog.Error("cloud provider is not supported yet", "cloud.provider", cloudProvider)
+				os.Exit(1)
+			}
+		},
 	}
-
-	return nil
 }
 
 func slogLevel(level string) slog.Level {

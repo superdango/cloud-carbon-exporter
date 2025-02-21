@@ -48,7 +48,7 @@ func (refiner *s3InstanceRefiner) Refine(ctx context.Context, r *Resource) error
 
 	if item := refiner.cache.Get(r.ID); item != nil {
 		r.Source["s3_bucket_data"] = item.Value()
-		r.Location = item.Value().Region
+		r.Region = item.Value().Region
 		return nil
 	}
 
@@ -79,7 +79,7 @@ func (refiner *s3InstanceRefiner) Refine(ctx context.Context, r *Resource) error
 
 	if item := refiner.cache.Get(r.ID); item != nil {
 		r.Source["s3_bucket_data"] = item.Value()
-		r.Location = item.Value().Region
+		r.Region = item.Value().Region
 		r.Source["s3_bucket_data"] = item.Value()
 	}
 
@@ -124,7 +124,7 @@ func (refiner *S3BucketCloudwatchRefiner) Refine(ctx context.Context, r *Resourc
 	}
 
 	cwapi := cloudwatch.NewFromConfig(refiner.awscfg, func(o *cloudwatch.Options) {
-		o.Region = r.Location
+		o.Region = r.Region
 	})
 
 	paginator := cloudwatch.NewGetMetricDataPaginator(cwapi, &cloudwatch.GetMetricDataInput{
