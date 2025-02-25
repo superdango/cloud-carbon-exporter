@@ -2,7 +2,6 @@ package aws
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log/slog"
 	"slices"
@@ -18,8 +17,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/costexplorer"
 	cetypes "github.com/aws/aws-sdk-go-v2/service/costexplorer/types"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
-	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
-	resourcetypes "github.com/aws/aws-sdk-go-v2/service/resourcegroupstaggingapi/types"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 )
 
@@ -28,19 +25,20 @@ const day = 24 * time.Hour
 type Explorer struct {
 	mu             *sync.Mutex
 	accountID      string
-	aws            aws.Config
+	awscfg         aws.Config
 	awsbilling     aws.Config
 	defaultRegion  string
 	roleArn        string
 	billingRoleArn string
 	accountAZs     []AvailabilityZone
+	services       map[string][]string
 }
 
 type Option func(*Explorer)
 
 func WithAWSConfig(cfg aws.Config) Option {
 	return func(e *Explorer) {
-		e.aws = cfg
+		e.awscfg = cfg
 		e.awsbilling = cfg
 	}
 }
@@ -88,22 +86,27 @@ func NewExplorer(ctx context.Context, opts ...Option) (explorer *Explorer, err e
 	}
 
 	if explorer.roleArn != "" {
-		explorer.aws.Credentials = aws.NewCredentialsCache(
+		explorer.awscfg.Credentials = aws.NewCredentialsCache(
 			stscreds.NewAssumeRoleProvider(sts.NewFromConfig(
-				explorer.aws,
+				explorer.awscfg,
 				func(o *sts.Options) { o.Region = explorer.defaultRegion },
 			), explorer.roleArn),
 		)
 		slog.Info("assuming aws role for resource services api calls", "role", explorer.roleArn)
 	}
 
-	go explorer.refreshAccountAZs(ctx, explorer.aws, explorer.defaultRegion, time.Hour)
-	go explorer.refreshAccountID(ctx)
+	go explorer.accountInfosRefresher(ctx)
+	go explorer.accountServicesRefresher(ctx)
 
 	return explorer, nil
 }
 
 func (explorer *Explorer) refreshAccountID(ctx context.Context) error {
+	start := time.Now()
+	defer func() {
+		slog.Info("aws account id refreshed", "duration_ms", time.Since(start).Milliseconds())
+	}()
+
 	stsapi := sts.NewFromConfig(explorer.awsbilling, func(o *sts.Options) {
 		o.Region = explorer.defaultRegion
 	})
@@ -118,73 +121,26 @@ func (explorer *Explorer) refreshAccountID(ctx context.Context) error {
 
 	explorer.accountID = *output.Account
 
-	slog.Info("explorer account id is refreshed", "account_id", explorer.accountID)
 	return nil
 }
 
 // discoverResources list all supported resources that have been tagged in configured regions
 func (explorer *Explorer) Find(ctx context.Context, resources chan *cloudcarbonexporter.Resource) error {
-	costs := costexplorer.NewFromConfig(explorer.awsbilling, func(o *costexplorer.Options) {
-		o.Region = explorer.defaultRegion
-	})
 
-	output, err := costs.GetCostAndUsage(ctx, &costexplorer.GetCostAndUsageInput{
-		TimePeriod: &cetypes.DateInterval{
-			Start: aws.String(time.Now().Add(-7 * day).Format(time.DateOnly)),
-			End:   aws.String(time.Now().Format(time.DateOnly)),
-		},
-		Granularity: cetypes.GranularityDaily,
-		Metrics:     []string{"UsageQuantity"},
-		GroupBy: []cetypes.GroupDefinition{
-			{
-				Key:  aws.String("SERVICE"),
-				Type: cetypes.GroupDefinitionTypeDimension,
-			},
-			{
-				Key:  aws.String("AZ"),
-				Type: cetypes.GroupDefinitionTypeDimension,
-			},
-		},
-	})
-	if err != nil {
-		return fmt.Errorf("failed to get cost and usage for aws account: %w", err)
-	}
-
-	list := make(map[string][]string, 0)
-	for _, result := range output.ResultsByTime {
-		for _, group := range result.Groups {
-			service, az := group.Keys[0], group.Keys[1]
-			list[service] = append(list[service], explorer.Region(az))
+	errg, errgctx := errgroup.WithContext(ctx)
+	for service, regions := range explorer.services {
+		for _, region := range regions {
+			region := region
+			switch service {
+			case "Amazon Elastic Compute Cloud - Compute":
+				errg.Go(func() error {
+					return explorer.listRegionEC2Instances(errgctx, region, resources)
+				})
+			}
 		}
 	}
-	for service := range list {
-		slices.Sort(list[service])
-		list[service] = slices.Compact(list[service])
-	}
 
-	jsn, _ := json.MarshalIndent(list, "", "  ")
-	fmt.Println(string(jsn))
-
-	//explorer.listRegionEC2Instances(ctx, "eu-west-3", nil)
-
-	// freetierclient := freetier.NewFromConfig(explorer.billingcfg, func(o *freetier.Options) {
-	// 	o.Region = explorer.defaultRegion
-	// })
-
-	// paginator := freetier.NewGetFreeTierUsagePaginator(freetierclient, &freetier.GetFreeTierUsageInput{})
-
-	// for paginator.HasMorePages() {
-	// 	freetieroutput, err := paginator.NextPage(ctx)
-	// 	if err != nil {
-	// 		return fmt.Errorf("failed to get free tier usage for aws account: %w", err)
-	// 	}
-
-	// 	for _, u := range freetieroutput.FreeTierUsages {
-	// 		fmt.Println(*u.Service, *u.Region, " usage", u.ActualUsageAmount, "/", int(u.Limit), *u.Unit)
-	// 	}
-	// }
-
-	return nil //explorer.listEC2Instances(ctx, resources, "eu-west-1", "eu-west-3")
+	return errg.Wait()
 
 }
 
@@ -194,65 +150,7 @@ func (explorer *Explorer) IsReady() bool {
 	availabilityZonesAreLoaded := len(explorer.accountAZs) > 0
 	accountIDIsLoaded := explorer.accountID != ""
 
-	fmt.Println(availabilityZonesAreLoaded, accountIDIsLoaded)
 	return availabilityZonesAreLoaded && accountIDIsLoaded
-}
-
-func (explorer *Explorer) listEC2Instances(ctx context.Context, resources chan *cloudcarbonexporter.Resource, regions ...string) error {
-	errg, errgctx := errgroup.WithContext(ctx)
-
-	for _, region := range regions {
-		region := region
-		errg.Go(func() error {
-			return explorer.listRegionEC2Instances(errgctx, region, resources)
-		})
-	}
-
-	return errg.Wait()
-}
-
-func (explorer *Explorer) listRegionEC2Instances(ctx context.Context, region string, resources chan *cloudcarbonexporter.Resource) error {
-	ec2api := ec2.NewFromConfig(explorer.aws, func(o *ec2.Options) {
-		o.Region = region
-	})
-
-	paginator := ec2.NewDescribeInstancesPaginator(ec2api, &ec2.DescribeInstancesInput{
-		MaxResults: aws.Int32(100),
-	})
-
-	for paginator.HasMorePages() {
-		output, err := paginator.NextPage(ctx)
-		if err != nil {
-			return fmt.Errorf("failed to list region instances: %w", err)
-		}
-
-		for _, reservation := range output.Reservations {
-			for _, instance := range reservation.Instances {
-				resources <- &cloudcarbonexporter.Resource{
-					CloudProvider: "aws",
-					Kind:          "ec2/instance",
-					ID:            *instance.InstanceId,
-					Region:        region,
-					Source: map[string]any{
-						"ec2_instance_core_count": int(*instance.CpuOptions.CoreCount),
-						"ec2_instance_is_running": instance.State.Name == types.InstanceStateNameRunning,
-					},
-				}
-			}
-		}
-	}
-
-	return nil
-}
-
-func parseTags(tags []resourcetypes.Tag) map[string]string {
-	m := make(map[string]string, len(tags))
-
-	for _, t := range tags {
-		m[fmt.Sprintf("tag_%s", *t.Key)] = *t.Value
-	}
-
-	return m
 }
 
 type AvailabilityZone struct {
@@ -289,14 +187,14 @@ func (e *Explorer) Region(location string) (region string) {
 	return "global"
 }
 
-func (e *Explorer) Refresh(ctx context.Context, awscfg aws.Config, defaultRegion string) error {
+func (e *Explorer) refreshAccountAvailibilityZones(ctx context.Context) error {
 	start := time.Now()
 	defer func() {
 		slog.Info("aws account availibility zones refreshed", "duration_ms", time.Since(start).Milliseconds())
 	}()
 
-	ec2api := ec2.NewFromConfig(awscfg, func(o *ec2.Options) {
-		o.Region = defaultRegion
+	ec2api := ec2.NewFromConfig(e.awscfg, func(o *ec2.Options) {
+		o.Region = e.defaultRegion
 	})
 
 	regions, err := ec2api.DescribeRegions(ctx, &ec2.DescribeRegionsInput{})
@@ -313,7 +211,7 @@ func (e *Explorer) Refresh(ctx context.Context, awscfg aws.Config, defaultRegion
 		region := *region.RegionName
 
 		errg.Go(func() error {
-			ec2api := ec2.NewFromConfig(awscfg, func(o *ec2.Options) {
+			ec2api := ec2.NewFromConfig(e.awscfg, func(o *ec2.Options) {
 				o.Region = region
 			})
 
@@ -345,10 +243,53 @@ func (e *Explorer) Refresh(ctx context.Context, awscfg aws.Config, defaultRegion
 	return nil
 }
 
-func (e *Explorer) refreshAccountAZs(ctx context.Context, awscfg aws.Config, defaultRegion string, every time.Duration) {
+func (e *Explorer) accountInfosRefresher(ctx context.Context) {
+	every := time.Hour
+	wait := must.NewWait(30 * time.Second)
+	errg, errgctx := errgroup.WithContext(ctx)
+	for {
+		errg.Go(func() error {
+			err := e.refreshAccountAvailibilityZones(errgctx)
+			if err != nil {
+				return fmt.Errorf("failed to refresh aws account availability zones: %w", err)
+			}
+			return nil
+		})
+
+		errg.Go(func() error {
+			err := e.refreshAccountID(errgctx)
+			if err != nil {
+				return fmt.Errorf("failed to refresh aws account id: %w", err)
+			}
+			return nil
+		})
+
+		if err := errg.Wait(); err != nil {
+			slog.Error("failed to refresh infos", "err", err)
+			wait.Linearly(time.Second)
+			continue
+		}
+
+		wait.Reset()
+
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.Tick(every):
+			continue
+		}
+	}
+}
+
+func (e *Explorer) accountServicesRefresher(ctx context.Context) {
+	every := time.Hour
 	wait := must.NewWait(30 * time.Second)
 	for {
-		if err := e.Refresh(ctx, awscfg, defaultRegion); err != nil {
+		if !e.IsReady() {
+			wait.Static(time.Second)
+			continue
+		}
+		if err := e.refreshAccountServices(ctx); err != nil {
 			slog.Warn("failed to refresh aws account availibility zones", "err", err)
 			wait.Linearly(time.Second)
 			continue
@@ -362,4 +303,57 @@ func (e *Explorer) refreshAccountAZs(ctx context.Context, awscfg aws.Config, def
 			continue
 		}
 	}
+}
+
+func (e *Explorer) refreshAccountServices(ctx context.Context) error {
+	start := time.Now()
+	defer func() {
+		slog.Info("aws account services refreshed", "duration_ms", time.Since(start).Milliseconds())
+	}()
+
+	costs := costexplorer.NewFromConfig(e.awsbilling, func(o *costexplorer.Options) {
+		o.Region = e.defaultRegion
+	})
+
+	output, err := costs.GetCostAndUsage(ctx, &costexplorer.GetCostAndUsageInput{
+		TimePeriod: &cetypes.DateInterval{
+			Start: aws.String(time.Now().Add(-7 * day).Format(time.DateOnly)),
+			End:   aws.String(time.Now().Format(time.DateOnly)),
+		},
+		Granularity: cetypes.GranularityDaily,
+		Metrics:     []string{"UsageQuantity"},
+		GroupBy: []cetypes.GroupDefinition{
+			{
+				Key:  aws.String("SERVICE"),
+				Type: cetypes.GroupDefinitionTypeDimension,
+			},
+			{
+				Key:  aws.String("AZ"),
+				Type: cetypes.GroupDefinitionTypeDimension,
+			},
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to get cost and usage for aws account: %w", err)
+	}
+
+	services := make(map[string][]string, 0)
+	for _, result := range output.ResultsByTime {
+		for _, group := range result.Groups {
+			service, az := group.Keys[0], group.Keys[1]
+			services[service] = append(services[service], e.Region(az))
+		}
+	}
+
+	for service := range services {
+		slices.Sort(services[service])
+		services[service] = slices.Compact(services[service])
+	}
+
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	e.services = services
+
+	return nil
 }

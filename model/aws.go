@@ -1,6 +1,8 @@
 package model
 
-import cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
+import (
+	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
+)
 
 type AmazonWebServicesModel struct {
 	carbonIntensity cloudcarbonexporter.CarbonIntensityMap
@@ -51,7 +53,7 @@ func (aws *AmazonWebServicesModel) ComputeMetrics(resource *cloudcarbonexporter.
 		return nil
 	}
 
-	return nil
+	return aws.calculations[resource.Kind](resource)
 }
 
 func NewAWSCarbonIntensityMap() cloudcarbonexporter.CarbonIntensityMap {
