@@ -23,38 +23,47 @@ import (
 func main() {
 	ctx := context.Background()
 
-	cloudProvider := ""
-	projectID := ""
-	listen := ""
-	demoEnabled := ""
-	logLevel := ""
-	logFormat := ""
+	flagCloudProvider := ""
+	flagCloudGCPProjectID := ""
+	flagListen := ""
+	flagDemoEnabled := ""
+	flagLogLevel := ""
+	flagLogFormat := ""
+	flagCloudAWSRoleArn := ""
+	flagCloudAWSBillingRoleArn := ""
+	flagCloudAWSDefaultRegion := ""
 
-	flag.StringVar(&cloudProvider, "cloud.provider", "", "cloud provider type (gcp, aws, azure)")
-	flag.StringVar(&projectID, "gcp.projectid", "", "gcp project to export data from")
-	flag.StringVar(&listen, "listen", "0.0.0.0:2922", "addr to listen to")
-	flag.StringVar(&demoEnabled, "demo.enabled", "false", "return fictive demo data")
-	flag.StringVar(&logLevel, "log.level", "info", "log severity (debug, info, warn, error)")
-	flag.StringVar(&logFormat, "log.format", "text", "log format (text, json)")
+	flag.StringVar(&flagCloudProvider, "cloud.provider", "", "cloud provider type (gcp, aws)")
+	flag.StringVar(&flagCloudGCPProjectID, "cloud.gcp.projectid", "", "gcp project to explore resources from")
+	flag.StringVar(&flagCloudAWSRoleArn, "cloud.aws.rolearn", "", "aws role arn to assume")
+	flag.StringVar(&flagCloudAWSBillingRoleArn, "cloud.aws.billingrolearn", "", "aws role arn to assume for billing apis")
+	flag.StringVar(&flagCloudAWSDefaultRegion, "cloud.aws.defaultregion", "us-east-1", "aws default region")
+	flag.StringVar(&flagListen, "listen", "0.0.0.0:2922", "addr to listen to")
+	flag.StringVar(&flagDemoEnabled, "demo.enabled", "false", "return fictive demo data")
+	flag.StringVar(&flagLogLevel, "log.level", "info", "log severity (debug, info, warn, error)")
+	flag.StringVar(&flagLogFormat, "log.format", "text", "log format (text, json)")
 
 	flag.Parse()
 
-	initLogging(logLevel, logFormat)
+	initLogging(flagLogLevel, flagLogFormat)
 
-	params := map[string]string{
-		"projectID":    projectID,
-		"demo_enabled": demoEnabled,
-	}
-
-	collector := cloudcarbonexporter.NewCollector(InitCollectorOptions(ctx, cloudProvider, params)...)
+	collector := cloudcarbonexporter.NewCollector(
+		InitCollectorOptions(ctx, map[string]string{
+			"cloud.provider":           flagCloudProvider,
+			"cloud.gcp.projectid":      flagCloudGCPProjectID,
+			"cloud.aws.rolearn":        flagCloudAWSRoleArn,
+			"cloud.aws.billingrolearn": flagCloudAWSBillingRoleArn,
+			"cloud.aws.defaultregion":  flagCloudAWSDefaultRegion,
+			"demo.enabled":             flagDemoEnabled,
+		})...)
 
 	defer collector.Close()
 
 	mux := http.NewServeMux()
 	mux.Handle("/metrics", cloudcarbonexporter.NewOpenMetricsHandler(collector))
 
-	slog.Info("starting cloud carbon exporter", "listen", listen)
-	if err := http.ListenAndServe(listen, mux); err != nil {
+	slog.Info("starting cloud carbon exporter", "listen", flagListen)
+	if err := http.ListenAndServe(flagListen, mux); err != nil {
 		slog.Error("failed to start cloud carbon exporter", "err", err)
 		os.Exit(1)
 	}
@@ -86,16 +95,16 @@ func initLogging(logLevel string, logFormat string) {
 	}
 }
 
-func InitCollectorOptions(ctx context.Context, cloudProvider string, params map[string]string) []cloudcarbonexporter.CollectorOptions {
+func InitCollectorOptions(ctx context.Context, params map[string]string) []cloudcarbonexporter.CollectorOptions {
 	return []cloudcarbonexporter.CollectorOptions{
 		func(c *cloudcarbonexporter.Collector) {
-			if params["demo_enabled"] == "true" {
+			if params["demo.enabled"] == "true" {
 				c.SetOpt(cloudcarbonexporter.WithExplorer(demo.NewExplorer()))
 				c.SetOpt(cloudcarbonexporter.WithModels(new(model.Demo)))
 			}
 		},
 		func(c *cloudcarbonexporter.Collector) {
-			switch cloudProvider {
+			switch params["cloud.provider"] {
 			case "gcp":
 				if params["projectID"] == "" {
 					slog.Error("project id is not set")
@@ -104,8 +113,7 @@ func InitCollectorOptions(ctx context.Context, cloudProvider string, params map[
 				}
 				model := model.NewGoogleCloudPlatform()
 				gcpExplorer, err := gcp.NewExplorer(ctx,
-					gcp.WithProjectID(params["projectID"]),
-					gcp.WithSupportsFunc(model.Supports),
+					gcp.WithProjectID(params["cloud.gcp.projectid"]),
 				)
 				if err != nil {
 					slog.Error("failed to create gcp explorer", "project_id", params["projectID"], "err", err)
@@ -117,16 +125,26 @@ func InitCollectorOptions(ctx context.Context, cloudProvider string, params map[
 			case "aws":
 				config, err := config.LoadDefaultConfig(ctx)
 				if err != nil {
+					slog.Error("failed to load aws config", "err", err)
+					os.Exit(1)
+				}
+
+				awsopts := []aws.Option{
+					aws.WithAWSConfig(config),
+					aws.WithRoleArn(params["cloud.aws.rolearn"]),
+					aws.WithBillingRoleArn(params["cloud.aws.billingrolearn"]),
+					aws.WithDefaultRegion(params["cloud.aws.defaultregion"]),
+				}
+
+				model := model.NewAmazonWebServices()
+				explorer, err := aws.NewExplorer(ctx, awsopts...)
+				if err != nil {
 					slog.Error("failed to create aws explorer", "err", err)
 					os.Exit(1)
 				}
 
-				model := model.NewAmazonWebServices()
 				c.SetOpt(cloudcarbonexporter.WithModels(model))
-				c.SetOpt(cloudcarbonexporter.WithExplorer(aws.NewExplorer(ctx,
-					aws.Config(config),
-					aws.SupportsFunc(model.Supports)),
-				))
+				c.SetOpt(cloudcarbonexporter.WithExplorer(explorer))
 
 			case "":
 				slog.Error("cloud provider is not set")
@@ -134,7 +152,7 @@ func InitCollectorOptions(ctx context.Context, cloudProvider string, params map[
 				os.Exit(1)
 
 			default:
-				slog.Error("cloud provider is not supported yet", "cloud.provider", cloudProvider)
+				slog.Error("cloud provider is not supported yet", "cloud.provider", params["cloud.provider"])
 				os.Exit(1)
 			}
 		},

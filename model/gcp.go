@@ -11,7 +11,7 @@ import (
 
 type GoogleCloudPlatformModel struct {
 	carbonIntensity cloudcarbonexporter.CarbonIntensityMap
-	calculations map[string]func(r *cloudcarbonexporter.Resource) []cloudcarbonexporter.Metric
+	calculations    map[string]func(r *cloudcarbonexporter.Resource) []cloudcarbonexporter.Metric
 }
 
 func NewGoogleCloudPlatform() *GoogleCloudPlatformModel {
@@ -54,11 +54,10 @@ func (gcp *GoogleCloudPlatformModel) Supports(r *cloudcarbonexporter.Resource) b
 }
 
 func (gcp *GoogleCloudPlatformModel) ComputeMetrics(r *cloudcarbonexporter.Resource) []cloudcarbonexporter.Metric {
-
 	if !gcp.Supports(r) {
 		return nil
-
 	}
+
 	for kind, calculation := range gcp.calculations {
 		if kind == r.Kind {
 			return calculation(r)

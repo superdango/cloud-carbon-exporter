@@ -3,7 +3,6 @@ package gcp
 import (
 	"context"
 	"fmt"
-	"log/slog"
 
 	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
 
@@ -15,20 +14,13 @@ import (
 type Option func(e *Explorer)
 
 type Explorer struct {
-	assetClient  *asset.Client
-	projectID    string
-	supportsFunc func(r *cloudcarbonexporter.Resource) bool
+	assetClient *asset.Client
+	projectID   string
 }
 
 func WithProjectID(projectID string) Option {
 	return func(e *Explorer) {
 		e.projectID = projectID
-	}
-}
-
-func WithSupportsFunc(f func(r *cloudcarbonexporter.Resource) bool) Option {
-	return func(e *Explorer) {
-		e.supportsFunc = f
 	}
 }
 
@@ -72,11 +64,6 @@ func (explorer *Explorer) Find(ctx context.Context, resources chan *cloudcarbone
 			Source:        response.Resource.Data.AsMap(),
 		}
 
-		if !explorer.supportsFunc(r) {
-			slog.Debug("resource not supported", "cloud_provider", r.CloudProvider, "kind", r.Kind)
-			continue
-		}
-
 		resources <- r
 	}
 
@@ -85,6 +72,10 @@ func (explorer *Explorer) Find(ctx context.Context, resources chan *cloudcarbone
 
 func (explorer *Explorer) Close() error {
 	return explorer.assetClient.Close()
+}
+
+func (explorer *Explorer) IsReady() bool {
+	return explorer.assetClient != nil
 }
 
 func mapToStringMap(m any) map[string]string {

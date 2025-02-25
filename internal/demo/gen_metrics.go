@@ -26,3 +26,5 @@ func (explorer *Explorer) Find(ctx context.Context, resources chan *cloudcarbone
 
 // Close demo collector
 func (explorer *Explorer) Close() error { return nil }
+
+func (explorer *Explorer) IsReady() bool { return true }

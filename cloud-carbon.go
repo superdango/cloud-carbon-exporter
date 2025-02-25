@@ -4,129 +4,13 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
+	"reflect"
 	"strings"
 
 	"github.com/superdango/cloud-carbon-exporter/internal/must"
 	"golang.org/x/sync/errgroup"
 )
-
-type CollectorOptions func(c *Collector)
-
-func WithExplorer(explorer Explorer) CollectorOptions {
-	return func(c *Collector) {
-		c.explorers = append(c.explorers, explorer)
-	}
-}
-
-func WithRefiners(refiners ...Refiner) CollectorOptions {
-	return func(c *Collector) {
-		c.refiners = append(c.refiners, refiners...)
-	}
-}
-
-func WithModels(models ...Model) CollectorOptions {
-	return func(c *Collector) {
-		c.models = models
-	}
-}
-
-type Collector struct {
-	explorers []Explorer
-	refiners  []Refiner
-	models    []Model
-}
-
-func NewCollector(opts ...CollectorOptions) *Collector {
-	collector := &Collector{
-		explorers: make([]Explorer, 0),
-		refiners:  make([]Refiner, 0),
-		models:    make([]Model, 0),
-	}
-	for _, option := range opts {
-		option(collector)
-	}
-	return collector
-}
-
-func (c *Collector) SetOpt(option CollectorOptions) {
-	option(c)
-}
-
-func (c *Collector) Collect(ctx context.Context, metrics chan Metric) error {
-	defer close(metrics)
-
-	resources := make(chan *Resource)
-
-	errg, errgctx := errgroup.WithContext(ctx)
-	errg.SetLimit(5)
-	errg.Go(func() error {
-		return c.explore(errgctx, resources)
-	})
-
-	for {
-		select {
-		case <-errgctx.Done():
-			return errg.Wait()
-		case r, ok := <-resources:
-			if !ok {
-				return errg.Wait()
-			}
-			errg.Go(func() error {
-				if err := c.refine(errgctx, r); err != nil {
-					return err
-				}
-
-				for _, model := range c.models {
-					for _, metric := range model.ComputeMetrics(r) {
-						metrics <- metric
-					}
-				}
-
-				return nil
-			})
-		}
-	}
-}
-
-func (c *Collector) Close() error {
-	for _, explorer := range c.explorers {
-		if err := explorer.Close(); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (c *Collector) explore(ctx context.Context, resources chan *Resource) error {
-	defer close(resources)
-	for _, explorer := range c.explorers {
-		err := explorer.Find(ctx, resources)
-		if err != nil {
-			return fmt.Errorf("failed to collect resources: %w", err)
-		}
-	}
-	return nil
-}
-
-func (c *Collector) refine(ctx context.Context, resource *Resource) error {
-	for _, refiner := range c.refiners {
-		err := refiner.Refine(ctx, resource)
-		if err != nil {
-			return fmt.Errorf("failed to refine resource %s: %w", resource.Kind, err)
-		}
-	}
-	return nil
-}
-
-type Explorer interface {
-	Find(ctx context.Context, resources chan *Resource) error
-	io.Closer
-}
-
-type Refiner interface {
-	Refine(ctx context.Context, resource *Resource) error
-	Supports(r *Resource) bool
-}
 
 // Resource is the representation of a Cloud asset potentially drawing energy
 type Resource struct {
@@ -165,6 +49,136 @@ func (m Metric) Clone() Metric {
 	}
 }
 
+type Model interface {
+	ComputeMetrics(r *Resource) []Metric
+	Supports(r *Resource) bool
+}
+
+type Explorer interface {
+	Find(ctx context.Context, resources chan *Resource) error
+	IsReady() bool
+	io.Closer
+}
+
+type Refiner interface {
+	Refresh(ctx context.Context) error
+	Refine(resource *Resource)
+	Supports(r *Resource) bool
+	CollectUnexploredResources(resources chan *Resource)
+}
+
+type CollectorOptions func(c *Collector)
+
+func WithExplorer(explorer Explorer) CollectorOptions {
+	return func(c *Collector) {
+		c.explorers = append(c.explorers, explorer)
+	}
+}
+
+func WithRefiners(refiners ...Refiner) CollectorOptions {
+	return func(c *Collector) {
+		c.refiners = append(c.refiners, refiners...)
+	}
+}
+
+func WithModels(models ...Model) CollectorOptions {
+	return func(c *Collector) {
+		c.models = models
+	}
+}
+
+type Collector struct {
+	explorers []Explorer
+	refiners  []Refiner
+	models    []Model
+}
+
+func NewCollector(opts ...CollectorOptions) *Collector {
+	collector := &Collector{
+		explorers: make([]Explorer, 0),
+		refiners:  make([]Refiner, 0),
+		models:    make([]Model, 0),
+	}
+
+	for _, option := range opts {
+		option(collector)
+	}
+
+	return collector
+}
+
+func (c *Collector) SetOpt(option CollectorOptions) {
+	option(c)
+}
+
+func (c *Collector) Collect(ctx context.Context, metrics chan Metric) error {
+	defer close(metrics)
+
+	resources := make(chan *Resource)
+
+	errg, errgctx := errgroup.WithContext(ctx)
+	errg.SetLimit(5)
+	errg.Go(func() error {
+		return c.explore(errgctx, resources)
+	})
+
+	for {
+		select {
+		case <-errgctx.Done():
+			return errg.Wait()
+		case r, ok := <-resources:
+			if !ok {
+				return errg.Wait()
+			}
+			errg.Go(func() error {
+				c.refine(r)
+
+				for _, model := range c.models {
+					for _, metric := range model.ComputeMetrics(r) {
+						metrics <- metric
+					}
+				}
+
+				return nil
+			})
+		}
+	}
+}
+
+func (c *Collector) Close() error {
+	for _, explorer := range c.explorers {
+		if err := explorer.Close(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (c *Collector) explore(ctx context.Context, resources chan *Resource) error {
+	defer close(resources)
+	for _, explorer := range c.explorers {
+		if !explorer.IsReady() {
+			slog.Warn("explorer is not ready", "explorer", reflect.TypeOf(explorer))
+			continue
+		}
+		err := explorer.Find(ctx, resources)
+		if err != nil {
+			return fmt.Errorf("failed to collect resources: %w", err)
+		}
+	}
+	return nil
+}
+
+func (c *Collector) refine(resource *Resource) {
+	for _, refiner := range c.refiners {
+		if !refiner.Supports(resource) {
+			return
+		}
+
+		refiner.Refine(resource)
+	}
+}
+
 func MergeLabels(labels ...map[string]string) map[string]string {
 	result := make(map[string]string)
 	for _, l := range labels {
@@ -176,6 +190,12 @@ func MergeLabels(labels ...map[string]string) map[string]string {
 		}
 	}
 	return result
+}
+
+func MergeMaps(to map[string]any, from map[string]any) {
+	for k, v := range from {
+		to[k] = v
+	}
 }
 
 // CarbonIntensityMap regroups carbon intensity by location
@@ -240,9 +260,4 @@ func (m EnergyModel) EstimateWatts(r *Resource) *Metric {
 	}
 
 	return nil
-}
-
-type Model interface {
-	ComputeMetrics(r *Resource) []Metric
-	Supports(r *Resource) bool
 }

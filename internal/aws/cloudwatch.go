@@ -10,81 +10,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatch"
 	cwtypes "github.com/aws/aws-sdk-go-v2/service/cloudwatch/types"
-	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/jellydator/ttlcache/v3"
+	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
 )
-
-type s3InstanceRefinedData struct {
-	Region string
-}
-
-type s3InstanceRefiner struct {
-	mu     *sync.Mutex
-	awscfg aws.Config
-	cache  *ttlcache.Cache[string, s3InstanceRefinedData]
-}
-
-func NewS3BucketRefiner(awscfg aws.Config) *s3InstanceRefiner {
-	cache := ttlcache.New(
-		ttlcache.WithTTL[string, s3InstanceRefinedData](5 * time.Minute),
-	)
-
-	go cache.Start() // starts automatic expired item deletion
-
-	return &s3InstanceRefiner{
-		mu:     new(sync.Mutex),
-		awscfg: awscfg,
-		cache:  cache,
-	}
-}
-
-func (refiner *s3InstanceRefiner) Supports(r *Resource) bool {
-	return r.Kind == "s3"
-}
-
-func (refiner *s3InstanceRefiner) Refine(ctx context.Context, r *Resource) error {
-	refiner.mu.Lock()
-	defer refiner.mu.Unlock()
-
-	if item := refiner.cache.Get(r.ID); item != nil {
-		r.Source["s3_bucket_data"] = item.Value()
-		r.Region = item.Value().Region
-		return nil
-	}
-
-	s3api := s3.NewFromConfig(refiner.awscfg, func(o *s3.Options) {
-		o.Region = "us-west-1"
-	})
-
-	paginator := s3.NewListBucketsPaginator(s3api, &s3.ListBucketsInput{
-		MaxBuckets: aws.Int32(100),
-	})
-
-	for paginator.HasMorePages() {
-		output, err := paginator.NextPage(ctx)
-		if err != nil {
-			return fmt.Errorf("failed to enrich data for %s resource with id %s: %w", r.Kind, r.ID, err)
-		}
-
-		for _, bucket := range output.Buckets {
-			refiner.cache.Set(*bucket.Name,
-				s3InstanceRefinedData{
-					Region: *bucket.BucketRegion,
-				},
-				ttlcache.DefaultTTL,
-			)
-
-		}
-	}
-
-	if item := refiner.cache.Get(r.ID); item != nil {
-		r.Source["s3_bucket_data"] = item.Value()
-		r.Region = item.Value().Region
-		r.Source["s3_bucket_data"] = item.Value()
-	}
-
-	return nil
-}
 
 type S3BucketCloudwatchRefinedData struct {
 	BucketSizeBytes float64
@@ -110,11 +38,11 @@ func NewS3BucketCloudwatchRefiner(awscfg aws.Config) *S3BucketCloudwatchRefiner 
 	}
 }
 
-func (refiner *S3BucketCloudwatchRefiner) Supports(r *Resource) bool {
+func (refiner *S3BucketCloudwatchRefiner) Supports(r *cloudcarbonexporter.Resource) bool {
 	return r.Kind == "s3"
 }
 
-func (refiner *S3BucketCloudwatchRefiner) Refine(ctx context.Context, r *Resource) error {
+func (refiner *S3BucketCloudwatchRefiner) Refine(ctx context.Context, r *cloudcarbonexporter.Resource) error {
 	refiner.mu.Lock()
 	defer refiner.mu.Unlock()
 
