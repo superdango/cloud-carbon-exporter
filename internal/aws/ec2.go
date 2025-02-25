@@ -8,14 +8,54 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
+	"github.com/superdango/cloud-carbon-exporter/internal/must"
 )
 
-func (e *Explorer) listRegionEC2Instances(ctx context.Context, region string, resources chan *cloudcarbonexporter.Resource) error {
+type cpuinfo struct {
+}
+
+type EC2InstanceResourceCreator struct {
+	awscfg        aws.Config
+	defaultRegion string
+	cpuinfos      map[string]cpuinfo
+}
+
+func NewEC2InstanceResourceCreator(awscfg aws.Config, defaultRegion string) *EC2InstanceResourceCreator {
+	return &EC2InstanceResourceCreator{
+		awscfg:        awscfg,
+		defaultRegion: defaultRegion,
+		cpuinfos:      make(map[string]cpuinfo),
+	}
+}
+
+func (rc *EC2InstanceResourceCreator) Load(ctx context.Context) error {
+	ec2api := ec2.NewFromConfig(rc.awscfg, func(o *ec2.Options) {
+		o.Region = rc.defaultRegion
+	})
+
+	paginator := ec2.NewDescribeInstanceTypesPaginator(ec2api, &ec2.DescribeInstanceTypesInput{})
+
+	for paginator.HasMorePages() {
+		page, err := paginator.NextPage(ctx)
+		if err != nil {
+			return err
+		}
+		for _, instanceType := range page.InstanceTypes {
+			must.PrintDebugJSON(map[string]any{
+				"instanceType":   instanceType.InstanceType,
+				"processor_info": instanceType.ProcessorInfo,
+			})
+		}
+	}
+	return nil
+}
+
+func (rc *EC2InstanceResourceCreator) CreateResources(ctx context.Context, region string, resources chan *cloudcarbonexporter.Resource) error {
 	if region == "global" {
 		return nil
 	}
 
-	ec2api := ec2.NewFromConfig(e.awscfg, func(o *ec2.Options) {
+	ec2api := ec2.NewFromConfig(rc.awscfg, func(o *ec2.Options) {
 		o.Region = region
 	})
 
@@ -26,11 +66,12 @@ func (e *Explorer) listRegionEC2Instances(ctx context.Context, region string, re
 	for paginator.HasMorePages() {
 		output, err := paginator.NextPage(ctx)
 		if err != nil {
-			return fmt.Errorf("failed to list region instances: %w", err)
+			return fmt.Errorf("failed to list region ec2 instances: %w", err)
 		}
 
 		for _, reservation := range output.Reservations {
 			for _, instance := range reservation.Instances {
+				must.PrintDebugJSON(instance)
 				resources <- &cloudcarbonexporter.Resource{
 					CloudProvider: "aws",
 					Kind:          "ec2/instance",

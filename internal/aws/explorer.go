@@ -22,46 +22,51 @@ import (
 
 const day = 24 * time.Hour
 
-type Explorer struct {
-	mu             *sync.Mutex
-	accountID      string
-	awscfg         aws.Config
-	awsbilling     aws.Config
-	defaultRegion  string
-	roleArn        string
-	billingRoleArn string
-	accountAZs     []AvailabilityZone
-	services       map[string][]string
+type ResourcesCreator interface {
+	CreateResources(ctx context.Context, region string, resources chan *cloudcarbonexporter.Resource) error
+	Load(ctx context.Context) error
 }
 
-type Option func(*Explorer)
+type Explorer struct {
+	mu                *sync.Mutex
+	awscfg            aws.Config
+	awsbillingcfg     aws.Config
+	defaultRegion     string
+	roleArn           string
+	billingRoleArn    string
+	accountAZs        []AvailabilityZone
+	services          map[string][]string
+	resourcesCreators map[string][]ResourcesCreator
+}
 
-func WithAWSConfig(cfg aws.Config) Option {
+type ExplorerOption func(*Explorer)
+
+func WithAWSConfig(cfg aws.Config) ExplorerOption {
 	return func(e *Explorer) {
 		e.awscfg = cfg
-		e.awsbilling = cfg
+		e.awsbillingcfg = cfg
 	}
 }
 
-func WithDefaultRegion(region string) Option {
+func WithDefaultRegion(region string) ExplorerOption {
 	return func(c *Explorer) {
 		c.defaultRegion = region
 	}
 }
 
-func WithRoleArn(role string) Option {
+func WithRoleArn(role string) ExplorerOption {
 	return func(c *Explorer) {
 		c.roleArn = role
 	}
 }
 
-func WithBillingRoleArn(role string) Option {
+func WithBillingRoleArn(role string) ExplorerOption {
 	return func(c *Explorer) {
 		c.billingRoleArn = role
 	}
 }
 
-func NewExplorer(ctx context.Context, opts ...Option) (explorer *Explorer, err error) {
+func NewExplorer(ctx context.Context, opts ...ExplorerOption) (explorer *Explorer, err error) {
 	explorer = &Explorer{
 		mu:            new(sync.Mutex),
 		defaultRegion: "us-east-1",
@@ -75,9 +80,9 @@ func NewExplorer(ctx context.Context, opts ...Option) (explorer *Explorer, err e
 	}
 
 	if explorer.billingRoleArn != "" {
-		explorer.awsbilling.Credentials = aws.NewCredentialsCache(
+		explorer.awsbillingcfg.Credentials = aws.NewCredentialsCache(
 			stscreds.NewAssumeRoleProvider(sts.NewFromConfig(
-				explorer.awsbilling,
+				explorer.awsbillingcfg,
 				func(o *sts.Options) { o.Region = explorer.defaultRegion },
 			), explorer.billingRoleArn,
 			),
@@ -95,46 +100,42 @@ func NewExplorer(ctx context.Context, opts ...Option) (explorer *Explorer, err e
 		slog.Info("assuming aws role for resource services api calls", "role", explorer.roleArn)
 	}
 
-	go explorer.accountInfosRefresher(ctx)
+	go explorer.accountAvailabilityZonesRefresher(ctx)
 	go explorer.accountServicesRefresher(ctx)
 
-	return explorer, nil
-}
-
-func (explorer *Explorer) refreshAccountID(ctx context.Context) error {
-	start := time.Now()
-	defer func() {
-		slog.Info("aws account id refreshed", "duration_ms", time.Since(start).Milliseconds())
-	}()
-
-	stsapi := sts.NewFromConfig(explorer.awsbilling, func(o *sts.Options) {
-		o.Region = explorer.defaultRegion
-	})
-
-	output, err := stsapi.GetCallerIdentity(ctx, &sts.GetCallerIdentityInput{})
-	if err != nil {
-		return fmt.Errorf("failed to get caller identity: %w", err)
+	explorer.resourcesCreators = map[string][]ResourcesCreator{
+		"Amazon Elastic Compute Cloud - Compute": {
+			NewEC2InstanceResourceCreator(explorer.awscfg, explorer.defaultRegion),
+		},
 	}
 
-	explorer.mu.Lock()
-	defer explorer.mu.Unlock()
+	errg, errgctx := errgroup.WithContext(ctx)
+	for _, rcs := range explorer.resourcesCreators {
+		for _, rc := range rcs {
+			rc := rc
+			errg.Go(func() error {
+				if err := rc.Load(errgctx); err != nil {
+					return fmt.Errorf("failed to load resources creator: %w", err)
+				}
+				return nil
+			})
+		}
+	}
 
-	explorer.accountID = *output.Account
-
-	return nil
+	return explorer, errg.Wait()
 }
 
 // discoverResources list all supported resources that have been tagged in configured regions
 func (explorer *Explorer) Find(ctx context.Context, resources chan *cloudcarbonexporter.Resource) error {
-
 	errg, errgctx := errgroup.WithContext(ctx)
+
 	for service, regions := range explorer.services {
 		for _, region := range regions {
-			region := region
-			switch service {
-			case "Amazon Elastic Compute Cloud - Compute":
+			for _, resourceCreator := range explorer.resourcesCreators[service] {
+				region := region
+				resourceCreator := resourceCreator
 				errg.Go(func() error {
-					return explorer.listRegionEC2Instances(errgctx, region, resources)
+					return resourceCreator.CreateResources(errgctx, region, resources)
 				})
 			}
 		}
@@ -148,9 +149,8 @@ func (explorer *Explorer) Close() error { return nil }
 
 func (explorer *Explorer) IsReady() bool {
 	availabilityZonesAreLoaded := len(explorer.accountAZs) > 0
-	accountIDIsLoaded := explorer.accountID != ""
 
-	return availabilityZonesAreLoaded && accountIDIsLoaded
+	return availabilityZonesAreLoaded
 }
 
 type AvailabilityZone struct {
@@ -185,6 +185,143 @@ func (e *Explorer) Region(location string) (region string) {
 		}
 	}
 	return "global"
+}
+
+func (e *Explorer) accountAvailabilityZonesRefresher(ctx context.Context) {
+	every := 24 * time.Hour
+	wait := must.NewWait(30 * time.Second)
+	errg := new(errgroup.Group)
+	for {
+		errg.Go(func() error {
+			err := e.refreshAccountAvailibilityZones(ctx)
+			if err != nil {
+				return fmt.Errorf("failed to refresh aws account availability zones: %w", err)
+			}
+			return nil
+		})
+
+		if err := errg.Wait(); err != nil {
+			slog.Error("failed to refresh infos", "err", err)
+			wait.Linearly(time.Second)
+			continue
+		}
+
+		wait.Reset()
+
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.Tick(every):
+			continue
+		}
+	}
+}
+
+func (e *Explorer) accountServicesRefresher(ctx context.Context) {
+	every := time.Hour
+	wait := must.NewWait(30 * time.Second)
+	for {
+		if !e.IsReady() {
+			wait.Static(time.Second)
+			continue
+		}
+
+		if err := e.refreshAccountServices(ctx); err != nil {
+			slog.Warn("failed to refresh aws account availibility zones", "err", err)
+			wait.Linearly(time.Second)
+			continue
+		}
+		wait.Reset()
+
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.Tick(every):
+			continue
+		}
+	}
+}
+
+func (explorer *Explorer) getAWSAccountID(ctx context.Context, awscfg aws.Config) (accountID string, err error) {
+	start := time.Now()
+	defer func() {
+		slog.Info("got aws account id from caller identity ", "duration_ms", time.Since(start).Milliseconds())
+	}()
+
+	stsapi := sts.NewFromConfig(awscfg, func(o *sts.Options) {
+		o.Region = explorer.defaultRegion
+	})
+
+	output, err := stsapi.GetCallerIdentity(ctx, &sts.GetCallerIdentityInput{})
+	if err != nil {
+		return "", fmt.Errorf("failed to get caller identity: %w", err)
+	}
+
+	return *output.Account, nil
+}
+
+func (e *Explorer) refreshAccountServices(ctx context.Context) error {
+	start := time.Now()
+	defer func() {
+		slog.Info("aws account services refreshed", "duration_ms", time.Since(start).Milliseconds())
+	}()
+
+	accountID, err := e.getAWSAccountID(ctx, e.awscfg)
+	if err != nil {
+		return fmt.Errorf("failed to retreive target account id: %w", err)
+	}
+
+	costs := costexplorer.NewFromConfig(e.awsbillingcfg, func(o *costexplorer.Options) {
+		o.Region = e.defaultRegion
+	})
+
+	output, err := costs.GetCostAndUsage(ctx, &costexplorer.GetCostAndUsageInput{
+		TimePeriod: &cetypes.DateInterval{
+			Start: aws.String(time.Now().Add(-7 * day).Format(time.DateOnly)),
+			End:   aws.String(time.Now().Format(time.DateOnly)),
+		},
+		Granularity: cetypes.GranularityDaily,
+		Metrics:     []string{"UsageQuantity"},
+		GroupBy: []cetypes.GroupDefinition{
+			{
+				Key:  aws.String("SERVICE"),
+				Type: cetypes.GroupDefinitionTypeDimension,
+			},
+			{
+				Key:  aws.String("AZ"),
+				Type: cetypes.GroupDefinitionTypeDimension,
+			},
+		},
+		Filter: &cetypes.Expression{
+			Dimensions: &cetypes.DimensionValues{
+				Key:    cetypes.DimensionLinkedAccount,
+				Values: []string{accountID},
+			},
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to get cost and usage for aws account: %w", err)
+	}
+
+	services := make(map[string][]string, 0)
+	for _, result := range output.ResultsByTime {
+		for _, group := range result.Groups {
+			service, az := group.Keys[0], group.Keys[1]
+			services[service] = append(services[service], e.Region(az))
+		}
+	}
+
+	for service := range services {
+		slices.Sort(services[service])
+		services[service] = slices.Compact(services[service])
+	}
+
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	e.services = services
+
+	return nil
 }
 
 func (e *Explorer) refreshAccountAvailibilityZones(ctx context.Context) error {
@@ -239,121 +376,6 @@ func (e *Explorer) refreshAccountAvailibilityZones(ctx context.Context) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	e.accountAZs = azs
-
-	return nil
-}
-
-func (e *Explorer) accountInfosRefresher(ctx context.Context) {
-	every := time.Hour
-	wait := must.NewWait(30 * time.Second)
-	errg, errgctx := errgroup.WithContext(ctx)
-	for {
-		errg.Go(func() error {
-			err := e.refreshAccountAvailibilityZones(errgctx)
-			if err != nil {
-				return fmt.Errorf("failed to refresh aws account availability zones: %w", err)
-			}
-			return nil
-		})
-
-		errg.Go(func() error {
-			err := e.refreshAccountID(errgctx)
-			if err != nil {
-				return fmt.Errorf("failed to refresh aws account id: %w", err)
-			}
-			return nil
-		})
-
-		if err := errg.Wait(); err != nil {
-			slog.Error("failed to refresh infos", "err", err)
-			wait.Linearly(time.Second)
-			continue
-		}
-
-		wait.Reset()
-
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.Tick(every):
-			continue
-		}
-	}
-}
-
-func (e *Explorer) accountServicesRefresher(ctx context.Context) {
-	every := time.Hour
-	wait := must.NewWait(30 * time.Second)
-	for {
-		if !e.IsReady() {
-			wait.Static(time.Second)
-			continue
-		}
-		if err := e.refreshAccountServices(ctx); err != nil {
-			slog.Warn("failed to refresh aws account availibility zones", "err", err)
-			wait.Linearly(time.Second)
-			continue
-		}
-		wait.Reset()
-
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.Tick(every):
-			continue
-		}
-	}
-}
-
-func (e *Explorer) refreshAccountServices(ctx context.Context) error {
-	start := time.Now()
-	defer func() {
-		slog.Info("aws account services refreshed", "duration_ms", time.Since(start).Milliseconds())
-	}()
-
-	costs := costexplorer.NewFromConfig(e.awsbilling, func(o *costexplorer.Options) {
-		o.Region = e.defaultRegion
-	})
-
-	output, err := costs.GetCostAndUsage(ctx, &costexplorer.GetCostAndUsageInput{
-		TimePeriod: &cetypes.DateInterval{
-			Start: aws.String(time.Now().Add(-7 * day).Format(time.DateOnly)),
-			End:   aws.String(time.Now().Format(time.DateOnly)),
-		},
-		Granularity: cetypes.GranularityDaily,
-		Metrics:     []string{"UsageQuantity"},
-		GroupBy: []cetypes.GroupDefinition{
-			{
-				Key:  aws.String("SERVICE"),
-				Type: cetypes.GroupDefinitionTypeDimension,
-			},
-			{
-				Key:  aws.String("AZ"),
-				Type: cetypes.GroupDefinitionTypeDimension,
-			},
-		},
-	})
-	if err != nil {
-		return fmt.Errorf("failed to get cost and usage for aws account: %w", err)
-	}
-
-	services := make(map[string][]string, 0)
-	for _, result := range output.ResultsByTime {
-		for _, group := range result.Groups {
-			service, az := group.Keys[0], group.Keys[1]
-			services[service] = append(services[service], e.Region(az))
-		}
-	}
-
-	for service := range services {
-		slices.Sort(services[service])
-		services[service] = slices.Compact(services[service])
-	}
-
-	e.mu.Lock()
-	defer e.mu.Unlock()
-
-	e.services = services
 
 	return nil
 }

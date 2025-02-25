@@ -129,7 +129,7 @@ func InitCollectorOptions(ctx context.Context, params map[string]string) []cloud
 					os.Exit(1)
 				}
 
-				awsopts := []aws.Option{
+				awsopts := []aws.ExplorerOption{
 					aws.WithAWSConfig(config),
 					aws.WithRoleArn(params["cloud.aws.rolearn"]),
 					aws.WithBillingRoleArn(params["cloud.aws.billingrolearn"]),

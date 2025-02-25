@@ -57,41 +57,41 @@ func (aws *AmazonWebServicesModel) ComputeMetrics(resource *cloudcarbonexporter.
 }
 
 func NewAWSCarbonIntensityMap() cloudcarbonexporter.CarbonIntensityMap {
-	gcpIntensityMap := NewGCPCarbonIntensityMap()
-	awsIntensityMap := make(cloudcarbonexporter.CarbonIntensityMap)
-
-	// awsGcpRegions maps aws regions to gcp regions. AWS emissions are calculated
-	// based on GCP data as AWS do not provide those informations.
-	var awsGcpRegions = map[string]string{
-		"ap-east-1":      "asia-east2",
-		"ap-northeast-1": "asia-northeast1",
-		"ap-northeast-2": "asia-northeast2",
-		"ap-northeast-3": "asia-northeast2",
-		"ap-south-1":     "asia-south1",
-		"ap-southeast-1": "asia-southeast1",
-		"ap-southeast-3": "asia-southeast2",
-		"ap-southeast-2": "australia-southeast1",
-		"eu-north-1":     "europe-north1",
-		"eu-south-1":     "europe-west1",
-		"eu-west-1":      "europe-west1",
-		"eu-west-2":      "europe-west2",
-		"eu-central-1":   "europe-west3",
-		"eu-west-3":      "europe-west9",
-		"ca-central-1":   "northamerica-northeast1",
-		"sa-east-1":      "southamerica-east1 ",
-		"us-east-1":      "us-east4",
-		"us-east-2":      "us-east4",
-		"us-west-1":      "us-west1",
-		"us-west-2":      "us-west1",
-	}
-
-	for awsRegion, gcpRegion := range awsGcpRegions {
-		awsIntensityMap[awsRegion] = gcpIntensityMap.Get(gcpRegion)
+	// Base on the Cloud Carbon Footprint data
+	// https://github.com/cloud-carbon-footprint/cloud-carbon-footprint/blob/trunk/packages/aws/src/domain/AwsFootprintEstimationConstants.ts
+	awsIntensityMap := cloudcarbonexporter.CarbonIntensityMap{
+		"af-south-1":     900.6,
+		"ap-east-1":      710.0,
+		"ap-south-1":     708.2,
+		"ap-northeast-3": 465.8,
+		"ap-northeast-2": 415.6,
+		"ap-southeast-1": 408.,
+		"ap-southeast-2": 760.0,
+		"ap-southeast-3": 717.7,
+		"ap-northeast-1": 465.8,
+		"ca-central-1":   120.0,
+		"cn-north-1":     537.4,
+		"cn-northwest-1": 537.4,
+		"eu-central-1":   311.0,
+		"eu-west-1":      278.6,
+		"eu-west-2":      225.0,
+		"eu-south-1":     213.4,
+		"eu-west-3":      51.1,
+		"eu-north-1":     8.8,
+		"me-south-1":     505.9,
+		"me-central-1":   404.1,
+		"sa-east-1":      61.7,
+		"us-east-1":      379.069,
+		"us-east-2":      410.608,
+		"us-west-1":      322.167,
+		"us-west-2":      322.167,
+		"us-gov-east-1":  379.069,
+		"us-gov-west-1":  322.167,
 	}
 
 	awsIntensityMap["global"] = awsIntensityMap.Average()
 	awsIntensityMap["amer"] = awsIntensityMap.Average("us", "ca", "sa")
-	awsIntensityMap["apac"] = awsIntensityMap.Average("ap")
+	awsIntensityMap["apac"] = awsIntensityMap.Average("ap", "cn")
 	awsIntensityMap["emea"] = awsIntensityMap.Average("eu", "me", "af")
 
 	return awsIntensityMap
