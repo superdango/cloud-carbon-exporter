@@ -12,6 +12,32 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+type AnyMap map[string]any
+
+func (a AnyMap) Int(k string) int {
+	i, ok := a[k].(int)
+	must.Assert(ok, "expected a[k] to be int type, got: "+reflect.TypeOf(a[k]).String())
+	return i
+}
+
+func (a AnyMap) Float64(k string) float64 {
+	i, ok := a[k].(float64)
+	must.Assert(ok, "expected a[k] to be float64 type, got: "+reflect.TypeOf(a[k]).String())
+	return i
+}
+
+func (a AnyMap) Bool(k string) bool {
+	i, ok := a[k].(bool)
+	must.Assert(ok, "expected a[k] to be boolean type, got: "+reflect.TypeOf(a[k]).String())
+	return i
+}
+
+func (a AnyMap) String(k string) string {
+	i, ok := a[k].(string)
+	must.Assert(ok, "expected a[k] to be string type, got: "+reflect.TypeOf(a[k]).String())
+	return i
+}
+
 // Resource is the representation of a Cloud asset potentially drawing energy
 type Resource struct {
 	// CloudProvider hosting the resource
@@ -25,7 +51,7 @@ type Resource struct {
 	// Labels describing the resource
 	Labels map[string]string
 	// Source is the raw data collected from the source
-	Source map[string]any
+	Source AnyMap
 }
 
 // Metric olds the name and value of a measurement in addition to its labels.
@@ -192,12 +218,6 @@ func MergeLabels(labels ...map[string]string) map[string]string {
 	return result
 }
 
-func MergeMaps(to map[string]any, from map[string]any) {
-	for k, v := range from {
-		to[k] = v
-	}
-}
-
 // CarbonIntensityMap regroups carbon intensity by location
 type CarbonIntensityMap map[string]float64
 
@@ -247,7 +267,8 @@ func (intensity CarbonIntensityMap) Get(location string) float64 {
 func (intensityMap CarbonIntensityMap) ComputeCO2eq(wattMetric Metric) Metric {
 	emissionMetric := wattMetric.Clone()
 	emissionMetric.Name = "estimated_g_co2eq_second"
-	emissionMetric.Value = intensityMap.Get(wattMetric.Labels["region"]) * wattMetric.Value
+	gramPerKWh := intensityMap.Get(wattMetric.Labels["region"]) / 1000 / 60 / 60
+	emissionMetric.Value = wattMetric.Value * gramPerKWh
 	return emissionMetric
 }
 

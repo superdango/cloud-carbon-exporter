@@ -1,4 +1,4 @@
-package model
+package demo
 
 import (
 	"math/rand/v2"
@@ -22,7 +22,7 @@ func (m *Demo) ComputeMetrics(r *cloudcarbonexporter.Resource) []cloudcarbonexpo
 	case "demo":
 		now := time.Now()
 		return []cloudcarbonexporter.Metric{
-			cloudcarbonexporter.Metric{
+			{
 				Name:  "demo_connected_users",
 				Value: float64(naturalTrafficInstant(now.Hour(), now.Minute(), rand.IntN(10))),
 				Labels: map[string]string{

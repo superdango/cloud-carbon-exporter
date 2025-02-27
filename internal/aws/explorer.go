@@ -1,3 +1,7 @@
+/*
+ *   Copyright (c) 2025
+ *   All rights reserved.
+ */
 package aws
 
 import (
@@ -9,7 +13,6 @@ import (
 	"time"
 
 	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
-	"github.com/superdango/cloud-carbon-exporter/internal/must"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -20,11 +23,11 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 )
 
-const day = 24 * time.Hour
+const DAY = 24 * time.Hour
 
-type ResourcesCreator interface {
-	CreateResources(ctx context.Context, region string, resources chan *cloudcarbonexporter.Resource) error
-	Load(ctx context.Context) error
+type awsResourceExplorer interface {
+	awsExploreResources(ctx context.Context, region string, resources chan *cloudcarbonexporter.Resource) error
+	load(ctx context.Context) error
 }
 
 type Explorer struct {
@@ -36,7 +39,7 @@ type Explorer struct {
 	billingRoleArn    string
 	accountAZs        []AvailabilityZone
 	services          map[string][]string
-	resourcesCreators map[string][]ResourcesCreator
+	resourcesCreators map[string][]awsResourceExplorer
 }
 
 type ExplorerOption func(*Explorer)
@@ -66,6 +69,7 @@ func WithBillingRoleArn(role string) ExplorerOption {
 	}
 }
 
+// NewExplorer initialize and returns a new AWS Explorer.
 func NewExplorer(ctx context.Context, opts ...ExplorerOption) (explorer *Explorer, err error) {
 	explorer = &Explorer{
 		mu:            new(sync.Mutex),
@@ -100,21 +104,18 @@ func NewExplorer(ctx context.Context, opts ...ExplorerOption) (explorer *Explore
 		slog.Info("assuming aws role for resource services api calls", "role", explorer.roleArn)
 	}
 
-	go explorer.accountAvailabilityZonesRefresher(ctx)
-	go explorer.accountServicesRefresher(ctx)
-
-	explorer.resourcesCreators = map[string][]ResourcesCreator{
+	explorer.resourcesCreators = map[string][]awsResourceExplorer{
 		"Amazon Elastic Compute Cloud - Compute": {
-			NewEC2InstanceResourceCreator(explorer.awscfg, explorer.defaultRegion),
+			NewEC2InstanceExplorer(explorer.awscfg, explorer.defaultRegion),
 		},
 	}
-
 	errg, errgctx := errgroup.WithContext(ctx)
+
 	for _, rcs := range explorer.resourcesCreators {
 		for _, rc := range rcs {
 			rc := rc
 			errg.Go(func() error {
-				if err := rc.Load(errgctx); err != nil {
+				if err := rc.load(errgctx); err != nil {
 					return fmt.Errorf("failed to load resources creator: %w", err)
 				}
 				return nil
@@ -122,10 +123,14 @@ func NewExplorer(ctx context.Context, opts ...ExplorerOption) (explorer *Explore
 		}
 	}
 
+	errg.Go(func() error {
+		return explorer.discoverActiveServicesAndRegions(ctx)
+	})
+
 	return explorer, errg.Wait()
 }
 
-// discoverResources list all supported resources that have been tagged in configured regions
+// Find resources on the configured AWS Account and sends them in the resources chan
 func (explorer *Explorer) Find(ctx context.Context, resources chan *cloudcarbonexporter.Resource) error {
 	errg, errgctx := errgroup.WithContext(ctx)
 
@@ -135,7 +140,7 @@ func (explorer *Explorer) Find(ctx context.Context, resources chan *cloudcarbone
 				region := region
 				resourceCreator := resourceCreator
 				errg.Go(func() error {
-					return resourceCreator.CreateResources(errgctx, region, resources)
+					return resourceCreator.awsExploreResources(errgctx, region, resources)
 				})
 			}
 		}
@@ -145,20 +150,25 @@ func (explorer *Explorer) Find(ctx context.Context, resources chan *cloudcarbone
 
 }
 
+// Close do nothing else but implementing the Explorer interface
 func (explorer *Explorer) Close() error { return nil }
 
+// IsReady returns true if explorer can effectively return resources
 func (explorer *Explorer) IsReady() bool {
 	availabilityZonesAreLoaded := len(explorer.accountAZs) > 0
 
 	return availabilityZonesAreLoaded
 }
 
+// AvailabilityZone represents an AWS Availability Zone with its name and
+// the region containing it.
 type AvailabilityZone struct {
 	Name   string
 	Region string
 }
 
-func (e *Explorer) IsZone(zone string) bool {
+// IsValidZone returns true if zone is a valid zone
+func (e *Explorer) IsValidZone(zone string) bool {
 	for _, az := range e.accountAZs {
 		if az.Name == zone {
 			return true
@@ -167,7 +177,8 @@ func (e *Explorer) IsZone(zone string) bool {
 	return false
 }
 
-func (e *Explorer) IsRegion(region string) bool {
+// IsValidRegion returns true if region is a valid region
+func (e *Explorer) IsValidRegion(region string) bool {
 	for _, az := range e.accountAZs {
 		if az.Region == region {
 			return true
@@ -176,7 +187,7 @@ func (e *Explorer) IsRegion(region string) bool {
 	return false
 }
 
-// Region return "global" is location is unknown, itself if location is already a region or the
+// Region returns "global" is location is unknown, itself if location is already a region or the
 // parent region if location is an availability zone
 func (e *Explorer) Region(location string) (region string) {
 	for _, az := range e.accountAZs {
@@ -187,61 +198,7 @@ func (e *Explorer) Region(location string) (region string) {
 	return "global"
 }
 
-func (e *Explorer) accountAvailabilityZonesRefresher(ctx context.Context) {
-	every := 24 * time.Hour
-	wait := must.NewWait(30 * time.Second)
-	errg := new(errgroup.Group)
-	for {
-		errg.Go(func() error {
-			err := e.refreshAccountAvailibilityZones(ctx)
-			if err != nil {
-				return fmt.Errorf("failed to refresh aws account availability zones: %w", err)
-			}
-			return nil
-		})
-
-		if err := errg.Wait(); err != nil {
-			slog.Error("failed to refresh infos", "err", err)
-			wait.Linearly(time.Second)
-			continue
-		}
-
-		wait.Reset()
-
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.Tick(every):
-			continue
-		}
-	}
-}
-
-func (e *Explorer) accountServicesRefresher(ctx context.Context) {
-	every := time.Hour
-	wait := must.NewWait(30 * time.Second)
-	for {
-		if !e.IsReady() {
-			wait.Static(time.Second)
-			continue
-		}
-
-		if err := e.refreshAccountServices(ctx); err != nil {
-			slog.Warn("failed to refresh aws account availibility zones", "err", err)
-			wait.Linearly(time.Second)
-			continue
-		}
-		wait.Reset()
-
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.Tick(every):
-			continue
-		}
-	}
-}
-
+// getAWSAccountID returns the account id targeted by the awscfg
 func (explorer *Explorer) getAWSAccountID(ctx context.Context, awscfg aws.Config) (accountID string, err error) {
 	start := time.Now()
 	defer func() {
@@ -260,7 +217,10 @@ func (explorer *Explorer) getAWSAccountID(ctx context.Context, awscfg aws.Config
 	return *output.Account, nil
 }
 
-func (e *Explorer) refreshAccountServices(ctx context.Context) error {
+// discoverActiveServicesAndRegions first looks for the targeted account id and initialize
+// all AWS AZs / Regions. Then, it discovers active services and regions via cost explorer
+// apis.
+func (e *Explorer) discoverActiveServicesAndRegions(ctx context.Context) error {
 	start := time.Now()
 	defer func() {
 		slog.Info("aws account services refreshed", "duration_ms", time.Since(start).Milliseconds())
@@ -271,13 +231,18 @@ func (e *Explorer) refreshAccountServices(ctx context.Context) error {
 		return fmt.Errorf("failed to retreive target account id: %w", err)
 	}
 
+	err = e.refreshAccountAvailibilityZones(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to update list of aws availability zones")
+	}
+
 	costs := costexplorer.NewFromConfig(e.awsbillingcfg, func(o *costexplorer.Options) {
 		o.Region = e.defaultRegion
 	})
 
 	output, err := costs.GetCostAndUsage(ctx, &costexplorer.GetCostAndUsageInput{
 		TimePeriod: &cetypes.DateInterval{
-			Start: aws.String(time.Now().Add(-7 * day).Format(time.DateOnly)),
+			Start: aws.String(time.Now().Add(-7 * DAY).Format(time.DateOnly)),
 			End:   aws.String(time.Now().Format(time.DateOnly)),
 		},
 		Granularity: cetypes.GranularityDaily,

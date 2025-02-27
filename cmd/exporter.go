@@ -13,7 +13,8 @@ import (
 	"github.com/superdango/cloud-carbon-exporter/internal/aws"
 	"github.com/superdango/cloud-carbon-exporter/internal/demo"
 	"github.com/superdango/cloud-carbon-exporter/internal/gcp"
-	"github.com/superdango/cloud-carbon-exporter/model"
+	"github.com/superdango/cloud-carbon-exporter/model/cloudcarbonfootprint"
+	modeldemo "github.com/superdango/cloud-carbon-exporter/model/demo"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/lmittmann/tint"
@@ -25,13 +26,13 @@ func main() {
 
 	flagCloudProvider := ""
 	flagCloudGCPProjectID := ""
+	flagCloudAWSRoleArn := ""
+	flagCloudAWSBillingRoleArn := ""
+	flagCloudAWSDefaultRegion := ""
 	flagListen := ""
 	flagDemoEnabled := ""
 	flagLogLevel := ""
 	flagLogFormat := ""
-	flagCloudAWSRoleArn := ""
-	flagCloudAWSBillingRoleArn := ""
-	flagCloudAWSDefaultRegion := ""
 
 	flag.StringVar(&flagCloudProvider, "cloud.provider", "", "cloud provider type (gcp, aws)")
 	flag.StringVar(&flagCloudGCPProjectID, "cloud.gcp.projectid", "", "gcp project to explore resources from")
@@ -48,7 +49,7 @@ func main() {
 	initLogging(flagLogLevel, flagLogFormat)
 
 	collector := cloudcarbonexporter.NewCollector(
-		InitCollectorOptions(ctx, map[string]string{
+		setupCollectorOptions(ctx, map[string]string{
 			"cloud.provider":           flagCloudProvider,
 			"cloud.gcp.projectid":      flagCloudGCPProjectID,
 			"cloud.aws.rolearn":        flagCloudAWSRoleArn,
@@ -95,23 +96,23 @@ func initLogging(logLevel string, logFormat string) {
 	}
 }
 
-func InitCollectorOptions(ctx context.Context, params map[string]string) []cloudcarbonexporter.CollectorOptions {
+func setupCollectorOptions(ctx context.Context, params map[string]string) []cloudcarbonexporter.CollectorOptions {
 	return []cloudcarbonexporter.CollectorOptions{
 		func(c *cloudcarbonexporter.Collector) {
 			if params["demo.enabled"] == "true" {
 				c.SetOpt(cloudcarbonexporter.WithExplorer(demo.NewExplorer()))
-				c.SetOpt(cloudcarbonexporter.WithModels(new(model.Demo)))
+				c.SetOpt(cloudcarbonexporter.WithModels(new(modeldemo.Demo)))
 			}
 		},
 		func(c *cloudcarbonexporter.Collector) {
 			switch params["cloud.provider"] {
 			case "gcp":
-				if params["projectID"] == "" {
+				if params["cloud.gcp.projectid"] == "" {
 					slog.Error("project id is not set")
 					flag.PrintDefaults()
 					os.Exit(1)
 				}
-				model := model.NewGoogleCloudPlatform()
+				model := cloudcarbonfootprint.NewGoogleCloudPlatform()
 				gcpExplorer, err := gcp.NewExplorer(ctx,
 					gcp.WithProjectID(params["cloud.gcp.projectid"]),
 				)
@@ -136,7 +137,7 @@ func InitCollectorOptions(ctx context.Context, params map[string]string) []cloud
 					aws.WithDefaultRegion(params["cloud.aws.defaultregion"]),
 				}
 
-				model := model.NewAmazonWebServices()
+				model := cloudcarbonfootprint.NewAWSModel()
 				explorer, err := aws.NewExplorer(ctx, awsopts...)
 				if err != nil {
 					slog.Error("failed to create aws explorer", "err", err)

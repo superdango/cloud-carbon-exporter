@@ -11,10 +11,8 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/costexplorer v1.46.8
 	github.com/aws/aws-sdk-go-v2/service/ec2 v1.203.0
 	github.com/aws/aws-sdk-go-v2/service/sts v1.33.14
-	github.com/jellydator/ttlcache/v3 v3.3.0
 	github.com/lmittmann/tint v1.0.6
 	github.com/mattn/go-isatty v0.0.20
-	github.com/mitchellh/mapstructure v1.5.0
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/sync v0.10.0
 	google.golang.org/api v0.214.0
@@ -44,7 +42,6 @@ require (
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/google/s2a-go v0.1.8 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.4 // indirect
 	github.com/googleapis/gax-go/v2 v2.14.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
