@@ -68,21 +68,21 @@ func (gcp *GoogleCloudPlatformModel) ComputeMetrics(r *cloudcarbonexporter.Resou
 }
 
 // generateResourceMetrics returns watts metrics and related emissions from a watts value.
-func generateResourceMetrics(resource *cloudcarbonexporter.Resource, watts float64, intensity cloudcarbonexporter.CarbonIntensityMap) []cloudcarbonexporter.Metric {
-	wattsMetric := cloudcarbonexporter.Metric{
-		Name:  "estimated_watts",
-		Value: watts,
-		Labels: cloudcarbonexporter.MergeLabels(resource.Labels, map[string]string{
-			"model_version":  "0",
-			"cloud_provider": "gcp",
-			"region":         resource.Region,
-			"resource_id":    resource.ID,
-			"resource_kind":  resource.Kind,
-		}),
-	}
-	emissions := intensity.ComputeCO2eq(wattsMetric)
-	return []cloudcarbonexporter.Metric{wattsMetric, emissions}
-}
+// func generateResourceMetrics(resource *cloudcarbonexporter.Resource, watts float64, intensity cloudcarbonexporter.CarbonIntensityMap) []cloudcarbonexporter.Metric {
+// 	wattsMetric := cloudcarbonexporter.Metric{
+// 		Name:  "estimated_watts",
+// 		Value: watts,
+// 		Labels: cloudcarbonexporter.MergeLabels(resource.Labels, map[string]string{
+// 			"model_version":  "0",
+// 			"cloud_provider": "gcp",
+// 			"region":         resource.Region,
+// 			"resource_id":    resource.ID,
+// 			"resource_kind":  resource.Kind,
+// 		}),
+// 	}
+// 	emissions := intensity.ComputeCO2eq(wattsMetric)
+// 	return []cloudcarbonexporter.Metric{wattsMetric, emissions}
+// }
 
 //go:embed data/gcp_region_carbon_info_2023.csv
 var carboninfo embed.FS

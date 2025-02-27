@@ -1,56 +1,82 @@
+// Copyright (C) 2025 dangofish.com
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 package aws
 
 import (
 	"context"
+	"embed"
+	"encoding/json"
 	"fmt"
+	"log/slog"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
-	"github.com/superdango/cloud-carbon-exporter/internal/must"
 )
 
-type cpuinfo struct {
+//go:embed data/instance_types/instance_types.json
+var instanceTypeJsonFile embed.FS
+
+type instanceTypeInfos struct {
+	InstanceType      string  `json:"instance_type"`
+	PhysicalProcessor string  `json:"physical_processor"`
+	VCPU              float64 `json:"vcpu"`
+	Memory            float64 `json:"memory"`
 }
 
-type EC2InstanceResourceCreator struct {
-	awscfg        aws.Config
-	defaultRegion string
-	cpuinfos      map[string]cpuinfo
+type EC2InstanceExplorer struct {
+	awscfg            aws.Config
+	defaultRegion     string
+	instanceTypeInfos map[string]instanceTypeInfos
 }
 
-func NewEC2InstanceResourceCreator(awscfg aws.Config, defaultRegion string) *EC2InstanceResourceCreator {
-	return &EC2InstanceResourceCreator{
-		awscfg:        awscfg,
-		defaultRegion: defaultRegion,
-		cpuinfos:      make(map[string]cpuinfo),
+func NewEC2InstanceExplorer(awscfg aws.Config, defaultRegion string) *EC2InstanceExplorer {
+	return &EC2InstanceExplorer{
+		awscfg:            awscfg,
+		defaultRegion:     defaultRegion,
+		instanceTypeInfos: make(map[string]instanceTypeInfos),
 	}
 }
 
-func (rc *EC2InstanceResourceCreator) Load(ctx context.Context) error {
-	ec2api := ec2.NewFromConfig(rc.awscfg, func(o *ec2.Options) {
-		o.Region = rc.defaultRegion
-	})
-
-	paginator := ec2.NewDescribeInstanceTypesPaginator(ec2api, &ec2.DescribeInstanceTypesInput{})
-
-	for paginator.HasMorePages() {
-		page, err := paginator.NextPage(ctx)
-		if err != nil {
-			return err
-		}
-		for _, instanceType := range page.InstanceTypes {
-			must.PrintDebugJSON(map[string]any{
-				"instanceType":   instanceType.InstanceType,
-				"processor_info": instanceType.ProcessorInfo,
-			})
-		}
+func (rc *EC2InstanceExplorer) Load(ctx context.Context) error {
+	file, err := instanceTypeJsonFile.Open("data/instance_types/instance_types.json")
+	if err != nil {
+		return fmt.Errorf("failed to open instance type json file: %w", err)
 	}
+	defer file.Close()
+
+	instancesTypeInfos := make([]instanceTypeInfos, 0)
+
+	err = json.NewDecoder(file).Decode(&instancesTypeInfos)
+	if err != nil {
+		return fmt.Errorf("failed to decode instance type json file: %w", err)
+	}
+
+	for _, infos := range instancesTypeInfos {
+		rc.instanceTypeInfos[infos.InstanceType] = infos
+	}
+
+	slog.Info("ec2 instance types infos loaded")
+
 	return nil
 }
 
-func (rc *EC2InstanceResourceCreator) CreateResources(ctx context.Context, region string, resources chan *cloudcarbonexporter.Resource) error {
+func (rc *EC2InstanceExplorer) CreateResources(ctx context.Context, region string, resources chan *cloudcarbonexporter.Resource) error {
+	slog.Debug("calling ec2 instance explorer create resources", "region", region)
 	if region == "global" {
 		return nil
 	}
@@ -71,7 +97,10 @@ func (rc *EC2InstanceResourceCreator) CreateResources(ctx context.Context, regio
 
 		for _, reservation := range output.Reservations {
 			for _, instance := range reservation.Instances {
-				must.PrintDebugJSON(instance)
+				if instance.State.Name != types.InstanceStateNameRunning {
+					continue
+				}
+				instanceType := rc.instanceTypeInfos[string(instance.InstanceType)]
 				resources <- &cloudcarbonexporter.Resource{
 					CloudProvider: "aws",
 					Kind:          "ec2/instance",
@@ -79,8 +108,9 @@ func (rc *EC2InstanceResourceCreator) CreateResources(ctx context.Context, regio
 					Region:        region,
 					Labels:        parseEC2Tags(instance.Tags),
 					Source: map[string]any{
-						"ec2_instance_core_count": int(*instance.CpuOptions.CoreCount),
-						"ec2_instance_is_running": instance.State.Name == types.InstanceStateNameRunning,
+						"ec2_instance_core_count":         instanceType.VCPU,
+						"ec2_instance_physical_processor": instanceType.PhysicalProcessor,
+						"ec2_instance_memory_gb":          instanceType.Memory,
 					},
 				}
 			}

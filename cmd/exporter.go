@@ -25,13 +25,13 @@ func main() {
 
 	flagCloudProvider := ""
 	flagCloudGCPProjectID := ""
+	flagCloudAWSRoleArn := ""
+	flagCloudAWSBillingRoleArn := ""
+	flagCloudAWSDefaultRegion := ""
 	flagListen := ""
 	flagDemoEnabled := ""
 	flagLogLevel := ""
 	flagLogFormat := ""
-	flagCloudAWSRoleArn := ""
-	flagCloudAWSBillingRoleArn := ""
-	flagCloudAWSDefaultRegion := ""
 
 	flag.StringVar(&flagCloudProvider, "cloud.provider", "", "cloud provider type (gcp, aws)")
 	flag.StringVar(&flagCloudGCPProjectID, "cloud.gcp.projectid", "", "gcp project to explore resources from")
@@ -136,7 +136,7 @@ func InitCollectorOptions(ctx context.Context, params map[string]string) []cloud
 					aws.WithDefaultRegion(params["cloud.aws.defaultregion"]),
 				}
 
-				model := model.NewAmazonWebServices()
+				model := model.NewModel_AWS_CloudCarbonFootprint()
 				explorer, err := aws.NewExplorer(ctx, awsopts...)
 				if err != nil {
 					slog.Error("failed to create aws explorer", "err", err)
