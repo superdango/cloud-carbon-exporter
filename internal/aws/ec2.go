@@ -133,7 +133,6 @@ func (ec2explorer *EC2InstanceExplorer) awsExploreResources(ctx context.Context,
 }
 
 func (ec2explorer *EC2InstanceExplorer) GetInstanceCPUAverage(ctx context.Context, region string, instanceID string) (float64, error) {
-
 	key := fmt.Sprintf("%s/instances_average_cpu", region)
 	entry, err := ec2explorer.cache.GetOrSet(ctx, key, func(ctx context.Context) (any, error) {
 		return ec2explorer.ListInstanceCPUAverage(ctx, region)
