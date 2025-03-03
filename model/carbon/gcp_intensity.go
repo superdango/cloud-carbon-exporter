@@ -1,4 +1,4 @@
-package gcp
+package carbon
 
 import (
 	"embed"
@@ -12,10 +12,10 @@ import (
 //go:embed data/gcp_region_carbon_info_2023.csv
 var carboninfo embed.FS
 
-// NewCarbonIntensityMap loads and parse official carbon data provided by GCP
+// NewGCPCarbonIntensityMap loads and parse official carbon data provided by GCP
 // https://github.com/GoogleCloudPlatform/region-carbon-info
 // Should be updated each year.
-func NewCarbonIntensityMap() cloudcarbonexporter.CarbonIntensityMap {
+func NewGCPCarbonIntensityMap() cloudcarbonexporter.CarbonIntensityMap {
 	f, err := carboninfo.Open("data/gcp_region_carbon_info_2023.csv")
 	must.NoError(err)
 
@@ -34,7 +34,7 @@ func NewCarbonIntensityMap() cloudcarbonexporter.CarbonIntensityMap {
 		region := location[0]
 		co2eqbykwh := strToFloat64(location[3])
 
-		intensity[region] = co2eqbykwh / 60 / 60 / 1000
+		intensity[region] = co2eqbykwh
 	}
 
 	intensity["emea"] = intensity.Average([]string{"eu", "me", "af"}...)

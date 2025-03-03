@@ -1,0 +1,5366 @@
+[
+  {
+    "instance_type": "a1.2xlarge",
+    "physical_processor": "AWS Graviton Processor",
+    "vcpu": 8.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "a1.4xlarge",
+    "physical_processor": "AWS Graviton Processor",
+    "vcpu": 16.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "a1.large",
+    "physical_processor": "AWS Graviton Processor",
+    "vcpu": 2.0,
+    "memory": 4.0
+  },
+  {
+    "instance_type": "a1.medium",
+    "physical_processor": "AWS Graviton Processor",
+    "vcpu": 1.0,
+    "memory": 2.0
+  },
+  {
+    "instance_type": "a1.metal",
+    "physical_processor": "AWS Graviton Processor",
+    "vcpu": 16.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "a1.xlarge",
+    "physical_processor": "AWS Graviton Processor",
+    "vcpu": 4.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "c1.medium",
+    "physical_processor": "Intel Xeon Family",
+    "vcpu": 2.0,
+    "memory": 1.7
+  },
+  {
+    "instance_type": "c1.xlarge",
+    "physical_processor": "Intel Xeon Family",
+    "vcpu": 8.0,
+    "memory": 7.0
+  },
+  {
+    "instance_type": "c3.2xlarge",
+    "physical_processor": "Intel Xeon E5-2680 v2 (Ivy Bridge)",
+    "vcpu": 8.0,
+    "memory": 15.0
+  },
+  {
+    "instance_type": "c3.4xlarge",
+    "physical_processor": "Intel Xeon E5-2680 v2 (Ivy Bridge)",
+    "vcpu": 16.0,
+    "memory": 30.0
+  },
+  {
+    "instance_type": "c3.8xlarge",
+    "physical_processor": "Intel Xeon E5-2680 v2 (Ivy Bridge)",
+    "vcpu": 32.0,
+    "memory": 60.0
+  },
+  {
+    "instance_type": "c3.large",
+    "physical_processor": "Intel Xeon E5-2680 v2 (Ivy Bridge)",
+    "vcpu": 2.0,
+    "memory": 3.75
+  },
+  {
+    "instance_type": "c3.xlarge",
+    "physical_processor": "Intel Xeon E5-2680 v2 (Ivy Bridge)",
+    "vcpu": 4.0,
+    "memory": 7.5
+  },
+  {
+    "instance_type": "c4.2xlarge",
+    "physical_processor": "Intel Xeon E5-2666 v3 (Haswell)",
+    "vcpu": 8.0,
+    "memory": 15.0
+  },
+  {
+    "instance_type": "c4.4xlarge",
+    "physical_processor": "Intel Xeon E5-2666 v3 (Haswell)",
+    "vcpu": 16.0,
+    "memory": 30.0
+  },
+  {
+    "instance_type": "c4.8xlarge",
+    "physical_processor": "Intel Xeon E5-2666 v3 (Haswell)",
+    "vcpu": 36.0,
+    "memory": 60.0
+  },
+  {
+    "instance_type": "c4.large",
+    "physical_processor": "Intel Xeon E5-2666 v3 (Haswell)",
+    "vcpu": 2.0,
+    "memory": 3.75
+  },
+  {
+    "instance_type": "c4.xlarge",
+    "physical_processor": "Intel Xeon E5-2666 v3 (Haswell)",
+    "vcpu": 4.0,
+    "memory": 7.5
+  },
+  {
+    "instance_type": "c5.12xlarge",
+    "physical_processor": "Intel Xeon Platinum 8275L",
+    "vcpu": 48.0,
+    "memory": 96.0
+  },
+  {
+    "instance_type": "c5.18xlarge",
+    "physical_processor": "Intel Xeon Platinum 8124M",
+    "vcpu": 72.0,
+    "memory": 144.0
+  },
+  {
+    "instance_type": "c5.24xlarge",
+    "physical_processor": "Intel Xeon Platinum 8275L",
+    "vcpu": 96.0,
+    "memory": 192.0
+  },
+  {
+    "instance_type": "c5.2xlarge",
+    "physical_processor": "Intel Xeon Platinum 8124M",
+    "vcpu": 8.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "c5.4xlarge",
+    "physical_processor": "Intel Xeon Platinum 8124M",
+    "vcpu": 16.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "c5.9xlarge",
+    "physical_processor": "Intel Xeon Platinum 8124M",
+    "vcpu": 36.0,
+    "memory": 72.0
+  },
+  {
+    "instance_type": "c5.large",
+    "physical_processor": "Intel Xeon Platinum 8124M",
+    "vcpu": 2.0,
+    "memory": 4.0
+  },
+  {
+    "instance_type": "c5.metal",
+    "physical_processor": "Intel Xeon Platinum 8275L",
+    "vcpu": 96.0,
+    "memory": 192.0
+  },
+  {
+    "instance_type": "c5.xlarge",
+    "physical_processor": "Intel Xeon Platinum 8124M",
+    "vcpu": 4.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "c5a.12xlarge",
+    "physical_processor": "AMD EPYC 7R32",
+    "vcpu": 48.0,
+    "memory": 96.0
+  },
+  {
+    "instance_type": "c5a.16xlarge",
+    "physical_processor": "AMD EPYC 7R32",
+    "vcpu": 64.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "c5a.24xlarge",
+    "physical_processor": "AMD EPYC 7R32",
+    "vcpu": 96.0,
+    "memory": 192.0
+  },
+  {
+    "instance_type": "c5a.2xlarge",
+    "physical_processor": "AMD EPYC 7R32",
+    "vcpu": 8.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "c5a.4xlarge",
+    "physical_processor": "AMD EPYC 7R32",
+    "vcpu": 16.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "c5a.8xlarge",
+    "physical_processor": "AMD EPYC 7R32",
+    "vcpu": 32.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "c5a.large",
+    "physical_processor": "AMD EPYC 7R32",
+    "vcpu": 2.0,
+    "memory": 4.0
+  },
+  {
+    "instance_type": "c5a.xlarge",
+    "physical_processor": "AMD EPYC 7R32",
+    "vcpu": 4.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "c5ad.12xlarge",
+    "physical_processor": "AMD EPYC 7R32",
+    "vcpu": 48.0,
+    "memory": 96.0
+  },
+  {
+    "instance_type": "c5ad.16xlarge",
+    "physical_processor": "AMD EPYC 7R32",
+    "vcpu": 64.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "c5ad.24xlarge",
+    "physical_processor": "AMD EPYC 7R32",
+    "vcpu": 96.0,
+    "memory": 192.0
+  },
+  {
+    "instance_type": "c5ad.2xlarge",
+    "physical_processor": "AMD EPYC 7R32",
+    "vcpu": 8.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "c5ad.4xlarge",
+    "physical_processor": "AMD EPYC 7R32",
+    "vcpu": 16.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "c5ad.8xlarge",
+    "physical_processor": "AMD EPYC 7R32",
+    "vcpu": 32.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "c5ad.large",
+    "physical_processor": "AMD EPYC 7R32",
+    "vcpu": 2.0,
+    "memory": 4.0
+  },
+  {
+    "instance_type": "c5ad.xlarge",
+    "physical_processor": "AMD EPYC 7R32",
+    "vcpu": 4.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "c5d.12xlarge",
+    "physical_processor": "Intel Xeon Platinum 8275L",
+    "vcpu": 48.0,
+    "memory": 96.0
+  },
+  {
+    "instance_type": "c5d.18xlarge",
+    "physical_processor": "Intel Xeon Platinum 8124M",
+    "vcpu": 72.0,
+    "memory": 144.0
+  },
+  {
+    "instance_type": "c5d.24xlarge",
+    "physical_processor": "Intel Xeon Platinum 8275L",
+    "vcpu": 96.0,
+    "memory": 192.0
+  },
+  {
+    "instance_type": "c5d.2xlarge",
+    "physical_processor": "Intel Xeon Platinum 8124M",
+    "vcpu": 8.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "c5d.4xlarge",
+    "physical_processor": "Intel Xeon Platinum 8124M",
+    "vcpu": 16.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "c5d.9xlarge",
+    "physical_processor": "Intel Xeon Platinum 8124M",
+    "vcpu": 36.0,
+    "memory": 72.0
+  },
+  {
+    "instance_type": "c5d.large",
+    "physical_processor": "Intel Xeon Platinum 8124M",
+    "vcpu": 2.0,
+    "memory": 4.0
+  },
+  {
+    "instance_type": "c5d.metal",
+    "physical_processor": "Intel Xeon Platinum 8275L",
+    "vcpu": 96.0,
+    "memory": 192.0
+  },
+  {
+    "instance_type": "c5d.xlarge",
+    "physical_processor": "Intel Xeon Platinum 8124M",
+    "vcpu": 4.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "c5n.18xlarge",
+    "physical_processor": "Intel Xeon Platinum 8124M",
+    "vcpu": 72.0,
+    "memory": 192.0
+  },
+  {
+    "instance_type": "c5n.2xlarge",
+    "physical_processor": "Intel Xeon Platinum 8124M",
+    "vcpu": 8.0,
+    "memory": 21.0
+  },
+  {
+    "instance_type": "c5n.4xlarge",
+    "physical_processor": "Intel Xeon Platinum 8124M",
+    "vcpu": 16.0,
+    "memory": 42.0
+  },
+  {
+    "instance_type": "c5n.9xlarge",
+    "physical_processor": "Intel Xeon Platinum 8124M",
+    "vcpu": 36.0,
+    "memory": 96.0
+  },
+  {
+    "instance_type": "c5n.large",
+    "physical_processor": "Intel Xeon Platinum 8124M",
+    "vcpu": 2.0,
+    "memory": 5.25
+  },
+  {
+    "instance_type": "c5n.metal",
+    "physical_processor": "Intel Xeon Platinum 8124M",
+    "vcpu": 72.0,
+    "memory": 192.0
+  },
+  {
+    "instance_type": "c5n.xlarge",
+    "physical_processor": "Intel Xeon Platinum 8124M",
+    "vcpu": 4.0,
+    "memory": 10.5
+  },
+  {
+    "instance_type": "c6a.12xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 48.0,
+    "memory": 96.0
+  },
+  {
+    "instance_type": "c6a.16xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 64.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "c6a.24xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 96.0,
+    "memory": 192.0
+  },
+  {
+    "instance_type": "c6a.2xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 8.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "c6a.32xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 128.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "c6a.48xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 192.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "c6a.4xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 16.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "c6a.8xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 32.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "c6a.large",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 2.0,
+    "memory": 4.0
+  },
+  {
+    "instance_type": "c6a.metal",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 192.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "c6a.xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 4.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "c6g.12xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 48.0,
+    "memory": 96.0
+  },
+  {
+    "instance_type": "c6g.16xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 64.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "c6g.2xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 8.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "c6g.4xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 16.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "c6g.8xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 32.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "c6g.large",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 2.0,
+    "memory": 4.0
+  },
+  {
+    "instance_type": "c6g.medium",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 1.0,
+    "memory": 2.0
+  },
+  {
+    "instance_type": "c6g.metal",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 64.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "c6g.xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 4.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "c6gd.12xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 48.0,
+    "memory": 96.0
+  },
+  {
+    "instance_type": "c6gd.16xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 64.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "c6gd.2xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 8.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "c6gd.4xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 16.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "c6gd.8xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 32.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "c6gd.large",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 2.0,
+    "memory": 4.0
+  },
+  {
+    "instance_type": "c6gd.medium",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 1.0,
+    "memory": 2.0
+  },
+  {
+    "instance_type": "c6gd.metal",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 64.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "c6gd.xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 4.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "c6gn.12xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 48.0,
+    "memory": 96.0
+  },
+  {
+    "instance_type": "c6gn.16xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 64.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "c6gn.2xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 8.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "c6gn.4xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 16.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "c6gn.8xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 32.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "c6gn.large",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 2.0,
+    "memory": 4.0
+  },
+  {
+    "instance_type": "c6gn.medium",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 1.0,
+    "memory": 2.0
+  },
+  {
+    "instance_type": "c6gn.metal",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 64.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "c6gn.xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 4.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "c6i.12xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 48.0,
+    "memory": 96.0
+  },
+  {
+    "instance_type": "c6i.16xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 64.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "c6i.24xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 96.0,
+    "memory": 192.0
+  },
+  {
+    "instance_type": "c6i.2xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 8.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "c6i.32xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 128.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "c6i.4xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 16.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "c6i.8xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 32.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "c6i.large",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 2.0,
+    "memory": 4.0
+  },
+  {
+    "instance_type": "c6i.metal",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 128.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "c6i.xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 4.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "c6id.12xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 48.0,
+    "memory": 96.0
+  },
+  {
+    "instance_type": "c6id.16xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 64.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "c6id.24xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 96.0,
+    "memory": 192.0
+  },
+  {
+    "instance_type": "c6id.2xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 8.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "c6id.32xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 128.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "c6id.4xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 16.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "c6id.8xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 32.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "c6id.large",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 2.0,
+    "memory": 4.0
+  },
+  {
+    "instance_type": "c6id.metal",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 128.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "c6id.xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 4.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "c6in.12xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 48.0,
+    "memory": 96.0
+  },
+  {
+    "instance_type": "c6in.16xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 64.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "c6in.24xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 96.0,
+    "memory": 192.0
+  },
+  {
+    "instance_type": "c6in.2xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 8.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "c6in.32xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 128.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "c6in.4xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 16.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "c6in.8xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 32.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "c6in.large",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 2.0,
+    "memory": 4.0
+  },
+  {
+    "instance_type": "c6in.metal",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 128.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "c6in.xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 4.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "c7a.12xlarge",
+    "physical_processor": "AMD EPYC 9R14 Processor",
+    "vcpu": 48.0,
+    "memory": 96.0
+  },
+  {
+    "instance_type": "c7a.16xlarge",
+    "physical_processor": "AMD EPYC 9R14 Processor",
+    "vcpu": 64.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "c7a.24xlarge",
+    "physical_processor": "AMD EPYC 9R14 Processor",
+    "vcpu": 96.0,
+    "memory": 192.0
+  },
+  {
+    "instance_type": "c7a.2xlarge",
+    "physical_processor": "AMD EPYC 9R14 Processor",
+    "vcpu": 8.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "c7a.32xlarge",
+    "physical_processor": "AMD EPYC 9R14 Processor",
+    "vcpu": 128.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "c7a.48xlarge",
+    "physical_processor": "AMD EPYC 9R14 Processor",
+    "vcpu": 192.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "c7a.4xlarge",
+    "physical_processor": "AMD EPYC 9R14 Processor",
+    "vcpu": 16.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "c7a.8xlarge",
+    "physical_processor": "AMD EPYC 9R14 Processor",
+    "vcpu": 32.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "c7a.large",
+    "physical_processor": "AMD EPYC 9R14 Processor",
+    "vcpu": 2.0,
+    "memory": 4.0
+  },
+  {
+    "instance_type": "c7a.medium",
+    "physical_processor": "AMD EPYC 9R14 Processor",
+    "vcpu": 1.0,
+    "memory": 2.0
+  },
+  {
+    "instance_type": "c7a.metal-48xl",
+    "physical_processor": "AMD EPYC 9R14 Processor",
+    "vcpu": 192.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "c7a.xlarge",
+    "physical_processor": "AMD EPYC 9R14 Processor",
+    "vcpu": 4.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "c7g.12xlarge",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 48.0,
+    "memory": 96.0
+  },
+  {
+    "instance_type": "c7g.16xlarge",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 64.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "c7g.2xlarge",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 8.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "c7g.4xlarge",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 16.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "c7g.8xlarge",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 32.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "c7g.large",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 2.0,
+    "memory": 4.0
+  },
+  {
+    "instance_type": "c7g.medium",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 1.0,
+    "memory": 2.0
+  },
+  {
+    "instance_type": "c7g.metal",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 64.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "c7g.xlarge",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 4.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "c7gd.12xlarge",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 48.0,
+    "memory": 96.0
+  },
+  {
+    "instance_type": "c7gd.16xlarge",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 64.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "c7gd.2xlarge",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 8.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "c7gd.4xlarge",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 16.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "c7gd.8xlarge",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 32.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "c7gd.large",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 2.0,
+    "memory": 4.0
+  },
+  {
+    "instance_type": "c7gd.medium",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 1.0,
+    "memory": 2.0
+  },
+  {
+    "instance_type": "c7gd.metal",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 64.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "c7gd.xlarge",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 4.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "c7gn.12xlarge",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 48.0,
+    "memory": 96.0
+  },
+  {
+    "instance_type": "c7gn.16xlarge",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 64.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "c7gn.2xlarge",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 8.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "c7gn.4xlarge",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 16.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "c7gn.8xlarge",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 32.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "c7gn.large",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 2.0,
+    "memory": 4.0
+  },
+  {
+    "instance_type": "c7gn.medium",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 1.0,
+    "memory": 2.0
+  },
+  {
+    "instance_type": "c7gn.metal",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 64.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "c7gn.xlarge",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 4.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "c7i-flex.12xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 48.0,
+    "memory": 96.0
+  },
+  {
+    "instance_type": "c7i-flex.16xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 64.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "c7i-flex.2xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 8.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "c7i-flex.4xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 16.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "c7i-flex.8xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 32.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "c7i-flex.large",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 2.0,
+    "memory": 4.0
+  },
+  {
+    "instance_type": "c7i-flex.xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 4.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "c7i.12xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 48.0,
+    "memory": 96.0
+  },
+  {
+    "instance_type": "c7i.16xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 64.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "c7i.24xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 96.0,
+    "memory": 192.0
+  },
+  {
+    "instance_type": "c7i.2xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 8.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "c7i.48xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 192.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "c7i.4xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 16.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "c7i.8xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 32.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "c7i.large",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 2.0,
+    "memory": 4.0
+  },
+  {
+    "instance_type": "c7i.metal-24xl",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 96.0,
+    "memory": 192.0
+  },
+  {
+    "instance_type": "c7i.metal-48xl",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 192.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "c7i.xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 4.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "c8g.12xlarge",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 48.0,
+    "memory": 96.0
+  },
+  {
+    "instance_type": "c8g.16xlarge",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 64.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "c8g.24xlarge",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 96.0,
+    "memory": 192.0
+  },
+  {
+    "instance_type": "c8g.2xlarge",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 8.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "c8g.48xlarge",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 192.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "c8g.4xlarge",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 16.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "c8g.8xlarge",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 32.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "c8g.large",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 2.0,
+    "memory": 4.0
+  },
+  {
+    "instance_type": "c8g.medium",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 1.0,
+    "memory": 2.0
+  },
+  {
+    "instance_type": "c8g.metal-24xl",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 96.0,
+    "memory": 192.0
+  },
+  {
+    "instance_type": "c8g.metal-48xl",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 192.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "c8g.xlarge",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 4.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "cc2.8xlarge",
+    "physical_processor": "Intel Xeon E5-2670",
+    "vcpu": 32.0,
+    "memory": 60.5
+  },
+  {
+    "instance_type": "cr1.8xlarge",
+    "physical_processor": "Intel Xeon E5-2670",
+    "vcpu": 32.0,
+    "memory": 244.0
+  },
+  {
+    "instance_type": "d2.2xlarge",
+    "physical_processor": "Intel Xeon E5-2676 v3 (Haswell)",
+    "vcpu": 8.0,
+    "memory": 61.0
+  },
+  {
+    "instance_type": "d2.4xlarge",
+    "physical_processor": "Intel Xeon E5-2676 v3 (Haswell)",
+    "vcpu": 16.0,
+    "memory": 122.0
+  },
+  {
+    "instance_type": "d2.8xlarge",
+    "physical_processor": "Intel Xeon E5-2676 v3 (Haswell)",
+    "vcpu": 36.0,
+    "memory": 244.0
+  },
+  {
+    "instance_type": "d2.xlarge",
+    "physical_processor": "Intel Xeon E5-2676 v3 (Haswell)",
+    "vcpu": 4.0,
+    "memory": 30.5
+  },
+  {
+    "instance_type": "d3.2xlarge",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 8.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "d3.4xlarge",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 16.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "d3.8xlarge",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 32.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "d3.xlarge",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 4.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "d3en.12xlarge",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 48.0,
+    "memory": 192.0
+  },
+  {
+    "instance_type": "d3en.2xlarge",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 8.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "d3en.4xlarge",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 16.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "d3en.6xlarge",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 24.0,
+    "memory": 96.0
+  },
+  {
+    "instance_type": "d3en.8xlarge",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 32.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "d3en.large",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 2.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "d3en.xlarge",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 4.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "dl1.24xlarge",
+    "physical_processor": "Intel Xeon Platinum 8275L",
+    "vcpu": 96.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "dl2q.24xlarge",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 96.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "f1.16xlarge",
+    "physical_processor": "Intel Xeon E5-2686 v4 (Broadwell)",
+    "vcpu": 64.0,
+    "memory": 976.0
+  },
+  {
+    "instance_type": "f1.2xlarge",
+    "physical_processor": "Intel Xeon E5-2686 v4 (Broadwell)",
+    "vcpu": 8.0,
+    "memory": 122.0
+  },
+  {
+    "instance_type": "f1.4xlarge",
+    "physical_processor": "Intel Xeon E5-2686 v4 (Broadwell)",
+    "vcpu": 16.0,
+    "memory": 244.0
+  },
+  {
+    "instance_type": "f2.12xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 48.0,
+    "memory": 512.0
+  },
+  {
+    "instance_type": "f2.48xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 192.0,
+    "memory": 2048.0
+  },
+  {
+    "instance_type": "f2.6xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 24.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "g2.2xlarge",
+    "physical_processor": "Intel Xeon E5-2670 (Sandy Bridge)",
+    "vcpu": 8.0,
+    "memory": 15.0
+  },
+  {
+    "instance_type": "g2.8xlarge",
+    "physical_processor": "Intel Xeon E5-2670 (Sandy Bridge)",
+    "vcpu": 32.0,
+    "memory": 60.0
+  },
+  {
+    "instance_type": "g3.16xlarge",
+    "physical_processor": "Intel Xeon E5-2686 v4 (Broadwell)",
+    "vcpu": 64.0,
+    "memory": 488.0
+  },
+  {
+    "instance_type": "g3.4xlarge",
+    "physical_processor": "Intel Xeon E5-2686 v4 (Broadwell)",
+    "vcpu": 16.0,
+    "memory": 122.0
+  },
+  {
+    "instance_type": "g3.8xlarge",
+    "physical_processor": "Intel Xeon E5-2686 v4 (Broadwell)",
+    "vcpu": 32.0,
+    "memory": 244.0
+  },
+  {
+    "instance_type": "g3s.xlarge",
+    "physical_processor": "Intel Xeon E5-2686 v4 (Broadwell)",
+    "vcpu": 4.0,
+    "memory": 30.5
+  },
+  {
+    "instance_type": "g4ad.16xlarge",
+    "physical_processor": "AMD EPYC 7R32",
+    "vcpu": 64.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "g4ad.2xlarge",
+    "physical_processor": "AMD EPYC 7R32",
+    "vcpu": 8.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "g4ad.4xlarge",
+    "physical_processor": "AMD EPYC 7R32",
+    "vcpu": 16.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "g4ad.8xlarge",
+    "physical_processor": "AMD EPYC 7R32",
+    "vcpu": 32.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "g4ad.xlarge",
+    "physical_processor": "AMD EPYC 7R32",
+    "vcpu": 4.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "g4dn.12xlarge",
+    "physical_processor": "Intel Xeon Family",
+    "vcpu": 48.0,
+    "memory": 192.0
+  },
+  {
+    "instance_type": "g4dn.16xlarge",
+    "physical_processor": "Intel Xeon Family",
+    "vcpu": 64.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "g4dn.2xlarge",
+    "physical_processor": "Intel Xeon Family",
+    "vcpu": 8.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "g4dn.4xlarge",
+    "physical_processor": "Intel Xeon Family",
+    "vcpu": 16.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "g4dn.8xlarge",
+    "physical_processor": "Intel Xeon Family",
+    "vcpu": 32.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "g4dn.metal",
+    "physical_processor": "Intel Xeon Family",
+    "vcpu": 96.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "g4dn.xlarge",
+    "physical_processor": "Intel Xeon Family",
+    "vcpu": 4.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "g5.12xlarge",
+    "physical_processor": "AMD EPYC 7R32",
+    "vcpu": 48.0,
+    "memory": 192.0
+  },
+  {
+    "instance_type": "g5.16xlarge",
+    "physical_processor": "AMD EPYC 7R32",
+    "vcpu": 64.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "g5.24xlarge",
+    "physical_processor": "AMD EPYC 7R32",
+    "vcpu": 96.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "g5.2xlarge",
+    "physical_processor": "AMD EPYC 7R32",
+    "vcpu": 8.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "g5.48xlarge",
+    "physical_processor": "AMD EPYC 7R32",
+    "vcpu": 192.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "g5.4xlarge",
+    "physical_processor": "AMD EPYC 7R32",
+    "vcpu": 16.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "g5.8xlarge",
+    "physical_processor": "AMD EPYC 7R32",
+    "vcpu": 32.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "g5.xlarge",
+    "physical_processor": "AMD EPYC 7R32",
+    "vcpu": 4.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "g5g.16xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 64.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "g5g.2xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 8.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "g5g.4xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 16.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "g5g.8xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 32.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "g5g.metal",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 64.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "g5g.xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 4.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "g6.12xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 48.0,
+    "memory": 192.0
+  },
+  {
+    "instance_type": "g6.16xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 64.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "g6.24xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 96.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "g6.2xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 8.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "g6.48xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 192.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "g6.4xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 16.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "g6.8xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 32.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "g6.xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 4.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "g6e.12xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 48.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "g6e.16xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 64.0,
+    "memory": 512.0
+  },
+  {
+    "instance_type": "g6e.24xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 96.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "g6e.2xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 8.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "g6e.48xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 192.0,
+    "memory": 1536.0
+  },
+  {
+    "instance_type": "g6e.4xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 16.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "g6e.8xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 32.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "g6e.xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 4.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "gr6.4xlarge",
+    "physical_processor": "AMD EPYC 7R32",
+    "vcpu": 16.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "gr6.8xlarge",
+    "physical_processor": "AMD EPYC 7R32",
+    "vcpu": 32.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "h1.16xlarge",
+    "physical_processor": "Intel Xeon E5-2686 v4 (Broadwell)",
+    "vcpu": 64.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "h1.2xlarge",
+    "physical_processor": "Intel Xeon E5-2686 v4 (Broadwell)",
+    "vcpu": 8.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "h1.4xlarge",
+    "physical_processor": "Intel Xeon E5-2686 v4 (Broadwell)",
+    "vcpu": 16.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "h1.8xlarge",
+    "physical_processor": "Intel Xeon E5-2686 v4 (Broadwell)",
+    "vcpu": 32.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "hpc6a.48xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 96.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "hpc6id.32xlarge",
+    "physical_processor": "Intel Xeon Scalable (Icelake)",
+    "vcpu": 64.0,
+    "memory": 1024.0
+  },
+  {
+    "instance_type": "hpc7a.12xlarge",
+    "physical_processor": "AMD EPYC 9R14 Processor",
+    "vcpu": 24.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "hpc7a.24xlarge",
+    "physical_processor": "AMD EPYC 9R14 Processor",
+    "vcpu": 48.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "hpc7a.48xlarge",
+    "physical_processor": "AMD EPYC 9R14 Processor",
+    "vcpu": 96.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "hpc7a.96xlarge",
+    "physical_processor": "AMD EPYC 9R14 Processor",
+    "vcpu": 192.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "hpc7g.16xlarge",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 64.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "hpc7g.4xlarge",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 16.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "hpc7g.8xlarge",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 32.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "hs1.8xlarge",
+    "physical_processor": "Intel Xeon E5-2650",
+    "vcpu": 16.0,
+    "memory": 117.0
+  },
+  {
+    "instance_type": "i2.2xlarge",
+    "physical_processor": "Intel Xeon E5-2670 v2 (Ivy Bridge)",
+    "vcpu": 8.0,
+    "memory": 61.0
+  },
+  {
+    "instance_type": "i2.4xlarge",
+    "physical_processor": "Intel Xeon E5-2670 v2 (Ivy Bridge)",
+    "vcpu": 16.0,
+    "memory": 122.0
+  },
+  {
+    "instance_type": "i2.8xlarge",
+    "physical_processor": "Intel Xeon E5-2670 v2 (Ivy Bridge)",
+    "vcpu": 32.0,
+    "memory": 244.0
+  },
+  {
+    "instance_type": "i2.large",
+    "physical_processor": "Intel Xeon E5-2670 v2 (Ivy Bridge)",
+    "vcpu": 2.0,
+    "memory": 15.0
+  },
+  {
+    "instance_type": "i2.xlarge",
+    "physical_processor": "Intel Xeon E5-2670 v2 (Ivy Bridge)",
+    "vcpu": 4.0,
+    "memory": 30.5
+  },
+  {
+    "instance_type": "i3.16xlarge",
+    "physical_processor": "Intel Xeon E5-2686 v4 (Broadwell)",
+    "vcpu": 64.0,
+    "memory": 488.0
+  },
+  {
+    "instance_type": "i3.2xlarge",
+    "physical_processor": "Intel Xeon E5-2686 v4 (Broadwell)",
+    "vcpu": 8.0,
+    "memory": 61.0
+  },
+  {
+    "instance_type": "i3.4xlarge",
+    "physical_processor": "Intel Xeon E5-2686 v4 (Broadwell)",
+    "vcpu": 16.0,
+    "memory": 122.0
+  },
+  {
+    "instance_type": "i3.8xlarge",
+    "physical_processor": "Intel Xeon E5-2686 v4 (Broadwell)",
+    "vcpu": 32.0,
+    "memory": 244.0
+  },
+  {
+    "instance_type": "i3.large",
+    "physical_processor": "Intel Xeon E5-2686 v4 (Broadwell)",
+    "vcpu": 2.0,
+    "memory": 15.25
+  },
+  {
+    "instance_type": "i3.metal",
+    "physical_processor": "Intel Xeon E5-2686 v4 (Broadwell)",
+    "vcpu": 72.0,
+    "memory": 512.0
+  },
+  {
+    "instance_type": "i3.xlarge",
+    "physical_processor": "Intel Xeon E5-2686 v4 (Broadwell)",
+    "vcpu": 4.0,
+    "memory": 30.5
+  },
+  {
+    "instance_type": "i3en.12xlarge",
+    "physical_processor": "Intel Xeon Platinum 8175",
+    "vcpu": 48.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "i3en.24xlarge",
+    "physical_processor": "Intel Xeon Platinum 8175",
+    "vcpu": 96.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "i3en.2xlarge",
+    "physical_processor": "Intel Xeon Platinum 8175",
+    "vcpu": 8.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "i3en.3xlarge",
+    "physical_processor": "Intel Xeon Platinum 8175",
+    "vcpu": 12.0,
+    "memory": 96.0
+  },
+  {
+    "instance_type": "i3en.6xlarge",
+    "physical_processor": "Intel Xeon Platinum 8175",
+    "vcpu": 24.0,
+    "memory": 192.0
+  },
+  {
+    "instance_type": "i3en.large",
+    "physical_processor": "Intel Xeon Platinum 8175",
+    "vcpu": 2.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "i3en.metal",
+    "physical_processor": "Intel Xeon Platinum 8175",
+    "vcpu": 96.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "i3en.xlarge",
+    "physical_processor": "Intel Xeon Platinum 8175",
+    "vcpu": 4.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "i3p.16xlarge",
+    "physical_processor": "Intel Xeon E5-2686 v4 (Broadwell)",
+    "vcpu": 64.0,
+    "memory": 488.0
+  },
+  {
+    "instance_type": "i4g.16xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 64.0,
+    "memory": 512.0
+  },
+  {
+    "instance_type": "i4g.2xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 8.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "i4g.4xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 16.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "i4g.8xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 32.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "i4g.large",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 2.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "i4g.xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 4.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "i4i.12xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 48.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "i4i.16xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 64.0,
+    "memory": 512.0
+  },
+  {
+    "instance_type": "i4i.24xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 96.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "i4i.2xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 8.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "i4i.32xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 128.0,
+    "memory": 1024.0
+  },
+  {
+    "instance_type": "i4i.4xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 16.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "i4i.8xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 32.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "i4i.large",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 2.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "i4i.metal",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 128.0,
+    "memory": 1024.0
+  },
+  {
+    "instance_type": "i4i.xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 4.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "i7ie.12xlarge",
+    "physical_processor": "Intel Xeon Scalable (Emerald Rapids)",
+    "vcpu": 48.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "i7ie.18xlarge",
+    "physical_processor": "Intel Xeon Scalable (Emerald Rapids)",
+    "vcpu": 72.0,
+    "memory": 576.0
+  },
+  {
+    "instance_type": "i7ie.24xlarge",
+    "physical_processor": "Intel Xeon Scalable (Emerald Rapids)",
+    "vcpu": 96.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "i7ie.2xlarge",
+    "physical_processor": "Intel Xeon Scalable (Emerald Rapids)",
+    "vcpu": 8.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "i7ie.3xlarge",
+    "physical_processor": "Intel Xeon Scalable (Emerald Rapids)",
+    "vcpu": 12.0,
+    "memory": 96.0
+  },
+  {
+    "instance_type": "i7ie.48xlarge",
+    "physical_processor": "Intel Xeon Scalable (Emerald Rapids)",
+    "vcpu": 192.0,
+    "memory": 1536.0
+  },
+  {
+    "instance_type": "i7ie.6xlarge",
+    "physical_processor": "Intel Xeon Scalable (Emerald Rapids)",
+    "vcpu": 24.0,
+    "memory": 192.0
+  },
+  {
+    "instance_type": "i7ie.large",
+    "physical_processor": "Intel Xeon Scalable (Emerald Rapids)",
+    "vcpu": 2.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "i7ie.xlarge",
+    "physical_processor": "Intel Xeon Scalable (Emerald Rapids)",
+    "vcpu": 4.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "i8g.12xlarge",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 48.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "i8g.16xlarge",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 64.0,
+    "memory": 512.0
+  },
+  {
+    "instance_type": "i8g.24xlarge",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 96.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "i8g.2xlarge",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 8.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "i8g.4xlarge",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 16.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "i8g.8xlarge",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 32.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "i8g.large",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 2.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "i8g.metal-24xl",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 96.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "i8g.xlarge",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 4.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "im4gn.16xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 64.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "im4gn.2xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 8.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "im4gn.4xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 16.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "im4gn.8xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 32.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "im4gn.large",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 2.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "im4gn.xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 4.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "inf1.24xlarge",
+    "physical_processor": "Intel Xeon Platinum 8275CL (Cascade Lake)",
+    "vcpu": 96.0,
+    "memory": 192.0
+  },
+  {
+    "instance_type": "inf1.2xlarge",
+    "physical_processor": "Intel Xeon Platinum 8275CL (Cascade Lake)",
+    "vcpu": 8.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "inf1.6xlarge",
+    "physical_processor": "Intel Xeon Platinum 8275CL (Cascade Lake)",
+    "vcpu": 24.0,
+    "memory": 48.0
+  },
+  {
+    "instance_type": "inf1.xlarge",
+    "physical_processor": "Intel Xeon Platinum 8275CL (Cascade Lake)",
+    "vcpu": 4.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "inf2.24xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 96.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "inf2.48xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 192.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "inf2.8xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 32.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "inf2.xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 4.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "is4gen.2xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 8.0,
+    "memory": 48.0
+  },
+  {
+    "instance_type": "is4gen.4xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 16.0,
+    "memory": 96.0
+  },
+  {
+    "instance_type": "is4gen.8xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 32.0,
+    "memory": 192.0
+  },
+  {
+    "instance_type": "is4gen.large",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 2.0,
+    "memory": 12.0
+  },
+  {
+    "instance_type": "is4gen.medium",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 1.0,
+    "memory": 6.0
+  },
+  {
+    "instance_type": "is4gen.xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 4.0,
+    "memory": 24.0
+  },
+  {
+    "instance_type": "m1.large",
+    "physical_processor": "Intel Xeon Family",
+    "vcpu": 2.0,
+    "memory": 7.5
+  },
+  {
+    "instance_type": "m1.medium",
+    "physical_processor": "Intel Xeon Family",
+    "vcpu": 1.0,
+    "memory": 3.75
+  },
+  {
+    "instance_type": "m1.small",
+    "physical_processor": "Intel Xeon Family",
+    "vcpu": 1.0,
+    "memory": 1.7
+  },
+  {
+    "instance_type": "m1.xlarge",
+    "physical_processor": "Intel Xeon Family",
+    "vcpu": 4.0,
+    "memory": 15.0
+  },
+  {
+    "instance_type": "m2.2xlarge",
+    "physical_processor": "Intel Xeon Family",
+    "vcpu": 4.0,
+    "memory": 34.2
+  },
+  {
+    "instance_type": "m2.4xlarge",
+    "physical_processor": "Intel Xeon Family",
+    "vcpu": 8.0,
+    "memory": 68.4
+  },
+  {
+    "instance_type": "m2.xlarge",
+    "physical_processor": "Intel Xeon Family",
+    "vcpu": 2.0,
+    "memory": 17.1
+  },
+  {
+    "instance_type": "m3.2xlarge",
+    "physical_processor": "Intel Xeon E5-2670 v2 (Ivy Bridge/Sandy Bridge)",
+    "vcpu": 8.0,
+    "memory": 30.0
+  },
+  {
+    "instance_type": "m3.large",
+    "physical_processor": "Intel Xeon E5-2670 v2 (Ivy Bridge/Sandy Bridge)",
+    "vcpu": 2.0,
+    "memory": 7.5
+  },
+  {
+    "instance_type": "m3.medium",
+    "physical_processor": "Intel Xeon E5-2670 v2 (Ivy Bridge/Sandy Bridge)",
+    "vcpu": 1.0,
+    "memory": 3.75
+  },
+  {
+    "instance_type": "m3.xlarge",
+    "physical_processor": "Intel Xeon E5-2670 v2 (Ivy Bridge/Sandy Bridge)",
+    "vcpu": 4.0,
+    "memory": 15.0
+  },
+  {
+    "instance_type": "m4.10xlarge",
+    "physical_processor": "Intel Xeon E5-2676 v3 (Haswell)",
+    "vcpu": 40.0,
+    "memory": 160.0
+  },
+  {
+    "instance_type": "m4.16xlarge",
+    "physical_processor": "Intel Xeon E5-2686 v4 (Broadwell)",
+    "vcpu": 64.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "m4.2xlarge",
+    "physical_processor": "Intel Xeon E5-2676 v3 (Haswell)",
+    "vcpu": 8.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "m4.4xlarge",
+    "physical_processor": "Intel Xeon E5-2676 v3 (Haswell)",
+    "vcpu": 16.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "m4.large",
+    "physical_processor": "Intel Xeon E5-2676 v3 (Haswell)",
+    "vcpu": 2.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "m4.xlarge",
+    "physical_processor": "Intel Xeon E5-2676 v3 (Haswell)",
+    "vcpu": 4.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "m5.12xlarge",
+    "physical_processor": "Intel Xeon Platinum 8175",
+    "vcpu": 48.0,
+    "memory": 192.0
+  },
+  {
+    "instance_type": "m5.16xlarge",
+    "physical_processor": "Intel Xeon Platinum 8175",
+    "vcpu": 64.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "m5.24xlarge",
+    "physical_processor": "Intel Xeon Platinum 8175",
+    "vcpu": 96.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "m5.2xlarge",
+    "physical_processor": "Intel Xeon Platinum 8175",
+    "vcpu": 8.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "m5.4xlarge",
+    "physical_processor": "Intel Xeon Platinum 8175",
+    "vcpu": 16.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "m5.8xlarge",
+    "physical_processor": "Intel Xeon Platinum 8175",
+    "vcpu": 32.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "m5.large",
+    "physical_processor": "Intel Xeon Platinum 8175",
+    "vcpu": 2.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "m5.metal",
+    "physical_processor": "Intel Xeon Platinum 8175",
+    "vcpu": 96.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "m5.xlarge",
+    "physical_processor": "Intel Xeon Platinum 8175",
+    "vcpu": 4.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "m5a.12xlarge",
+    "physical_processor": "AMD EPYC 7571",
+    "vcpu": 48.0,
+    "memory": 192.0
+  },
+  {
+    "instance_type": "m5a.16xlarge",
+    "physical_processor": "AMD EPYC 7571",
+    "vcpu": 64.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "m5a.24xlarge",
+    "physical_processor": "AMD EPYC 7571",
+    "vcpu": 96.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "m5a.2xlarge",
+    "physical_processor": "AMD EPYC 7571",
+    "vcpu": 8.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "m5a.4xlarge",
+    "physical_processor": "AMD EPYC 7571",
+    "vcpu": 16.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "m5a.8xlarge",
+    "physical_processor": "AMD EPYC 7571",
+    "vcpu": 32.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "m5a.large",
+    "physical_processor": "AMD EPYC 7571",
+    "vcpu": 2.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "m5a.xlarge",
+    "physical_processor": "AMD EPYC 7571",
+    "vcpu": 4.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "m5ad.12xlarge",
+    "physical_processor": "AMD EPYC 7571",
+    "vcpu": 48.0,
+    "memory": 192.0
+  },
+  {
+    "instance_type": "m5ad.16xlarge",
+    "physical_processor": "AMD EPYC 7571",
+    "vcpu": 64.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "m5ad.24xlarge",
+    "physical_processor": "AMD EPYC 7571",
+    "vcpu": 96.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "m5ad.2xlarge",
+    "physical_processor": "AMD EPYC 7571",
+    "vcpu": 8.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "m5ad.4xlarge",
+    "physical_processor": "AMD EPYC 7571",
+    "vcpu": 16.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "m5ad.8xlarge",
+    "physical_processor": "AMD EPYC 7571",
+    "vcpu": 32.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "m5ad.large",
+    "physical_processor": "AMD EPYC 7571",
+    "vcpu": 2.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "m5ad.xlarge",
+    "physical_processor": "AMD EPYC 7571",
+    "vcpu": 4.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "m5d.12xlarge",
+    "physical_processor": "Intel Xeon Platinum 8175",
+    "vcpu": 48.0,
+    "memory": 192.0
+  },
+  {
+    "instance_type": "m5d.16xlarge",
+    "physical_processor": "Intel Xeon Platinum 8175",
+    "vcpu": 64.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "m5d.24xlarge",
+    "physical_processor": "Intel Xeon Platinum 8175",
+    "vcpu": 96.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "m5d.2xlarge",
+    "physical_processor": "Intel Xeon Platinum 8175",
+    "vcpu": 8.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "m5d.4xlarge",
+    "physical_processor": "Intel Xeon Platinum 8175",
+    "vcpu": 16.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "m5d.8xlarge",
+    "physical_processor": "Intel Xeon Platinum 8175",
+    "vcpu": 32.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "m5d.large",
+    "physical_processor": "Intel Xeon Platinum 8175",
+    "vcpu": 2.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "m5d.metal",
+    "physical_processor": "Intel Xeon Platinum 8175",
+    "vcpu": 96.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "m5d.xlarge",
+    "physical_processor": "Intel Xeon Platinum 8175",
+    "vcpu": 4.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "m5dn.12xlarge",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 48.0,
+    "memory": 192.0
+  },
+  {
+    "instance_type": "m5dn.16xlarge",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 64.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "m5dn.24xlarge",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 96.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "m5dn.2xlarge",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 8.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "m5dn.4xlarge",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 16.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "m5dn.8xlarge",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 32.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "m5dn.large",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 2.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "m5dn.metal",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 96.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "m5dn.xlarge",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 4.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "m5n.12xlarge",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 48.0,
+    "memory": 192.0
+  },
+  {
+    "instance_type": "m5n.16xlarge",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 64.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "m5n.24xlarge",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 96.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "m5n.2xlarge",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 8.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "m5n.4xlarge",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 16.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "m5n.8xlarge",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 32.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "m5n.large",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 2.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "m5n.metal",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 96.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "m5n.xlarge",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 4.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "m5zn.12xlarge",
+    "physical_processor": "Intel Xeon Platinum 8252",
+    "vcpu": 48.0,
+    "memory": 192.0
+  },
+  {
+    "instance_type": "m5zn.2xlarge",
+    "physical_processor": "Intel Xeon Platinum 8252",
+    "vcpu": 8.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "m5zn.3xlarge",
+    "physical_processor": "Intel Xeon Platinum 8252",
+    "vcpu": 12.0,
+    "memory": 48.0
+  },
+  {
+    "instance_type": "m5zn.6xlarge",
+    "physical_processor": "Intel Xeon Platinum 8252",
+    "vcpu": 24.0,
+    "memory": 96.0
+  },
+  {
+    "instance_type": "m5zn.large",
+    "physical_processor": "Intel Xeon Platinum 8252",
+    "vcpu": 2.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "m5zn.metal",
+    "physical_processor": "Intel Xeon Platinum 8252",
+    "vcpu": 48.0,
+    "memory": 192.0
+  },
+  {
+    "instance_type": "m5zn.xlarge",
+    "physical_processor": "Intel Xeon Platinum 8252",
+    "vcpu": 4.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "m6a.12xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 48.0,
+    "memory": 192.0
+  },
+  {
+    "instance_type": "m6a.16xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 64.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "m6a.24xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 96.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "m6a.2xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 8.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "m6a.32xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 128.0,
+    "memory": 512.0
+  },
+  {
+    "instance_type": "m6a.48xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 192.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "m6a.4xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 16.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "m6a.8xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 32.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "m6a.large",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 2.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "m6a.metal",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 192.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "m6a.xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 4.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "m6g.12xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 48.0,
+    "memory": 192.0
+  },
+  {
+    "instance_type": "m6g.16xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 64.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "m6g.2xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 8.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "m6g.4xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 16.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "m6g.8xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 32.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "m6g.large",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 2.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "m6g.medium",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 1.0,
+    "memory": 4.0
+  },
+  {
+    "instance_type": "m6g.metal",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 64.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "m6g.xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 4.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "m6gd.12xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 48.0,
+    "memory": 192.0
+  },
+  {
+    "instance_type": "m6gd.16xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 64.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "m6gd.2xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 8.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "m6gd.4xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 16.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "m6gd.8xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 32.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "m6gd.large",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 2.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "m6gd.medium",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 1.0,
+    "memory": 4.0
+  },
+  {
+    "instance_type": "m6gd.metal",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 64.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "m6gd.xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 4.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "m6i.12xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 48.0,
+    "memory": 192.0
+  },
+  {
+    "instance_type": "m6i.16xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 64.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "m6i.24xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 96.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "m6i.2xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 8.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "m6i.32xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 128.0,
+    "memory": 512.0
+  },
+  {
+    "instance_type": "m6i.4xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 16.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "m6i.8xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 32.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "m6i.large",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 2.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "m6i.metal",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 128.0,
+    "memory": 512.0
+  },
+  {
+    "instance_type": "m6i.xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 4.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "m6id.12xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 48.0,
+    "memory": 192.0
+  },
+  {
+    "instance_type": "m6id.16xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 64.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "m6id.24xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 96.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "m6id.2xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 8.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "m6id.32xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 128.0,
+    "memory": 512.0
+  },
+  {
+    "instance_type": "m6id.4xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 16.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "m6id.8xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 32.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "m6id.large",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 2.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "m6id.metal",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 128.0,
+    "memory": 512.0
+  },
+  {
+    "instance_type": "m6id.xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 4.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "m6idn.12xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 48.0,
+    "memory": 192.0
+  },
+  {
+    "instance_type": "m6idn.16xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 64.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "m6idn.24xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 96.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "m6idn.2xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 8.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "m6idn.32xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 128.0,
+    "memory": 512.0
+  },
+  {
+    "instance_type": "m6idn.4xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 16.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "m6idn.8xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 32.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "m6idn.large",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 2.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "m6idn.metal",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 128.0,
+    "memory": 512.0
+  },
+  {
+    "instance_type": "m6idn.xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 4.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "m6in.12xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 48.0,
+    "memory": 192.0
+  },
+  {
+    "instance_type": "m6in.16xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 64.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "m6in.24xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 96.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "m6in.2xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 8.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "m6in.32xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 128.0,
+    "memory": 512.0
+  },
+  {
+    "instance_type": "m6in.4xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 16.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "m6in.8xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 32.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "m6in.large",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 2.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "m6in.metal",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 128.0,
+    "memory": 512.0
+  },
+  {
+    "instance_type": "m6in.xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 4.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "m7a.12xlarge",
+    "physical_processor": "AMD EPYC 9R14 Processor",
+    "vcpu": 48.0,
+    "memory": 192.0
+  },
+  {
+    "instance_type": "m7a.16xlarge",
+    "physical_processor": "AMD EPYC 9R14 Processor",
+    "vcpu": 64.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "m7a.24xlarge",
+    "physical_processor": "AMD EPYC 9R14 Processor",
+    "vcpu": 96.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "m7a.2xlarge",
+    "physical_processor": "AMD EPYC 9R14 Processor",
+    "vcpu": 8.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "m7a.32xlarge",
+    "physical_processor": "AMD EPYC 9R14 Processor",
+    "vcpu": 128.0,
+    "memory": 512.0
+  },
+  {
+    "instance_type": "m7a.48xlarge",
+    "physical_processor": "AMD EPYC 9R14 Processor",
+    "vcpu": 192.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "m7a.4xlarge",
+    "physical_processor": "AMD EPYC 9R14 Processor",
+    "vcpu": 16.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "m7a.8xlarge",
+    "physical_processor": "AMD EPYC 9R14 Processor",
+    "vcpu": 32.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "m7a.large",
+    "physical_processor": "AMD EPYC 9R14 Processor",
+    "vcpu": 2.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "m7a.medium",
+    "physical_processor": "AMD EPYC 9R14 Processor",
+    "vcpu": 1.0,
+    "memory": 4.0
+  },
+  {
+    "instance_type": "m7a.metal-48xl",
+    "physical_processor": "AMD EPYC 9R14 Processor",
+    "vcpu": 192.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "m7a.xlarge",
+    "physical_processor": "AMD EPYC 9R14 Processor",
+    "vcpu": 4.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "m7g.12xlarge",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 48.0,
+    "memory": 192.0
+  },
+  {
+    "instance_type": "m7g.16xlarge",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 64.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "m7g.2xlarge",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 8.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "m7g.4xlarge",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 16.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "m7g.8xlarge",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 32.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "m7g.large",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 2.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "m7g.medium",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 1.0,
+    "memory": 4.0
+  },
+  {
+    "instance_type": "m7g.metal",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 64.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "m7g.xlarge",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 4.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "m7gd.12xlarge",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 48.0,
+    "memory": 192.0
+  },
+  {
+    "instance_type": "m7gd.16xlarge",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 64.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "m7gd.2xlarge",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 8.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "m7gd.4xlarge",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 16.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "m7gd.8xlarge",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 32.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "m7gd.large",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 2.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "m7gd.medium",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 1.0,
+    "memory": 4.0
+  },
+  {
+    "instance_type": "m7gd.metal",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 64.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "m7gd.xlarge",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 4.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "m7i-flex.12xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 48.0,
+    "memory": 192.0
+  },
+  {
+    "instance_type": "m7i-flex.16xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 64.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "m7i-flex.2xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 8.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "m7i-flex.4xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 16.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "m7i-flex.8xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 32.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "m7i-flex.large",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 2.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "m7i-flex.xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 4.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "m7i.12xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 48.0,
+    "memory": 192.0
+  },
+  {
+    "instance_type": "m7i.16xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 64.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "m7i.24xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 96.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "m7i.2xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 8.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "m7i.48xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 192.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "m7i.4xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 16.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "m7i.8xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 32.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "m7i.large",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 2.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "m7i.metal-24xl",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 96.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "m7i.metal-48xl",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 192.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "m7i.xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 4.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "m8g.12xlarge",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 48.0,
+    "memory": 192.0
+  },
+  {
+    "instance_type": "m8g.16xlarge",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 64.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "m8g.24xlarge",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 96.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "m8g.2xlarge",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 8.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "m8g.48xlarge",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 192.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "m8g.4xlarge",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 16.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "m8g.8xlarge",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 32.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "m8g.large",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 2.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "m8g.medium",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 1.0,
+    "memory": 4.0
+  },
+  {
+    "instance_type": "m8g.metal-24xl",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 96.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "m8g.metal-48xl",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 192.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "m8g.xlarge",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 4.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "mac1.metal",
+    "physical_processor": "Intel Core i7-8700B CPU",
+    "vcpu": 12.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "mac2-m1ultra.metal",
+    "physical_processor": "Apple silicon M1 Ultra",
+    "vcpu": 20.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "mac2-m2.metal",
+    "physical_processor": "Apple M2 Chip",
+    "vcpu": 12.0,
+    "memory": 24.0
+  },
+  {
+    "instance_type": "mac2-m2pro.metal",
+    "physical_processor": "Apple M2 Pro",
+    "vcpu": 20.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "mac2.metal",
+    "physical_processor": "Apple M1 chip with 8-core CPU, 8-core GPU, and 16-core Neural Engine",
+    "vcpu": 12.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "p2.16xlarge",
+    "physical_processor": "Intel Xeon E5-2686 v4 (Broadwell)",
+    "vcpu": 64.0,
+    "memory": 732.0
+  },
+  {
+    "instance_type": "p2.8xlarge",
+    "physical_processor": "Intel Xeon E5-2686 v4 (Broadwell)",
+    "vcpu": 32.0,
+    "memory": 488.0
+  },
+  {
+    "instance_type": "p2.xlarge",
+    "physical_processor": "Intel Xeon E5-2686 v4 (Broadwell)",
+    "vcpu": 4.0,
+    "memory": 61.0
+  },
+  {
+    "instance_type": "p3.16xlarge",
+    "physical_processor": "Intel Xeon E5-2686 v4 (Broadwell)",
+    "vcpu": 64.0,
+    "memory": 488.0
+  },
+  {
+    "instance_type": "p3.2xlarge",
+    "physical_processor": "Intel Xeon E5-2686 v4 (Broadwell)",
+    "vcpu": 8.0,
+    "memory": 61.0
+  },
+  {
+    "instance_type": "p3.8xlarge",
+    "physical_processor": "Intel Xeon E5-2686 v4 (Broadwell)",
+    "vcpu": 32.0,
+    "memory": 244.0
+  },
+  {
+    "instance_type": "p3dn.24xlarge",
+    "physical_processor": "Intel Xeon Platinum 8175 (Skylake)",
+    "vcpu": 96.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "p4d.24xlarge",
+    "physical_processor": "Intel Xeon Platinum 8275L",
+    "vcpu": 96.0,
+    "memory": 1152.0
+  },
+  {
+    "instance_type": "p4de.24xlarge",
+    "physical_processor": "Intel Xeon Platinum 8275L",
+    "vcpu": 96.0,
+    "memory": 1152.0
+  },
+  {
+    "instance_type": "p5.48xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 192.0,
+    "memory": 2048.0
+  },
+  {
+    "instance_type": "p5e.48xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 192.0,
+    "memory": 2048.0
+  },
+  {
+    "instance_type": "p5en.48xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 192.0,
+    "memory": 2048.0
+  },
+  {
+    "instance_type": "r3.2xlarge",
+    "physical_processor": "Intel Xeon E5-2670 v2 (Ivy Bridge)",
+    "vcpu": 8.0,
+    "memory": 61.0
+  },
+  {
+    "instance_type": "r3.4xlarge",
+    "physical_processor": "Intel Xeon E5-2670 v2 (Ivy Bridge)",
+    "vcpu": 16.0,
+    "memory": 122.0
+  },
+  {
+    "instance_type": "r3.8xlarge",
+    "physical_processor": "Intel Xeon E5-2670 v2 (Ivy Bridge)",
+    "vcpu": 32.0,
+    "memory": 244.0
+  },
+  {
+    "instance_type": "r3.large",
+    "physical_processor": "Intel Xeon E5-2670 v2 (Ivy Bridge)",
+    "vcpu": 2.0,
+    "memory": 15.25
+  },
+  {
+    "instance_type": "r3.xlarge",
+    "physical_processor": "Intel Xeon E5-2670 v2 (Ivy Bridge)",
+    "vcpu": 4.0,
+    "memory": 30.5
+  },
+  {
+    "instance_type": "r4.16xlarge",
+    "physical_processor": "Intel Xeon E5-2686 v4 (Broadwell)",
+    "vcpu": 64.0,
+    "memory": 488.0
+  },
+  {
+    "instance_type": "r4.2xlarge",
+    "physical_processor": "Intel Xeon E5-2686 v4 (Broadwell)",
+    "vcpu": 8.0,
+    "memory": 61.0
+  },
+  {
+    "instance_type": "r4.4xlarge",
+    "physical_processor": "Intel Xeon E5-2686 v4 (Broadwell)",
+    "vcpu": 16.0,
+    "memory": 122.0
+  },
+  {
+    "instance_type": "r4.8xlarge",
+    "physical_processor": "Intel Xeon E5-2686 v4 (Broadwell)",
+    "vcpu": 32.0,
+    "memory": 244.0
+  },
+  {
+    "instance_type": "r4.large",
+    "physical_processor": "Intel Xeon E5-2686 v4 (Broadwell)",
+    "vcpu": 2.0,
+    "memory": 15.25
+  },
+  {
+    "instance_type": "r4.xlarge",
+    "physical_processor": "Intel Xeon E5-2686 v4 (Broadwell)",
+    "vcpu": 4.0,
+    "memory": 30.5
+  },
+  {
+    "instance_type": "r5.12xlarge",
+    "physical_processor": "Intel Xeon Platinum 8175",
+    "vcpu": 48.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "r5.16xlarge",
+    "physical_processor": "Intel Xeon Platinum 8175",
+    "vcpu": 64.0,
+    "memory": 512.0
+  },
+  {
+    "instance_type": "r5.24xlarge",
+    "physical_processor": "Intel Xeon Platinum 8175",
+    "vcpu": 96.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "r5.2xlarge",
+    "physical_processor": "Intel Xeon Platinum 8175",
+    "vcpu": 8.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "r5.4xlarge",
+    "physical_processor": "Intel Xeon Platinum 8175",
+    "vcpu": 16.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "r5.8xlarge",
+    "physical_processor": "Intel Xeon Platinum 8175",
+    "vcpu": 32.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "r5.large",
+    "physical_processor": "Intel Xeon Platinum 8175",
+    "vcpu": 2.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "r5.metal",
+    "physical_processor": "Intel Xeon Platinum 8175",
+    "vcpu": 96.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "r5.xlarge",
+    "physical_processor": "Intel Xeon Platinum 8175",
+    "vcpu": 4.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "r5a.12xlarge",
+    "physical_processor": "AMD EPYC 7571",
+    "vcpu": 48.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "r5a.16xlarge",
+    "physical_processor": "AMD EPYC 7571",
+    "vcpu": 64.0,
+    "memory": 512.0
+  },
+  {
+    "instance_type": "r5a.24xlarge",
+    "physical_processor": "AMD EPYC 7571",
+    "vcpu": 96.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "r5a.2xlarge",
+    "physical_processor": "AMD EPYC 7571",
+    "vcpu": 8.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "r5a.4xlarge",
+    "physical_processor": "AMD EPYC 7571",
+    "vcpu": 16.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "r5a.8xlarge",
+    "physical_processor": "AMD EPYC 7571",
+    "vcpu": 32.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "r5a.large",
+    "physical_processor": "AMD EPYC 7571",
+    "vcpu": 2.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "r5a.xlarge",
+    "physical_processor": "AMD EPYC 7571",
+    "vcpu": 4.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "r5ad.12xlarge",
+    "physical_processor": "AMD EPYC 7571",
+    "vcpu": 48.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "r5ad.16xlarge",
+    "physical_processor": "AMD EPYC 7571",
+    "vcpu": 64.0,
+    "memory": 512.0
+  },
+  {
+    "instance_type": "r5ad.24xlarge",
+    "physical_processor": "AMD EPYC 7571",
+    "vcpu": 96.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "r5ad.2xlarge",
+    "physical_processor": "AMD EPYC 7571",
+    "vcpu": 8.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "r5ad.4xlarge",
+    "physical_processor": "AMD EPYC 7571",
+    "vcpu": 16.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "r5ad.8xlarge",
+    "physical_processor": "AMD EPYC 7571",
+    "vcpu": 32.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "r5ad.large",
+    "physical_processor": "AMD EPYC 7571",
+    "vcpu": 2.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "r5ad.xlarge",
+    "physical_processor": "AMD EPYC 7571",
+    "vcpu": 4.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "r5b.12xlarge",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 48.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "r5b.16xlarge",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 64.0,
+    "memory": 512.0
+  },
+  {
+    "instance_type": "r5b.24xlarge",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 96.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "r5b.2xlarge",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 8.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "r5b.4xlarge",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 16.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "r5b.8xlarge",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 32.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "r5b.large",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 2.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "r5b.metal",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 96.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "r5b.xlarge",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 4.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "r5d.12xlarge",
+    "physical_processor": "Intel Xeon Platinum 8175",
+    "vcpu": 48.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "r5d.16xlarge",
+    "physical_processor": "Intel Xeon Platinum 8175",
+    "vcpu": 64.0,
+    "memory": 512.0
+  },
+  {
+    "instance_type": "r5d.24xlarge",
+    "physical_processor": "Intel Xeon Platinum 8175",
+    "vcpu": 96.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "r5d.2xlarge",
+    "physical_processor": "Intel Xeon Platinum 8175",
+    "vcpu": 8.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "r5d.4xlarge",
+    "physical_processor": "Intel Xeon Platinum 8175",
+    "vcpu": 16.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "r5d.8xlarge",
+    "physical_processor": "Intel Xeon Platinum 8175",
+    "vcpu": 32.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "r5d.large",
+    "physical_processor": "Intel Xeon Platinum 8175",
+    "vcpu": 2.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "r5d.metal",
+    "physical_processor": "Intel Xeon Platinum 8175",
+    "vcpu": 96.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "r5d.xlarge",
+    "physical_processor": "Intel Xeon Platinum 8175",
+    "vcpu": 4.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "r5dn.12xlarge",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 48.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "r5dn.16xlarge",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 64.0,
+    "memory": 512.0
+  },
+  {
+    "instance_type": "r5dn.24xlarge",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 96.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "r5dn.2xlarge",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 8.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "r5dn.4xlarge",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 16.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "r5dn.8xlarge",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 32.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "r5dn.large",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 2.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "r5dn.metal",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 96.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "r5dn.xlarge",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 4.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "r5n.12xlarge",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 48.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "r5n.16xlarge",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 64.0,
+    "memory": 512.0
+  },
+  {
+    "instance_type": "r5n.24xlarge",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 96.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "r5n.2xlarge",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 8.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "r5n.4xlarge",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 16.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "r5n.8xlarge",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 32.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "r5n.large",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 2.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "r5n.metal",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 96.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "r5n.xlarge",
+    "physical_processor": "Intel Xeon Platinum 8259 (Cascade Lake)",
+    "vcpu": 4.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "r6a.12xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 48.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "r6a.16xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 64.0,
+    "memory": 512.0
+  },
+  {
+    "instance_type": "r6a.24xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 96.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "r6a.2xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 8.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "r6a.32xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 128.0,
+    "memory": 1024.0
+  },
+  {
+    "instance_type": "r6a.48xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 192.0,
+    "memory": 1536.0
+  },
+  {
+    "instance_type": "r6a.4xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 16.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "r6a.8xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 32.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "r6a.large",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 2.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "r6a.metal",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 192.0,
+    "memory": 1536.0
+  },
+  {
+    "instance_type": "r6a.xlarge",
+    "physical_processor": "AMD EPYC 7R13 Processor",
+    "vcpu": 4.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "r6g.12xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 48.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "r6g.16xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 64.0,
+    "memory": 512.0
+  },
+  {
+    "instance_type": "r6g.2xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 8.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "r6g.4xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 16.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "r6g.8xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 32.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "r6g.large",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 2.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "r6g.medium",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 1.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "r6g.metal",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 64.0,
+    "memory": 512.0
+  },
+  {
+    "instance_type": "r6g.xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 4.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "r6gd.12xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 48.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "r6gd.16xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 64.0,
+    "memory": 512.0
+  },
+  {
+    "instance_type": "r6gd.2xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 8.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "r6gd.4xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 16.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "r6gd.8xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 32.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "r6gd.large",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 2.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "r6gd.medium",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 1.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "r6gd.metal",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 64.0,
+    "memory": 512.0
+  },
+  {
+    "instance_type": "r6gd.xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 4.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "r6i.12xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 48.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "r6i.16xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 64.0,
+    "memory": 512.0
+  },
+  {
+    "instance_type": "r6i.24xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 96.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "r6i.2xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 8.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "r6i.32xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 128.0,
+    "memory": 1024.0
+  },
+  {
+    "instance_type": "r6i.4xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 16.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "r6i.8xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 32.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "r6i.large",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 2.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "r6i.metal",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 128.0,
+    "memory": 1024.0
+  },
+  {
+    "instance_type": "r6i.xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 4.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "r6id.12xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 48.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "r6id.16xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 64.0,
+    "memory": 512.0
+  },
+  {
+    "instance_type": "r6id.24xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 96.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "r6id.2xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 8.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "r6id.32xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 128.0,
+    "memory": 1024.0
+  },
+  {
+    "instance_type": "r6id.4xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 16.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "r6id.8xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 32.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "r6id.large",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 2.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "r6id.metal",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 128.0,
+    "memory": 1024.0
+  },
+  {
+    "instance_type": "r6id.xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 4.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "r6idn.12xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 48.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "r6idn.16xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 64.0,
+    "memory": 512.0
+  },
+  {
+    "instance_type": "r6idn.24xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 96.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "r6idn.2xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 8.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "r6idn.32xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 128.0,
+    "memory": 1024.0
+  },
+  {
+    "instance_type": "r6idn.4xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 16.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "r6idn.8xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 32.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "r6idn.large",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 2.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "r6idn.metal",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 128.0,
+    "memory": 1024.0
+  },
+  {
+    "instance_type": "r6idn.xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 4.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "r6in.12xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 48.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "r6in.16xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 64.0,
+    "memory": 512.0
+  },
+  {
+    "instance_type": "r6in.24xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 96.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "r6in.2xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 8.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "r6in.32xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 128.0,
+    "memory": 1024.0
+  },
+  {
+    "instance_type": "r6in.4xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 16.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "r6in.8xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 32.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "r6in.large",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 2.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "r6in.metal",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 128.0,
+    "memory": 1024.0
+  },
+  {
+    "instance_type": "r6in.xlarge",
+    "physical_processor": "Intel Xeon 8375C (Ice Lake)",
+    "vcpu": 4.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "r7a.12xlarge",
+    "physical_processor": "AMD EPYC 9R14 Processor",
+    "vcpu": 48.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "r7a.16xlarge",
+    "physical_processor": "AMD EPYC 9R14 Processor",
+    "vcpu": 64.0,
+    "memory": 512.0
+  },
+  {
+    "instance_type": "r7a.24xlarge",
+    "physical_processor": "AMD EPYC 9R14 Processor",
+    "vcpu": 96.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "r7a.2xlarge",
+    "physical_processor": "AMD EPYC 9R14 Processor",
+    "vcpu": 8.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "r7a.32xlarge",
+    "physical_processor": "AMD EPYC 9R14 Processor",
+    "vcpu": 128.0,
+    "memory": 1024.0
+  },
+  {
+    "instance_type": "r7a.48xlarge",
+    "physical_processor": "AMD EPYC 9R14 Processor",
+    "vcpu": 192.0,
+    "memory": 1536.0
+  },
+  {
+    "instance_type": "r7a.4xlarge",
+    "physical_processor": "AMD EPYC 9R14 Processor",
+    "vcpu": 16.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "r7a.8xlarge",
+    "physical_processor": "AMD EPYC 9R14 Processor",
+    "vcpu": 32.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "r7a.large",
+    "physical_processor": "AMD EPYC 9R14 Processor",
+    "vcpu": 2.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "r7a.medium",
+    "physical_processor": "AMD EPYC 9R14 Processor",
+    "vcpu": 1.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "r7a.metal-48xl",
+    "physical_processor": "AMD EPYC 9R14 Processor",
+    "vcpu": 192.0,
+    "memory": 1536.0
+  },
+  {
+    "instance_type": "r7a.xlarge",
+    "physical_processor": "AMD EPYC 9R14 Processor",
+    "vcpu": 4.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "r7g.12xlarge",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 48.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "r7g.16xlarge",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 64.0,
+    "memory": 512.0
+  },
+  {
+    "instance_type": "r7g.2xlarge",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 8.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "r7g.4xlarge",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 16.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "r7g.8xlarge",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 32.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "r7g.large",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 2.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "r7g.medium",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 1.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "r7g.metal",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 64.0,
+    "memory": 512.0
+  },
+  {
+    "instance_type": "r7g.xlarge",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 4.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "r7gd.12xlarge",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 48.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "r7gd.16xlarge",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 64.0,
+    "memory": 512.0
+  },
+  {
+    "instance_type": "r7gd.2xlarge",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 8.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "r7gd.4xlarge",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 16.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "r7gd.8xlarge",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 32.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "r7gd.large",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 2.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "r7gd.medium",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 1.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "r7gd.metal",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 64.0,
+    "memory": 512.0
+  },
+  {
+    "instance_type": "r7gd.xlarge",
+    "physical_processor": "AWS Graviton3 Processor",
+    "vcpu": 4.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "r7i.12xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 48.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "r7i.16xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 64.0,
+    "memory": 512.0
+  },
+  {
+    "instance_type": "r7i.24xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 96.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "r7i.2xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 8.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "r7i.48xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 192.0,
+    "memory": 1536.0
+  },
+  {
+    "instance_type": "r7i.4xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 16.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "r7i.8xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 32.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "r7i.large",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 2.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "r7i.metal-24xl",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 96.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "r7i.metal-48xl",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 192.0,
+    "memory": 1536.0
+  },
+  {
+    "instance_type": "r7i.xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 4.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "r7iz.12xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 48.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "r7iz.16xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 64.0,
+    "memory": 512.0
+  },
+  {
+    "instance_type": "r7iz.2xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 8.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "r7iz.32xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 128.0,
+    "memory": 1024.0
+  },
+  {
+    "instance_type": "r7iz.4xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 16.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "r7iz.8xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 32.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "r7iz.large",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 2.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "r7iz.metal-16xl",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 64.0,
+    "memory": 512.0
+  },
+  {
+    "instance_type": "r7iz.metal-32xl",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 128.0,
+    "memory": 1024.0
+  },
+  {
+    "instance_type": "r7iz.xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 4.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "r8g.12xlarge",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 48.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "r8g.16xlarge",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 64.0,
+    "memory": 512.0
+  },
+  {
+    "instance_type": "r8g.24xlarge",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 96.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "r8g.2xlarge",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 8.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "r8g.48xlarge",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 192.0,
+    "memory": 1536.0
+  },
+  {
+    "instance_type": "r8g.4xlarge",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 16.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "r8g.8xlarge",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 32.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "r8g.large",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 2.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "r8g.medium",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 1.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "r8g.metal-24xl",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 96.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "r8g.metal-48xl",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 192.0,
+    "memory": 1536.0
+  },
+  {
+    "instance_type": "r8g.xlarge",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 4.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "t1.micro",
+    "physical_processor": "Variable",
+    "vcpu": 1.0,
+    "memory": 0.613
+  },
+  {
+    "instance_type": "t2.2xlarge",
+    "physical_processor": "Intel Xeon Family",
+    "vcpu": 8.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "t2.large",
+    "physical_processor": "Intel Xeon Family",
+    "vcpu": 2.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "t2.medium",
+    "physical_processor": "Intel Xeon Family",
+    "vcpu": 2.0,
+    "memory": 4.0
+  },
+  {
+    "instance_type": "t2.micro",
+    "physical_processor": "Intel Xeon Family",
+    "vcpu": 1.0,
+    "memory": 1.0
+  },
+  {
+    "instance_type": "t2.nano",
+    "physical_processor": "Intel Xeon Family",
+    "vcpu": 1.0,
+    "memory": 0.5
+  },
+  {
+    "instance_type": "t2.small",
+    "physical_processor": "Intel Xeon Family",
+    "vcpu": 1.0,
+    "memory": 2.0
+  },
+  {
+    "instance_type": "t2.xlarge",
+    "physical_processor": "Intel Xeon Family",
+    "vcpu": 4.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "t3.2xlarge",
+    "physical_processor": "Intel Skylake E5 2686 v5",
+    "vcpu": 8.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "t3.large",
+    "physical_processor": "Intel Skylake E5 2686 v5",
+    "vcpu": 2.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "t3.medium",
+    "physical_processor": "Intel Skylake E5 2686 v5",
+    "vcpu": 2.0,
+    "memory": 4.0
+  },
+  {
+    "instance_type": "t3.micro",
+    "physical_processor": "Intel Skylake E5 2686 v5",
+    "vcpu": 2.0,
+    "memory": 1.0
+  },
+  {
+    "instance_type": "t3.nano",
+    "physical_processor": "Intel Skylake E5 2686 v5",
+    "vcpu": 2.0,
+    "memory": 0.5
+  },
+  {
+    "instance_type": "t3.small",
+    "physical_processor": "Intel Skylake E5 2686 v5",
+    "vcpu": 2.0,
+    "memory": 2.0
+  },
+  {
+    "instance_type": "t3.xlarge",
+    "physical_processor": "Intel Skylake E5 2686 v5",
+    "vcpu": 4.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "t3a.2xlarge",
+    "physical_processor": "AMD EPYC 7571",
+    "vcpu": 8.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "t3a.large",
+    "physical_processor": "AMD EPYC 7571",
+    "vcpu": 2.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "t3a.medium",
+    "physical_processor": "AMD EPYC 7571",
+    "vcpu": 2.0,
+    "memory": 4.0
+  },
+  {
+    "instance_type": "t3a.micro",
+    "physical_processor": "AMD EPYC 7571",
+    "vcpu": 2.0,
+    "memory": 1.0
+  },
+  {
+    "instance_type": "t3a.nano",
+    "physical_processor": "AMD EPYC 7571",
+    "vcpu": 2.0,
+    "memory": 0.5
+  },
+  {
+    "instance_type": "t3a.small",
+    "physical_processor": "AMD EPYC 7571",
+    "vcpu": 2.0,
+    "memory": 2.0
+  },
+  {
+    "instance_type": "t3a.xlarge",
+    "physical_processor": "AMD EPYC 7571",
+    "vcpu": 4.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "t4g.2xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 8.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "t4g.large",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 2.0,
+    "memory": 8.0
+  },
+  {
+    "instance_type": "t4g.medium",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 2.0,
+    "memory": 4.0
+  },
+  {
+    "instance_type": "t4g.micro",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 2.0,
+    "memory": 1.0
+  },
+  {
+    "instance_type": "t4g.nano",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 2.0,
+    "memory": 0.5
+  },
+  {
+    "instance_type": "t4g.small",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 2.0,
+    "memory": 2.0
+  },
+  {
+    "instance_type": "t4g.xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 4.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "trn1.2xlarge",
+    "physical_processor": "Intel Xeon Scalable (Icelake)",
+    "vcpu": 8.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "trn1.32xlarge",
+    "physical_processor": "Intel Xeon Scalable (Icelake)",
+    "vcpu": 128.0,
+    "memory": 512.0
+  },
+  {
+    "instance_type": "trn1n.32xlarge",
+    "physical_processor": "Intel Xeon Scalable (Icelake)",
+    "vcpu": 128.0,
+    "memory": 512.0
+  },
+  {
+    "instance_type": "trn2.48xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 192.0,
+    "memory": 2048.0
+  },
+  {
+    "instance_type": "u-12tb1.112xlarge",
+    "physical_processor": "Intel Xeon Scalable (Skylake)",
+    "vcpu": 448.0,
+    "memory": 12288.0
+  },
+  {
+    "instance_type": "u-12tb1.metal",
+    "physical_processor": "Intel Xeon Scalable (Skylake)",
+    "vcpu": 448.0,
+    "memory": 12288.0
+  },
+  {
+    "instance_type": "u-18tb1.112xlarge",
+    "physical_processor": "Intel Xeon Platinum 8280L (Cascade Lake)",
+    "vcpu": 448.0,
+    "memory": 18432.0
+  },
+  {
+    "instance_type": "u-18tb1.metal",
+    "physical_processor": "Intel Xeon Platinum 8280L (Cascade Lake)",
+    "vcpu": 448.0,
+    "memory": 18432.0
+  },
+  {
+    "instance_type": "u-24tb1.112xlarge",
+    "physical_processor": "Intel Xeon Platinum 8280L (Cascade Lake)",
+    "vcpu": 448.0,
+    "memory": 24576.0
+  },
+  {
+    "instance_type": "u-24tb1.metal",
+    "physical_processor": "Intel Xeon Platinum 8280L (Cascade Lake)",
+    "vcpu": 448.0,
+    "memory": 24576.0
+  },
+  {
+    "instance_type": "u-3tb1.56xlarge",
+    "physical_processor": "Intel Xeon Scalable (Skylake)",
+    "vcpu": 224.0,
+    "memory": 3072.0
+  },
+  {
+    "instance_type": "u-6tb1.112xlarge",
+    "physical_processor": "Intel Xeon Scalable (Skylake)",
+    "vcpu": 448.0,
+    "memory": 6144.0
+  },
+  {
+    "instance_type": "u-6tb1.56xlarge",
+    "physical_processor": "Intel Xeon Scalable (Skylake)",
+    "vcpu": 224.0,
+    "memory": 6144.0
+  },
+  {
+    "instance_type": "u-6tb1.metal",
+    "physical_processor": "Intel Xeon Scalable (Skylake)",
+    "vcpu": 448.0,
+    "memory": 6144.0
+  },
+  {
+    "instance_type": "u-9tb1.112xlarge",
+    "physical_processor": "Intel Xeon Scalable (Skylake)",
+    "vcpu": 448.0,
+    "memory": 9216.0
+  },
+  {
+    "instance_type": "u-9tb1.metal",
+    "physical_processor": "Intel Xeon Scalable (Skylake)",
+    "vcpu": 448.0,
+    "memory": 9216.0
+  },
+  {
+    "instance_type": "u7i-12tb.224xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 896.0,
+    "memory": 12288.0
+  },
+  {
+    "instance_type": "u7i-6tb.112xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 448.0,
+    "memory": 6144.0
+  },
+  {
+    "instance_type": "u7i-8tb.112xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 448.0,
+    "memory": 8192.0
+  },
+  {
+    "instance_type": "u7in-16tb.224xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 896.0,
+    "memory": 16384.0
+  },
+  {
+    "instance_type": "u7in-24tb.224xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 896.0,
+    "memory": 24576.0
+  },
+  {
+    "instance_type": "u7in-32tb.224xlarge",
+    "physical_processor": "Intel Xeon Scalable (Sapphire Rapids)",
+    "vcpu": 896.0,
+    "memory": 32768.0
+  },
+  {
+    "instance_type": "vt1.24xlarge",
+    "physical_processor": "Intel Xeon Platinum 8259CL",
+    "vcpu": 96.0,
+    "memory": 192.0
+  },
+  {
+    "instance_type": "vt1.3xlarge",
+    "physical_processor": "Intel Xeon Platinum 8259CL",
+    "vcpu": 12.0,
+    "memory": 24.0
+  },
+  {
+    "instance_type": "vt1.6xlarge",
+    "physical_processor": "Intel Xeon Platinum 8259CL",
+    "vcpu": 24.0,
+    "memory": 48.0
+  },
+  {
+    "instance_type": "x1.16xlarge",
+    "physical_processor": "High Frequency Intel Xeon E7-8880 v3 (Haswell)",
+    "vcpu": 64.0,
+    "memory": 976.0
+  },
+  {
+    "instance_type": "x1.32xlarge",
+    "physical_processor": "High Frequency Intel Xeon E7-8880 v3 (Haswell)",
+    "vcpu": 128.0,
+    "memory": 1952.0
+  },
+  {
+    "instance_type": "x1e.16xlarge",
+    "physical_processor": "High Frequency Intel Xeon E7-8880 v3 (Haswell)",
+    "vcpu": 64.0,
+    "memory": 1952.0
+  },
+  {
+    "instance_type": "x1e.2xlarge",
+    "physical_processor": "High Frequency Intel Xeon E7-8880 v3 (Haswell)",
+    "vcpu": 8.0,
+    "memory": 244.0
+  },
+  {
+    "instance_type": "x1e.32xlarge",
+    "physical_processor": "High Frequency Intel Xeon E7-8880 v3 (Haswell)",
+    "vcpu": 128.0,
+    "memory": 3904.0
+  },
+  {
+    "instance_type": "x1e.4xlarge",
+    "physical_processor": "High Frequency Intel Xeon E7-8880 v3 (Haswell)",
+    "vcpu": 16.0,
+    "memory": 488.0
+  },
+  {
+    "instance_type": "x1e.8xlarge",
+    "physical_processor": "High Frequency Intel Xeon E7-8880 v3 (Haswell)",
+    "vcpu": 32.0,
+    "memory": 976.0
+  },
+  {
+    "instance_type": "x1e.xlarge",
+    "physical_processor": "High Frequency Intel Xeon E7-8880 v3 (Haswell)",
+    "vcpu": 4.0,
+    "memory": 122.0
+  },
+  {
+    "instance_type": "x2gd.12xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 48.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "x2gd.16xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 64.0,
+    "memory": 1024.0
+  },
+  {
+    "instance_type": "x2gd.2xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 8.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "x2gd.4xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 16.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "x2gd.8xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 32.0,
+    "memory": 512.0
+  },
+  {
+    "instance_type": "x2gd.large",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 2.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "x2gd.medium",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 1.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "x2gd.metal",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 64.0,
+    "memory": 1024.0
+  },
+  {
+    "instance_type": "x2gd.xlarge",
+    "physical_processor": "AWS Graviton2 Processor",
+    "vcpu": 4.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "x2idn.16xlarge",
+    "physical_processor": "Intel Xeon Scalable (Icelake)",
+    "vcpu": 64.0,
+    "memory": 1024.0
+  },
+  {
+    "instance_type": "x2idn.24xlarge",
+    "physical_processor": "Intel Xeon Scalable (Icelake)",
+    "vcpu": 96.0,
+    "memory": 1536.0
+  },
+  {
+    "instance_type": "x2idn.32xlarge",
+    "physical_processor": "Intel Xeon Scalable (Icelake)",
+    "vcpu": 128.0,
+    "memory": 2048.0
+  },
+  {
+    "instance_type": "x2idn.metal",
+    "physical_processor": "Intel Xeon Scalable (Icelake)",
+    "vcpu": 128.0,
+    "memory": 2048.0
+  },
+  {
+    "instance_type": "x2iedn.16xlarge",
+    "physical_processor": "Intel Xeon Scalable (Icelake)",
+    "vcpu": 64.0,
+    "memory": 2048.0
+  },
+  {
+    "instance_type": "x2iedn.24xlarge",
+    "physical_processor": "Intel Xeon Scalable (Icelake)",
+    "vcpu": 96.0,
+    "memory": 3072.0
+  },
+  {
+    "instance_type": "x2iedn.2xlarge",
+    "physical_processor": "Intel Xeon Scalable (Icelake)",
+    "vcpu": 8.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "x2iedn.32xlarge",
+    "physical_processor": "Intel Xeon Scalable (Icelake)",
+    "vcpu": 128.0,
+    "memory": 4096.0
+  },
+  {
+    "instance_type": "x2iedn.4xlarge",
+    "physical_processor": "Intel Xeon Scalable (Icelake)",
+    "vcpu": 16.0,
+    "memory": 512.0
+  },
+  {
+    "instance_type": "x2iedn.8xlarge",
+    "physical_processor": "Intel Xeon Scalable (Icelake)",
+    "vcpu": 32.0,
+    "memory": 1024.0
+  },
+  {
+    "instance_type": "x2iedn.metal",
+    "physical_processor": "Intel Xeon Scalable (Icelake)",
+    "vcpu": 128.0,
+    "memory": 4096.0
+  },
+  {
+    "instance_type": "x2iedn.xlarge",
+    "physical_processor": "Intel Xeon Scalable (Icelake)",
+    "vcpu": 4.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "x2iezn.12xlarge",
+    "physical_processor": "Intel Xeon Platinum 8252",
+    "vcpu": 48.0,
+    "memory": 1536.0
+  },
+  {
+    "instance_type": "x2iezn.2xlarge",
+    "physical_processor": "Intel Xeon Platinum 8252",
+    "vcpu": 8.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "x2iezn.4xlarge",
+    "physical_processor": "Intel Xeon Platinum 8252",
+    "vcpu": 16.0,
+    "memory": 512.0
+  },
+  {
+    "instance_type": "x2iezn.6xlarge",
+    "physical_processor": "Intel Xeon Platinum 8252",
+    "vcpu": 24.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "x2iezn.8xlarge",
+    "physical_processor": "Intel Xeon Platinum 8252",
+    "vcpu": 32.0,
+    "memory": 1024.0
+  },
+  {
+    "instance_type": "x2iezn.metal",
+    "physical_processor": "Intel Xeon Platinum 8252",
+    "vcpu": 48.0,
+    "memory": 1536.0
+  },
+  {
+    "instance_type": "x8g.12xlarge",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 48.0,
+    "memory": 768.0
+  },
+  {
+    "instance_type": "x8g.16xlarge",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 64.0,
+    "memory": 1024.0
+  },
+  {
+    "instance_type": "x8g.24xlarge",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 96.0,
+    "memory": 1536.0
+  },
+  {
+    "instance_type": "x8g.2xlarge",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 8.0,
+    "memory": 128.0
+  },
+  {
+    "instance_type": "x8g.48xlarge",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 192.0,
+    "memory": 3072.0
+  },
+  {
+    "instance_type": "x8g.4xlarge",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 16.0,
+    "memory": 256.0
+  },
+  {
+    "instance_type": "x8g.8xlarge",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 32.0,
+    "memory": 512.0
+  },
+  {
+    "instance_type": "x8g.large",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 2.0,
+    "memory": 32.0
+  },
+  {
+    "instance_type": "x8g.medium",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 1.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "x8g.metal-24xl",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 96.0,
+    "memory": 1536.0
+  },
+  {
+    "instance_type": "x8g.metal-48xl",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 192.0,
+    "memory": 3072.0
+  },
+  {
+    "instance_type": "x8g.xlarge",
+    "physical_processor": "AWS Graviton4 Processor",
+    "vcpu": 4.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "z1d.12xlarge",
+    "physical_processor": "Intel Xeon Platinum 8151",
+    "vcpu": 48.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "z1d.2xlarge",
+    "physical_processor": "Intel Xeon Platinum 8151",
+    "vcpu": 8.0,
+    "memory": 64.0
+  },
+  {
+    "instance_type": "z1d.3xlarge",
+    "physical_processor": "Intel Xeon Platinum 8151",
+    "vcpu": 12.0,
+    "memory": 96.0
+  },
+  {
+    "instance_type": "z1d.6xlarge",
+    "physical_processor": "Intel Xeon Platinum 8151",
+    "vcpu": 24.0,
+    "memory": 192.0
+  },
+  {
+    "instance_type": "z1d.large",
+    "physical_processor": "Intel Xeon Platinum 8151",
+    "vcpu": 2.0,
+    "memory": 16.0
+  },
+  {
+    "instance_type": "z1d.metal",
+    "physical_processor": "Intel Xeon Platinum 8151",
+    "vcpu": 48.0,
+    "memory": 384.0
+  },
+  {
+    "instance_type": "z1d.xlarge",
+    "physical_processor": "Intel Xeon Platinum 8151",
+    "vcpu": 4.0,
+    "memory": 32.0
+  }
+]

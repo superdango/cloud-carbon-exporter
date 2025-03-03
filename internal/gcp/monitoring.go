@@ -8,41 +8,18 @@ import (
 	"strconv"
 	"time"
 
-	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
 	"github.com/superdango/cloud-carbon-exporter/internal/must"
 
 	"github.com/mitchellh/mapstructure"
 	"google.golang.org/api/monitoring/v1"
 )
 
-// monitoringService wraps the Google Monitoring API and use the Managed Prometheus API
-type monitoringService struct {
-	*monitoring.Service
-	projectID  string
-	resolution time.Duration
-}
-
-// newMonitoringService returns a new monitoring service
-func newMonitoringService(ctx context.Context, projectID string) (*monitoringService, error) {
-	var err error
-	gcpmonitoring := &monitoringService{
-		projectID:  "projects/" + projectID,
-		resolution: 5 * time.Minute,
-	}
-	gcpmonitoring.Service, err = monitoring.NewService(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to initialize gcp monitoring: %w", err)
-	}
-
-	return gcpmonitoring, nil
-}
-
 // query the monitoring api and returns standardized cloud carbon metric
-func (service *monitoringService) query(ctx context.Context, promql string, resourceName string) ([]cloudcarbonexporter.Metric, error) {
-	body, err := service.Projects.Location.Prometheus.Api.V1.QueryRange(service.projectID, "global", &monitoring.QueryRangeRequest{
-		Start: time.Now().Add(service.resolution * -1).Format(time.RFC3339),
+func (explorer *Explorer) query(ctx context.Context, promql string, resourceName string, resolution time.Duration) (map[string]float64, error) {
+	body, err := explorer.monitoringClient.Projects.Location.Prometheus.Api.V1.QueryRange("projects/"+explorer.projectID, "global", &monitoring.QueryRangeRequest{
+		Start: time.Now().Add(-resolution).Format(time.RFC3339),
 		End:   time.Now().Format(time.RFC3339),
-		Step:  service.resolution.String(),
+		Step:  resolution.String(),
 		Query: promql,
 	}).Context(ctx).Do()
 	if err != nil {
@@ -54,22 +31,15 @@ func (service *monitoringService) query(ctx context.Context, promql string, reso
 		return nil, err
 	}
 
-	slog.Debug("decoded promquery response", "num_results", len(queryResponse.Result))
-
-	metrics := make([]cloudcarbonexporter.Metric, len(queryResponse.Result))
-	for i, result := range queryResponse.Result {
+	metrics := make(map[string]float64, len(queryResponse.Result))
+	for _, result := range queryResponse.Result {
 		resourceName, found := result.Metric[resourceName]
 		if !found {
 			slog.Warn("abandoning metric, cannot extract resource name in labels", "resourceName", resourceName)
 			continue
 		}
 
-		_, value := result.valueAt(result.len() - 1)
-		metrics[i] = cloudcarbonexporter.Metric{
-			Labels:     result.Metric,
-			Value:      value,
-			ResourceID: resourceName,
-		}
+		_, metrics[resourceName] = result.valueAt(result.len() - 1)
 	}
 
 	return metrics, nil
