@@ -14,6 +14,7 @@ require (
 	github.com/lmittmann/tint v1.0.6
 	github.com/mattn/go-isatty v0.0.20
 	github.com/mitchellh/mapstructure v1.5.0
+	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.32
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/sync v0.11.0
 	google.golang.org/api v0.223.0
@@ -64,5 +65,6 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250219182151-9fdb1cabc7b2 // indirect
 	google.golang.org/grpc v1.70.0 // indirect
 	google.golang.org/protobuf v1.36.5 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
