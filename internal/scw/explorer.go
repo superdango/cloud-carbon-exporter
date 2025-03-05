@@ -75,7 +75,7 @@ func (e *Explorer) Close() error { return nil }
 func (e *Explorer) findRegionalInstances(ctx context.Context, region scw.Region, resources chan *cloudcarbonexporter.Resource) error {
 	api := instance.NewAPI(e.client)
 
-	resp, err := api.ListServers(&instance.ListServersRequest{}, scw.WithAllPages(), scw.WithZones(region.GetZones()...))
+	resp, err := api.ListServers(&instance.ListServersRequest{Zone: scw.ZonePlWaw1}, scw.WithContext(ctx), scw.WithAllPages(), scw.WithZones(region.GetZones()...))
 	if err != nil {
 		return fmt.Errorf("failed to list %s region servers: %w", region, err)
 	}
@@ -87,8 +87,10 @@ func (e *Explorer) findRegionalInstances(ctx context.Context, region scw.Region,
 			ID:            server.ID,
 			Region:        region.String(),
 			Labels: map[string]string{
-				"project": server.Project,
-				"tags":    strings.Join(server.Tags, ","),
+				"name":          server.Name,
+				"project":       server.Project,
+				"instance_type": server.CommercialType,
+				"tags":          strings.Join(server.Tags, ","),
 			},
 			Source: cloudcarbonexporter.AnyMap{
 				"server": server,

@@ -33,13 +33,13 @@ func main() {
 	}
 
 	mu := new(sync.Mutex)
-	typeIntensity := make(map[string][]float64)
+	typeIntensity := make(map[string][]Precision2Float64)
 	errg, errgctx := errgroup.WithContext(ctx)
 	for _, t := range types {
 		t := t
-		loads := make([]float64, 100)
+		loads := make([]Precision2Float64, 100)
 		errg.Go(func() error {
-			for i := 0; i < 100; i++ {
+			for i := range 100 {
 				impact, err := api.InstanceImpact(errgctx, *cloudProvider, t, i)
 				if err != nil {
 					return err
@@ -55,6 +55,15 @@ func main() {
 
 	if err := errg.Wait(); err != nil {
 		panic(err)
+	}
+
+	if *cloudProvider == "scaleway" {
+		startdustIntensity := make([]Precision2Float64, len(typeIntensity["dev1-s"]))
+		copy(startdustIntensity, typeIntensity["dev1-s"])
+		for i := range len(startdustIntensity) {
+			startdustIntensity[i] = startdustIntensity[i] / 2
+		}
+		typeIntensity["stardust1-s"] = startdustIntensity
 	}
 
 	f, err := os.Create(*cloudProvider + ".json")
@@ -92,6 +101,13 @@ func (api *DataviztaAPI) ListCloudInstanceTypes(ctx context.Context, provider st
 	return instanceTypes, nil
 }
 
+type Precision2Float64 float64
+
+func (pf Precision2Float64) MarshalJSON() ([]byte, error) {
+	s := fmt.Sprintf("%.2f", pf)
+	return []byte(s), nil
+}
+
 type InstanceImpactResult struct {
 	Impacts struct {
 		PE struct {
@@ -104,7 +120,7 @@ type InstanceImpactResult struct {
 	} `json:"impacts"`
 	Verbose struct {
 		AVGPower struct {
-			Value float64 `json:"value"`
+			Value Precision2Float64 `json:"value"`
 		} `json:"avg_power"`
 	} `json:"verbose"`
 }
