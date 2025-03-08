@@ -34,7 +34,7 @@ $ docker pull ghcr.io/superdango/cloud-carbon-exporter:latest
 
 ## Configuration
 
-The Cloud Carbon Exporter can work on Google Cloud Platform and Amazon Web Service (more to come)
+The Cloud Carbon Exporter can work on Google Cloud Platform, Amazon Web Service and Scaleway (more to come)
 
 ### Google Cloud Platform
 
@@ -52,7 +52,7 @@ $ docker run -p 2922 ghcr.io/superdango/cloud-carbon-exporter:latest \
 
 ### Amazon Web Services
 
-Configure the exported via:
+Configure the exporter via:
 
 - Environment Variables (AWS_SECRET_ACCESS_KEY, AWS_ACCESS_KEY_ID, AWS_SESSION_TOKEN)
 - Shared Configuration
@@ -63,6 +63,17 @@ $ docker run -p 2922 ghcr.io/superdango/cloud-carbon-exporter:latest \
         -cloud.provider=aws
 ```
 
+### Scaleway
+
+Configure the exporter via:
+
+- Environment Variables (SCW_ACCESS_KEY, SCW_SECRET_KEY)
+
+```
+$ docker run -p 2922 ghcr.io/superdango/cloud-carbon-exporter:latest \
+        -cloud.provider=scw
+```
+
 ### Deployment
 
 Cloud Carbon Exporter can easily run on serverless platform like GCP Cloud Run or AWS Lambda.
@@ -71,18 +82,30 @@ Cloud Carbon Exporter can easily run on serverless platform like GCP Cloud Run o
 
 ```
 Usage of ./cloud-carbon-exporter:
+  -cloud.aws.billingrolearn string
+        aws role arn to assume for billing apis
+  -cloud.aws.defaultregion string
+        aws default region (default "us-east-1")
+  -cloud.aws.rolearn string
+        aws role arn to assume
+  -cloud.gcp.projectid string
+        gcp project to explore resources from
   -cloud.provider string
-        cloud provider type (gcp, aws)
-  -demo.enabled
-        return fictive demo data
-  -gcp.projectid string
-        gcp project to export data from
+        cloud provider type (gcp, aws, scw)
+  -demo.enabled string
+        return fictive demo data (default "false")
   -listen string
         addr to listen to (default "0.0.0.0:2922")
   -log.format string
         log format (text, json) (default "text")
   -log.level string
         log severity (debug, info, warn, error) (default "info")
+
+Environment Variables:
+  SCW_ACCESS_KEY
+        scaleway access key
+  SCW_SECRET_KEY
+        scaleway secret key
 ```
 
 ## Development

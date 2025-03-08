@@ -7,12 +7,7 @@ import (
 	"github.com/superdango/cloud-carbon-exporter/model/carbon"
 )
 
-type CloudCarbonFootprintModel struct {
-	carbonIntensity cloudcarbonexporter.CarbonIntensityMap
-	calculations    map[string]func(r *cloudcarbonexporter.Resource) []cloudcarbonexporter.Metric
-}
-
-func NewAWSModel() *CloudCarbonFootprintModel {
+func NewAWSModel() *model.Model {
 	carbonIntensity := carbon.NewAWSCloudCarbonFootprintIntensityMap()
 
 	// data extracted from https://github.com/cloud-carbon-footprint/cloud-carbon-footprint/blob/378d283c9d59fa478e97919705ed321edc9fe28a/packages/aws/src/domain/AwsFootprintEstimationConstants.ts
@@ -117,9 +112,10 @@ func NewAWSModel() *CloudCarbonFootprintModel {
 
 	pue := primitives["PUE_AVG"][0]
 
-	return &CloudCarbonFootprintModel{
-		carbonIntensity: carbonIntensity,
-		calculations: map[string]func(r *cloudcarbonexporter.Resource) []cloudcarbonexporter.Metric{
+	return &model.Model{
+		Provider:        "aws",
+		CarbonIntensity: carbonIntensity,
+		Calculations: map[string]func(r *cloudcarbonexporter.Resource) []cloudcarbonexporter.Metric{
 			"ec2/instance": func(r *cloudcarbonexporter.Resource) []cloudcarbonexporter.Metric {
 				cpuWatts := r.Source.Float64("ec2_instance_core_count") * processorPrimitives.Linear(
 					r.Source.String("ec2_instance_physical_processor"),
@@ -133,29 +129,11 @@ func NewAWSModel() *CloudCarbonFootprintModel {
 	}
 }
 
-func LinearcCPUWatts(primitives []float64, cpuPercent float64) float64 {
+func LinearCPUWatts(primitives []float64, cpuPercent float64) float64 {
 	must.Assert(len(primitives) == 2, "cpu primitives must be an array of two float64 [min, max]")
 
 	minWatt := primitives[0]
 	maxWatt := primitives[1]
 
 	return minWatt + ((maxWatt - minWatt) * cpuPercent / 100)
-}
-
-func (aws *CloudCarbonFootprintModel) Supports(r *cloudcarbonexporter.Resource) bool {
-	if r.CloudProvider != "aws" {
-		return false
-	}
-
-	_, found := aws.calculations[r.Kind]
-
-	return found
-}
-
-func (aws *CloudCarbonFootprintModel) ComputeMetrics(resource *cloudcarbonexporter.Resource) []cloudcarbonexporter.Metric {
-	if !aws.Supports(resource) {
-		return nil
-	}
-
-	return aws.calculations[resource.Kind](resource)
 }

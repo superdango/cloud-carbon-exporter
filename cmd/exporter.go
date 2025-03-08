@@ -3,16 +3,20 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
 	"strings"
 
+	_scw "github.com/scaleway/scaleway-sdk-go/scw"
 	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
 
 	"github.com/superdango/cloud-carbon-exporter/internal/aws"
 	"github.com/superdango/cloud-carbon-exporter/internal/demo"
 	"github.com/superdango/cloud-carbon-exporter/internal/gcp"
+	"github.com/superdango/cloud-carbon-exporter/internal/scw"
+	"github.com/superdango/cloud-carbon-exporter/model/boavizta"
 	"github.com/superdango/cloud-carbon-exporter/model/cloudcarbonfootprint"
 	modeldemo "github.com/superdango/cloud-carbon-exporter/model/demo"
 
@@ -24,6 +28,18 @@ import (
 func main() {
 	ctx := context.Background()
 
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
+
+		flag.PrintDefaults()
+
+		fmt.Fprint(os.Stderr, "\nEnvironment Variables:\n")
+		fmt.Fprint(os.Stderr, "  SCW_ACCESS_KEY\n")
+		fmt.Fprint(os.Stderr, "        scaleway access key\n")
+		fmt.Fprint(os.Stderr, "  SCW_SECRET_KEY\n")
+		fmt.Fprint(os.Stderr, "        scaleway secret key\n")
+	}
+
 	flagCloudProvider := ""
 	flagCloudGCPProjectID := ""
 	flagCloudAWSRoleArn := ""
@@ -34,7 +50,7 @@ func main() {
 	flagLogLevel := ""
 	flagLogFormat := ""
 
-	flag.StringVar(&flagCloudProvider, "cloud.provider", "", "cloud provider type (gcp, aws)")
+	flag.StringVar(&flagCloudProvider, "cloud.provider", "", "cloud provider type (gcp, aws, scw)")
 	flag.StringVar(&flagCloudGCPProjectID, "cloud.gcp.projectid", "", "gcp project to explore resources from")
 	flag.StringVar(&flagCloudAWSRoleArn, "cloud.aws.rolearn", "", "aws role arn to assume")
 	flag.StringVar(&flagCloudAWSBillingRoleArn, "cloud.aws.billingrolearn", "", "aws role arn to assume for billing apis")
@@ -112,7 +128,7 @@ func setupCollectorOptions(ctx context.Context, params map[string]string) []clou
 					flag.PrintDefaults()
 					os.Exit(1)
 				}
-				model := cloudcarbonfootprint.NewGoogleCloudPlatform()
+				model := cloudcarbonfootprint.NewGoogleCloudPlatformModel()
 				gcpExplorer, err := gcp.NewExplorer(ctx,
 					gcp.WithProjectID(params["cloud.gcp.projectid"]),
 				)
@@ -146,7 +162,25 @@ func setupCollectorOptions(ctx context.Context, params map[string]string) []clou
 
 				c.SetOpt(cloudcarbonexporter.WithModels(model))
 				c.SetOpt(cloudcarbonexporter.WithExplorer(explorer))
+			case "scw":
+				accessKey := os.Getenv("SCW_ACCESS_KEY")
+				secretKey := os.Getenv("SCW_SECRET_KEY")
 
+				client, err := _scw.NewClient(_scw.WithAuth(accessKey, secretKey))
+				if err != nil {
+					slog.Error("failed to load scaleway client", "err", err)
+					os.Exit(1)
+				}
+
+				model := boavizta.NewScalewayModel()
+				explorer, err := scw.NewExplorer(scw.WithClient(client))
+				if err != nil {
+					slog.Error("failed to create scaleway explorer", "err", err)
+					os.Exit(1)
+				}
+
+				c.SetOpt(cloudcarbonexporter.WithModels(model))
+				c.SetOpt(cloudcarbonexporter.WithExplorer(explorer))
 			case "":
 				slog.Error("cloud provider is not set")
 				flag.PrintDefaults()

@@ -2,15 +2,11 @@ package cloudcarbonfootprint
 
 import (
 	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
+	"github.com/superdango/cloud-carbon-exporter/model"
 	"github.com/superdango/cloud-carbon-exporter/model/carbon"
 )
 
-type GoogleCloudPlatformModel struct {
-	carbonIntensity cloudcarbonexporter.CarbonIntensityMap
-	calculations    map[string]func(r *cloudcarbonexporter.Resource) []cloudcarbonexporter.Metric
-}
-
-func NewGoogleCloudPlatform() *GoogleCloudPlatformModel {
+func NewGoogleCloudPlatformModel() *model.Model {
 	carbonIntensity := carbon.NewGCPCarbonIntensityMap()
 
 	generateResourceMetrics := func(resource *cloudcarbonexporter.Resource, watts float64) []cloudcarbonexporter.Metric {
@@ -29,36 +25,12 @@ func NewGoogleCloudPlatform() *GoogleCloudPlatformModel {
 		return []cloudcarbonexporter.Metric{wattsMetric, emissions}
 	}
 
-	return &GoogleCloudPlatformModel{
-		carbonIntensity: carbonIntensity,
-		calculations: map[string]func(r *cloudcarbonexporter.Resource) []cloudcarbonexporter.Metric{
+	return &model.Model{
+		CarbonIntensity: carbonIntensity,
+		Calculations: map[string]func(r *cloudcarbonexporter.Resource) []cloudcarbonexporter.Metric{
 			"compute.googleapis.com/Instance": func(r *cloudcarbonexporter.Resource) []cloudcarbonexporter.Metric {
 				return generateResourceMetrics(r, 10.0)
 			},
 		},
 	}
-}
-
-func (gcp *GoogleCloudPlatformModel) Supports(r *cloudcarbonexporter.Resource) bool {
-	if r.CloudProvider != "gcp" {
-		return false
-	}
-
-	_, found := gcp.calculations[r.Kind]
-
-	return found
-}
-
-func (gcp *GoogleCloudPlatformModel) ComputeMetrics(r *cloudcarbonexporter.Resource) []cloudcarbonexporter.Metric {
-	if !gcp.Supports(r) {
-		return nil
-	}
-
-	for kind, calculation := range gcp.calculations {
-		if kind == r.Kind {
-			return calculation(r)
-		}
-	}
-
-	return nil
 }
