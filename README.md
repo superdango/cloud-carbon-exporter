@@ -119,6 +119,15 @@ Environment Variables:
 
 This software is provided as is, without waranty under [AGPL 3.0 licence](https://www.gnu.org/licenses/agpl-3.0.en.html)
 
+## Acknowledgements
+
+Many of the most valuable contributions are in the forms of testing, feedback, and documentation. These help harden software and streamline usage for other users.
+
+We want to give special thanks to individuals who invest much of their time and energy into the project to help make it better:
+
+* Thanks to [Hakim Rouatbi](https://github.com/hakro), [Raphaël Cosperec](https://github.com/rcosperec) for giving early AWS expertise feedback.
+
+
 ## ⭐ Sponsor
 
 [dangofish.com](dangofish.com) - Tools and Services for Cloud Carbon Developers.
