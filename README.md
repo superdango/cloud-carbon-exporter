@@ -82,8 +82,6 @@ Cloud Carbon Exporter can easily run on serverless platform like GCP Cloud Run o
 
 ```
 Usage of ./cloud-carbon-exporter:
-  -cloud.aws.billingrolearn string
-        aws role arn to assume for billing apis
   -cloud.aws.defaultregion string
         aws default region (default "us-east-1")
   -cloud.aws.rolearn string
@@ -105,7 +103,6 @@ Environment Variables:
   SCW_ACCESS_KEY
         scaleway access key
   SCW_SECRET_KEY
-        scaleway secret key
 ```
 
 ## Development
