@@ -43,7 +43,6 @@ func main() {
 	flagCloudProvider := ""
 	flagCloudGCPProjectID := ""
 	flagCloudAWSRoleArn := ""
-	flagCloudAWSBillingRoleArn := ""
 	flagCloudAWSDefaultRegion := ""
 	flagListen := ""
 	flagDemoEnabled := ""
@@ -53,7 +52,6 @@ func main() {
 	flag.StringVar(&flagCloudProvider, "cloud.provider", "", "cloud provider type (gcp, aws, scw)")
 	flag.StringVar(&flagCloudGCPProjectID, "cloud.gcp.projectid", "", "gcp project to explore resources from")
 	flag.StringVar(&flagCloudAWSRoleArn, "cloud.aws.rolearn", "", "aws role arn to assume")
-	flag.StringVar(&flagCloudAWSBillingRoleArn, "cloud.aws.billingrolearn", "", "aws role arn to assume for billing apis")
 	flag.StringVar(&flagCloudAWSDefaultRegion, "cloud.aws.defaultregion", "us-east-1", "aws default region")
 	flag.StringVar(&flagListen, "listen", "0.0.0.0:2922", "addr to listen to")
 	flag.StringVar(&flagDemoEnabled, "demo.enabled", "false", "return fictive demo data")
@@ -66,12 +64,11 @@ func main() {
 
 	collector := cloudcarbonexporter.NewCollector(
 		setupCollectorOptions(ctx, map[string]string{
-			"cloud.provider":           flagCloudProvider,
-			"cloud.gcp.projectid":      flagCloudGCPProjectID,
-			"cloud.aws.rolearn":        flagCloudAWSRoleArn,
-			"cloud.aws.billingrolearn": flagCloudAWSBillingRoleArn,
-			"cloud.aws.defaultregion":  flagCloudAWSDefaultRegion,
-			"demo.enabled":             flagDemoEnabled,
+			"cloud.provider":          flagCloudProvider,
+			"cloud.gcp.projectid":     flagCloudGCPProjectID,
+			"cloud.aws.rolearn":       flagCloudAWSRoleArn,
+			"cloud.aws.defaultregion": flagCloudAWSDefaultRegion,
+			"demo.enabled":            flagDemoEnabled,
 		})...)
 
 	defer collector.Close()
@@ -149,7 +146,6 @@ func setupCollectorOptions(ctx context.Context, params map[string]string) []clou
 				awsopts := []aws.ExplorerOption{
 					aws.WithAWSConfig(config),
 					aws.WithRoleArn(params["cloud.aws.rolearn"]),
-					aws.WithBillingRoleArn(params["cloud.aws.billingrolearn"]),
 					aws.WithDefaultRegion(params["cloud.aws.defaultregion"]),
 				}
 

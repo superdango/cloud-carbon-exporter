@@ -33,7 +33,6 @@ type awsResourceExplorer interface {
 type Explorer struct {
 	mu                *sync.Mutex
 	awscfg            aws.Config
-	awsbillingcfg     aws.Config
 	defaultRegion     string
 	roleArn           string
 	billingRoleArn    string
@@ -47,7 +46,6 @@ type ExplorerOption func(*Explorer)
 func WithAWSConfig(cfg aws.Config) ExplorerOption {
 	return func(e *Explorer) {
 		e.awscfg = cfg
-		e.awsbillingcfg = cfg
 	}
 }
 
@@ -63,12 +61,6 @@ func WithRoleArn(role string) ExplorerOption {
 	}
 }
 
-func WithBillingRoleArn(role string) ExplorerOption {
-	return func(c *Explorer) {
-		c.billingRoleArn = role
-	}
-}
-
 // NewExplorer initialize and returns a new AWS Explorer.
 func NewExplorer(ctx context.Context, opts ...ExplorerOption) (explorer *Explorer, err error) {
 	explorer = &Explorer{
@@ -81,17 +73,6 @@ func NewExplorer(ctx context.Context, opts ...ExplorerOption) (explorer *Explore
 		if opt != nil {
 			opt(explorer)
 		}
-	}
-
-	if explorer.billingRoleArn != "" {
-		explorer.awsbillingcfg.Credentials = aws.NewCredentialsCache(
-			stscreds.NewAssumeRoleProvider(sts.NewFromConfig(
-				explorer.awsbillingcfg,
-				func(o *sts.Options) { o.Region = explorer.defaultRegion },
-			), explorer.billingRoleArn,
-			),
-		)
-		slog.Info("assuming aws role for billing api calls", "role", explorer.billingRoleArn)
 	}
 
 	if explorer.roleArn != "" {
@@ -237,7 +218,7 @@ func (e *Explorer) discoverActiveServicesAndRegions(ctx context.Context) error {
 		return fmt.Errorf("failed to update list of aws availability zones: %w", err)
 	}
 
-	costs := costexplorer.NewFromConfig(e.awsbillingcfg, func(o *costexplorer.Options) {
+	costs := costexplorer.NewFromConfig(e.awscfg, func(o *costexplorer.Options) {
 		o.Region = e.defaultRegion
 	})
 
