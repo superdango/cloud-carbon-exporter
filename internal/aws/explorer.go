@@ -35,7 +35,6 @@ type Explorer struct {
 	awscfg            aws.Config
 	defaultRegion     string
 	roleArn           string
-	billingRoleArn    string
 	accountAZs        []AvailabilityZone
 	services          map[string][]string
 	resourcesCreators map[string][]awsResourceExplorer
