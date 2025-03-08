@@ -274,6 +274,7 @@ func (e *Explorer) discoverActiveServicesAndRegions(ctx context.Context) error {
 		for _, group := range result.Groups {
 			service, az := group.Keys[0], group.Keys[1]
 			services[service] = append(services[service], e.Region(az))
+			slog.Debug("discovered service", "service", service, "region", e.Region(az))
 		}
 	}
 
