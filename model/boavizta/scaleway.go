@@ -16,7 +16,6 @@ import (
 var scalewayPrimitivesFS embed.FS
 
 func NewScalewayModel() *model.Model {
-
 	scwPrimitivesFile, err := scalewayPrimitivesFS.Open("primitives/scaleway.json")
 	must.NoError(err)
 

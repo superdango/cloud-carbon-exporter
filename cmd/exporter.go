@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -26,6 +27,18 @@ import (
 
 func main() {
 	ctx := context.Background()
+
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
+
+		flag.PrintDefaults()
+
+		fmt.Fprint(os.Stderr, "\nEnvironment Variables:\n")
+		fmt.Fprint(os.Stderr, "  SCW_ACCESS_KEY\n")
+		fmt.Fprint(os.Stderr, "        scaleway access key\n")
+		fmt.Fprint(os.Stderr, "  SCW_SECRET_KEY\n")
+		fmt.Fprint(os.Stderr, "        scaleway secret key\n")
+	}
 
 	flagCloudProvider := ""
 	flagCloudGCPProjectID := ""

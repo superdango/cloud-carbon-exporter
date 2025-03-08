@@ -129,7 +129,7 @@ func NewAWSModel() *model.Model {
 	}
 }
 
-func LinearcCPUWatts(primitives []float64, cpuPercent float64) float64 {
+func LinearCPUWatts(primitives []float64, cpuPercent float64) float64 {
 	must.Assert(len(primitives) == 2, "cpu primitives must be an array of two float64 [min, max]")
 
 	minWatt := primitives[0]

@@ -13,7 +13,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-type DataviztaAPI struct {
+type BoaviztaAPI struct {
 	url    string
 	client *http.Client
 }
@@ -21,11 +21,11 @@ type DataviztaAPI struct {
 func main() {
 
 	ctx := context.Background()
-	dataviztaAPI := flag.String("datavizta-url", "http://localhost:5000", "url of the datavizta api")
+	apiBoavizta := flag.String("boavizta-api-url", "http://localhost:5000", "url of the boavizta api")
 	cloudProvider := flag.String("provider", "scaleway", "provider to export data from")
 	flag.Parse()
 
-	api := &DataviztaAPI{url: *dataviztaAPI, client: http.DefaultClient}
+	api := &BoaviztaAPI{url: *apiBoavizta, client: http.DefaultClient}
 
 	types, err := api.ListCloudInstanceTypes(ctx, *cloudProvider)
 	if err != nil {
@@ -33,11 +33,11 @@ func main() {
 	}
 
 	mu := new(sync.Mutex)
-	typeIntensity := make(map[string][]Precision2Float64)
+	typeIntensity := make(map[string][]JSONFloat)
 	errg, errgctx := errgroup.WithContext(ctx)
 	for _, t := range types {
 		t := t
-		loads := make([]Precision2Float64, 100)
+		loads := make([]JSONFloat, 100)
 		errg.Go(func() error {
 			for i := range 100 {
 				impact, err := api.InstanceImpact(errgctx, *cloudProvider, t, i)
@@ -58,7 +58,7 @@ func main() {
 	}
 
 	if *cloudProvider == "scaleway" {
-		startdustIntensity := make([]Precision2Float64, len(typeIntensity["dev1-s"]))
+		startdustIntensity := make([]JSONFloat, len(typeIntensity["dev1-s"]))
 		copy(startdustIntensity, typeIntensity["dev1-s"])
 		for i := range len(startdustIntensity) {
 			startdustIntensity[i] = startdustIntensity[i] / 2
@@ -77,7 +77,7 @@ func main() {
 	}
 }
 
-func (api *DataviztaAPI) ListCloudInstanceTypes(ctx context.Context, provider string) ([]string, error) {
+func (api *BoaviztaAPI) ListCloudInstanceTypes(ctx context.Context, provider string) ([]string, error) {
 	instanceTypes := make([]string, 0)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, api.url+"/v1/cloud/instance/all_instances", nil)
 	if err != nil {
@@ -101,9 +101,9 @@ func (api *DataviztaAPI) ListCloudInstanceTypes(ctx context.Context, provider st
 	return instanceTypes, nil
 }
 
-type Precision2Float64 float64
+type JSONFloat float64
 
-func (pf Precision2Float64) MarshalJSON() ([]byte, error) {
+func (pf JSONFloat) MarshalJSON() ([]byte, error) {
 	s := fmt.Sprintf("%.2f", pf)
 	return []byte(s), nil
 }
@@ -120,12 +120,12 @@ type InstanceImpactResult struct {
 	} `json:"impacts"`
 	Verbose struct {
 		AVGPower struct {
-			Value Precision2Float64 `json:"value"`
+			Value JSONFloat `json:"value"`
 		} `json:"avg_power"`
 	} `json:"verbose"`
 }
 
-func (api *DataviztaAPI) InstanceImpact(ctx context.Context, provider string, instanceType string, percent int) (*InstanceImpactResult, error) {
+func (api *BoaviztaAPI) InstanceImpact(ctx context.Context, provider string, instanceType string, percent int) (*InstanceImpactResult, error) {
 	payload := map[string]any{
 		"instance_type": instanceType,
 		"provider":      provider,
