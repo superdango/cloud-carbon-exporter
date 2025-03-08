@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/scaleway/scaleway-sdk-go/api/instance/v1"
 	"github.com/scaleway/scaleway-sdk-go/scw"
 	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
-	"golang.org/x/sync/errgroup"
 )
 
 type ExplorerOption func(*Explorer)
@@ -52,20 +52,18 @@ func NewExplorer(opts ...ExplorerOption) (*Explorer, error) {
 	return e, nil
 }
 
-func (e *Explorer) Find(ctx context.Context, resources chan *cloudcarbonexporter.Resource) error {
-	errg, errgctx := errgroup.WithContext(ctx)
+func (e *Explorer) Find(ctx context.Context, resources chan *cloudcarbonexporter.Resource, errs chan error) {
+	wg := new(sync.WaitGroup)
 	for _, region := range e.regions {
 		region := region
-		errg.Go(func() error {
-			return e.findRegionalInstances(errgctx, region, resources)
-		})
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			errs <- e.findRegionalInstances(ctx, region, resources)
+		}()
 	}
+	wg.Wait()
 
-	if err := errg.Wait(); err != nil {
-		return fmt.Errorf("failed to find resources: %w", err)
-	}
-
-	return nil
 }
 
 func (e *Explorer) IsReady() bool { return true }
@@ -77,7 +75,7 @@ func (e *Explorer) findRegionalInstances(ctx context.Context, region scw.Region,
 
 	resp, err := api.ListServers(&instance.ListServersRequest{Zone: scw.ZonePlWaw1}, scw.WithContext(ctx), scw.WithAllPages(), scw.WithZones(region.GetZones()...))
 	if err != nil {
-		return fmt.Errorf("failed to list %s region servers: %w", region, err)
+		return &cloudcarbonexporter.ExplorerErr{Err: fmt.Errorf("failed to list %s region servers: %w", region, err), Operation: "instance/v1:ListServers"}
 	}
 
 	for _, server := range resp.Servers {

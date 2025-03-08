@@ -1,9 +1,9 @@
 package carbon
 
-import cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
+import "github.com/superdango/cloud-carbon-exporter/model"
 
-func NewScalewayCloudCarbonFootprintIntensityMap() cloudcarbonexporter.CarbonIntensityMap {
-	scwIntensityMap := cloudcarbonexporter.CarbonIntensityMap{
+func NewScalewayCloudCarbonFootprintIntensityMap() model.CarbonIntensityMap {
+	scwIntensityMap := model.CarbonIntensityMap{
 		"nl-ams": 236.0,
 		"pl-waw": 311.0,
 		"fr-par": 51.1,

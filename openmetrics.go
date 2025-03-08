@@ -43,7 +43,8 @@ func (rh *OpenMetricsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	defer cancel()
 
 	errg.Go(func() error {
-		return rh.collector.Collect(errgctx, metrics)
+		rh.collector.Collect(errgctx, metrics)
+		return nil
 	})
 
 	errg.Go(func() error {

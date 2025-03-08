@@ -131,22 +131,23 @@ func NewExplorer(ctx context.Context, opts ...ExplorerOption) (explorer *Explore
 }
 
 // Find resources on the configured AWS Account and sends them in the resources chan
-func (explorer *Explorer) Find(ctx context.Context, resources chan *cloudcarbonexporter.Resource) error {
-	errg, errgctx := errgroup.WithContext(ctx)
-
+func (explorer *Explorer) Find(ctx context.Context, resources chan *cloudcarbonexporter.Resource, errs chan error) {
+	wg := new(sync.WaitGroup)
 	for service, regions := range explorer.services {
 		for _, region := range regions {
 			for _, resourceCreator := range explorer.resourcesCreators[service] {
 				region := region
 				resourceCreator := resourceCreator
-				errg.Go(func() error {
-					return resourceCreator.awsExploreResources(errgctx, region, resources)
-				})
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					errs <- resourceCreator.awsExploreResources(ctx, region, resources)
+				}()
 			}
 		}
 	}
 
-	return errg.Wait()
+	wg.Wait()
 
 }
 
@@ -233,7 +234,7 @@ func (e *Explorer) discoverActiveServicesAndRegions(ctx context.Context) error {
 
 	err = e.refreshAccountAvailibilityZones(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to update list of aws availability zones")
+		return fmt.Errorf("failed to update list of aws availability zones: %w", err)
 	}
 
 	costs := costexplorer.NewFromConfig(e.awsbillingcfg, func(o *costexplorer.Options) {
@@ -301,7 +302,7 @@ func (e *Explorer) refreshAccountAvailibilityZones(ctx context.Context) error {
 
 	regions, err := ec2api.DescribeRegions(ctx, &ec2.DescribeRegionsInput{})
 	if err != nil {
-		return fmt.Errorf("failed to describe account regions: %w", err)
+		return &cloudcarbonexporter.ExplorerErr{Err: fmt.Errorf("failed to describe account regions: %w", err), Operation: "service/ec2:DescribeRegions"}
 	}
 
 	errg, errgctx := errgroup.WithContext(ctx)

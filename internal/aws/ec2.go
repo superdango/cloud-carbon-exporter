@@ -98,7 +98,7 @@ func (ec2explorer *EC2InstanceExplorer) awsExploreResources(ctx context.Context,
 	for paginator.HasMorePages() {
 		output, err := paginator.NextPage(ctx)
 		if err != nil {
-			return fmt.Errorf("failed to list region ec2 instances: %w", err)
+			return &cloudcarbonexporter.ExplorerErr{Err: fmt.Errorf("failed to list region ec2 instances: %w", err), Operation: "service/ec2:DescribeInstances"}
 		}
 
 		for _, reservation := range output.Reservations {
@@ -109,8 +109,7 @@ func (ec2explorer *EC2InstanceExplorer) awsExploreResources(ctx context.Context,
 				instanceType := ec2explorer.instanceTypeInfos[string(instance.InstanceType)]
 				intanceAverageCPU, err := ec2explorer.GetInstanceCPUAverage(ctx, region, *instance.InstanceId)
 				if err != nil {
-					slog.Warn("failed to get instance cpu average", "region", region, "instance_id", *instance.InstanceId, "err", err)
-					continue
+					return fmt.Errorf("failed to get instance %s cpu average: %w", *instance.InstanceId, err)
 				}
 				resources <- &cloudcarbonexporter.Resource{
 					CloudProvider: "aws",
@@ -179,7 +178,10 @@ func (ec2explorer *EC2InstanceExplorer) ListInstanceCPUAverage(ctx context.Conte
 	for paginator.HasMorePages() {
 		page, err := paginator.NextPage(ctx)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get instances cloudwatch metric in region %s: %w", region, err)
+			return nil, &cloudcarbonexporter.ExplorerErr{
+				Operation: "cloudwatch:GetMetricData",
+				Err:       fmt.Errorf("failed to get instances cloudwatch metric in region %s: %w", region, err),
+			}
 
 		}
 

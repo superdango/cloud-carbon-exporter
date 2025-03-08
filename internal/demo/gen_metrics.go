@@ -15,13 +15,11 @@ func NewExplorer() *Explorer {
 	return &Explorer{}
 }
 
-func (explorer *Explorer) Find(ctx context.Context, resources chan *cloudcarbonexporter.Resource) error {
+func (explorer *Explorer) Find(ctx context.Context, resources chan *cloudcarbonexporter.Resource, errs chan error) {
 	resources <- &cloudcarbonexporter.Resource{
 		CloudProvider: "demo",
 		Kind:          "demo",
 	}
-
-	return nil
 }
 
 // Close demo collector

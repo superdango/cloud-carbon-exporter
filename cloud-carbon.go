@@ -2,14 +2,16 @@ package cloudcarbonexporter
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
+	"maps"
 	"reflect"
-	"strings"
+	"sync"
+	"sync/atomic"
 
 	"github.com/superdango/cloud-carbon-exporter/internal/must"
-	"golang.org/x/sync/errgroup"
 )
 
 type AnyMap map[string]any
@@ -65,9 +67,7 @@ type Metric struct {
 // Clone return a deep copy of a metric.
 func (m Metric) Clone() Metric {
 	copiedLabel := make(map[string]string, len(m.Labels))
-	for k, v := range m.Labels {
-		copiedLabel[k] = v
-	}
+	maps.Copy(copiedLabel, m.Labels)
 	return Metric{
 		Name:   m.Name,
 		Value:  m.Value,
@@ -80,17 +80,23 @@ type Model interface {
 	Supports(r *Resource) bool
 }
 
-type Explorer interface {
-	Find(ctx context.Context, resources chan *Resource) error
-	IsReady() bool
-	io.Closer
+type ExplorerErr struct {
+	Err       error
+	Operation string
 }
 
-type Refiner interface {
-	Refresh(ctx context.Context) error
-	Refine(resource *Resource)
-	Supports(r *Resource) bool
-	CollectUnexploredResources(resources chan *Resource)
+func (explorerErr *ExplorerErr) Error() string {
+	return fmt.Sprintf("operation failed (op: %s): %s", explorerErr.Operation, explorerErr.Err.Error())
+}
+
+func (explorerErr *ExplorerErr) Unwrap() error {
+	return explorerErr.Err
+}
+
+type Explorer interface {
+	Find(ctx context.Context, resources chan *Resource, errors chan error)
+	IsReady() bool
+	io.Closer
 }
 
 type CollectorOptions func(c *Collector)
@@ -98,12 +104,6 @@ type CollectorOptions func(c *Collector)
 func WithExplorer(explorer Explorer) CollectorOptions {
 	return func(c *Collector) {
 		c.explorers = append(c.explorers, explorer)
-	}
-}
-
-func WithRefiners(refiners ...Refiner) CollectorOptions {
-	return func(c *Collector) {
-		c.refiners = append(c.refiners, refiners...)
 	}
 }
 
@@ -115,14 +115,12 @@ func WithModels(models ...Model) CollectorOptions {
 
 type Collector struct {
 	explorers []Explorer
-	refiners  []Refiner
 	models    []Model
 }
 
 func NewCollector(opts ...CollectorOptions) *Collector {
 	collector := &Collector{
 		explorers: make([]Explorer, 0),
-		refiners:  make([]Refiner, 0),
 		models:    make([]Model, 0),
 	}
 
@@ -137,36 +135,66 @@ func (c *Collector) SetOpt(option CollectorOptions) {
 	option(c)
 }
 
-func (c *Collector) Collect(ctx context.Context, metrics chan Metric) error {
+func (c *Collector) Collect(ctx context.Context, metrics chan Metric) {
 	defer close(metrics)
 
 	resources := make(chan *Resource)
+	errs := make(chan error)
+	errCount := new(atomic.Int32)
+	defer func() {
+		metrics <- Metric{
+			Name: "error_count",
+			Labels: map[string]string{
+				"action": "collect",
+			},
+			Value: float64(errCount.Load()),
+		}
+	}()
 
-	errg, errgctx := errgroup.WithContext(ctx)
-	errg.SetLimit(5)
-	errg.Go(func() error {
-		return c.explore(errgctx, resources)
-	})
+	wg := new(sync.WaitGroup)
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		c.explore(ctx, resources, errs)
+	}()
 
 	for {
 		select {
-		case <-errgctx.Done():
-			return errg.Wait()
 		case r, ok := <-resources:
 			if !ok {
-				return errg.Wait()
+				wg.Wait()
+				return
 			}
-			errg.Go(func() error {
-				c.refine(r)
-
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
 				for _, model := range c.models {
 					for _, metric := range model.ComputeMetrics(r) {
 						metrics <- metric
 					}
 				}
+			}()
 
-				return nil
-			})
+		case err, ok := <-errs:
+			if !ok {
+				wg.Wait()
+				return
+			}
+
+			if err == nil {
+				continue
+			}
+
+			errCount.Add(1)
+
+			experr := new(ExplorerErr)
+			if errors.As(err, &experr) {
+				slog.Warn("resources collection failed", "err", experr, "op", experr.Operation)
+				continue
+			}
+
+			slog.Warn("failed to explore resources", "err", err)
 		}
 	}
 }
@@ -180,28 +208,15 @@ func (c *Collector) Close() error {
 	return nil
 }
 
-func (c *Collector) explore(ctx context.Context, resources chan *Resource) error {
+func (c *Collector) explore(ctx context.Context, resources chan *Resource, errs chan error) {
 	defer close(resources)
+	defer close(errs)
 	for _, explorer := range c.explorers {
 		if !explorer.IsReady() {
 			slog.Warn("explorer is not ready", "explorer", reflect.TypeOf(explorer))
 			continue
 		}
-		err := explorer.Find(ctx, resources)
-		if err != nil {
-			return fmt.Errorf("failed to collect resources: %w", err)
-		}
-	}
-	return nil
-}
-
-func (c *Collector) refine(resource *Resource) {
-	for _, refiner := range c.refiners {
-		if !refiner.Supports(resource) {
-			return
-		}
-
-		refiner.Refine(resource)
+		explorer.Find(ctx, resources, errs)
 	}
 }
 
@@ -216,69 +231,4 @@ func MergeLabels(labels ...map[string]string) map[string]string {
 		}
 	}
 	return result
-}
-
-// CarbonIntensityMap regroups carbon intensity by location
-type CarbonIntensityMap map[string]float64
-
-func (intensity CarbonIntensityMap) Average(location ...string) float64 {
-	avg := 0.0
-	adds := 0.0
-	for loc, co2eqsec := range intensity {
-		if !hasOnePrefix(loc, location...) {
-			continue
-		}
-		avg = avg + co2eqsec
-		adds = adds + 1.0
-	}
-	avg = avg / adds
-	return avg
-}
-
-func hasOnePrefix(s string, prefixes ...string) bool {
-	if len(prefixes) == 0 {
-		return true
-	}
-	for _, p := range prefixes {
-		if strings.HasPrefix(s, p) {
-			return true
-		}
-	}
-
-	return false
-}
-
-func (intensity CarbonIntensityMap) Get(location string) float64 {
-	locationsize := 0
-	locationIntensity, found := intensity["global"]
-	must.Assert(found, "global coefficient not set")
-
-	for l, carbonIntensity := range intensity {
-		if strings.HasPrefix(location, l) {
-			if len(l) > locationsize {
-				locationsize = len(l)
-				locationIntensity = carbonIntensity
-			}
-		}
-	}
-	return locationIntensity
-}
-
-func (intensityMap CarbonIntensityMap) ComputeCO2eq(wattMetric Metric) Metric {
-	emissionMetric := wattMetric.Clone()
-	emissionMetric.Name = "estimated_g_co2eq_second"
-	gramPerKWh := intensityMap.Get(wattMetric.Labels["region"]) / 1000 / 60 / 60
-	emissionMetric.Value = wattMetric.Value * gramPerKWh
-	return emissionMetric
-}
-
-// EnergyModel holds every calculation methods for all supported resources.
-type EnergyModel map[string]func(r *Resource) *Metric
-
-func (m EnergyModel) EstimateWatts(r *Resource) *Metric {
-	if formula, found := m[r.Kind]; found {
-		return formula(r)
-	}
-
-	return nil
 }
