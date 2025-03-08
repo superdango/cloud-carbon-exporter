@@ -33,10 +33,8 @@ type awsResourceExplorer interface {
 type Explorer struct {
 	mu                *sync.Mutex
 	awscfg            aws.Config
-	awsbillingcfg     aws.Config
 	defaultRegion     string
 	roleArn           string
-	billingRoleArn    string
 	accountAZs        []AvailabilityZone
 	services          map[string][]string
 	resourcesCreators map[string][]awsResourceExplorer
@@ -47,7 +45,6 @@ type ExplorerOption func(*Explorer)
 func WithAWSConfig(cfg aws.Config) ExplorerOption {
 	return func(e *Explorer) {
 		e.awscfg = cfg
-		e.awsbillingcfg = cfg
 	}
 }
 
@@ -63,12 +60,6 @@ func WithRoleArn(role string) ExplorerOption {
 	}
 }
 
-func WithBillingRoleArn(role string) ExplorerOption {
-	return func(c *Explorer) {
-		c.billingRoleArn = role
-	}
-}
-
 // NewExplorer initialize and returns a new AWS Explorer.
 func NewExplorer(ctx context.Context, opts ...ExplorerOption) (explorer *Explorer, err error) {
 	explorer = &Explorer{
@@ -81,17 +72,6 @@ func NewExplorer(ctx context.Context, opts ...ExplorerOption) (explorer *Explore
 		if opt != nil {
 			opt(explorer)
 		}
-	}
-
-	if explorer.billingRoleArn != "" {
-		explorer.awsbillingcfg.Credentials = aws.NewCredentialsCache(
-			stscreds.NewAssumeRoleProvider(sts.NewFromConfig(
-				explorer.awsbillingcfg,
-				func(o *sts.Options) { o.Region = explorer.defaultRegion },
-			), explorer.billingRoleArn,
-			),
-		)
-		slog.Info("assuming aws role for billing api calls", "role", explorer.billingRoleArn)
 	}
 
 	if explorer.roleArn != "" {
@@ -131,22 +111,23 @@ func NewExplorer(ctx context.Context, opts ...ExplorerOption) (explorer *Explore
 }
 
 // Find resources on the configured AWS Account and sends them in the resources chan
-func (explorer *Explorer) Find(ctx context.Context, resources chan *cloudcarbonexporter.Resource) error {
-	errg, errgctx := errgroup.WithContext(ctx)
-
+func (explorer *Explorer) Find(ctx context.Context, resources chan *cloudcarbonexporter.Resource, errs chan error) {
+	wg := new(sync.WaitGroup)
 	for service, regions := range explorer.services {
 		for _, region := range regions {
 			for _, resourceCreator := range explorer.resourcesCreators[service] {
 				region := region
 				resourceCreator := resourceCreator
-				errg.Go(func() error {
-					return resourceCreator.awsExploreResources(errgctx, region, resources)
-				})
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					errs <- resourceCreator.awsExploreResources(ctx, region, resources)
+				}()
 			}
 		}
 	}
 
-	return errg.Wait()
+	wg.Wait()
 
 }
 
@@ -233,10 +214,10 @@ func (e *Explorer) discoverActiveServicesAndRegions(ctx context.Context) error {
 
 	err = e.refreshAccountAvailibilityZones(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to update list of aws availability zones")
+		return fmt.Errorf("failed to update list of aws availability zones: %w", err)
 	}
 
-	costs := costexplorer.NewFromConfig(e.awsbillingcfg, func(o *costexplorer.Options) {
+	costs := costexplorer.NewFromConfig(e.awscfg, func(o *costexplorer.Options) {
 		o.Region = e.defaultRegion
 	})
 
@@ -273,6 +254,7 @@ func (e *Explorer) discoverActiveServicesAndRegions(ctx context.Context) error {
 		for _, group := range result.Groups {
 			service, az := group.Keys[0], group.Keys[1]
 			services[service] = append(services[service], e.Region(az))
+			slog.Debug("discovered service", "service", service, "region", e.Region(az))
 		}
 	}
 
@@ -301,7 +283,7 @@ func (e *Explorer) refreshAccountAvailibilityZones(ctx context.Context) error {
 
 	regions, err := ec2api.DescribeRegions(ctx, &ec2.DescribeRegionsInput{})
 	if err != nil {
-		return fmt.Errorf("failed to describe account regions: %w", err)
+		return &cloudcarbonexporter.ExplorerErr{Err: fmt.Errorf("failed to describe account regions: %w", err), Operation: "service/ec2:DescribeRegions"}
 	}
 
 	errg, errgctx := errgroup.WithContext(ctx)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"sync"
 	"time"
 
 	asset "cloud.google.com/go/asset/apiv1"
@@ -11,7 +12,6 @@ import (
 	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
 	"github.com/superdango/cloud-carbon-exporter/internal/cache"
 	"github.com/superdango/cloud-carbon-exporter/internal/must"
-	"golang.org/x/sync/errgroup"
 
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/monitoring/v1"
@@ -73,7 +73,7 @@ func NewExplorer(ctx context.Context, opts ...Option) (*Explorer, error) {
 	return explorer, nil
 }
 
-func (explorer *Explorer) Find(ctx context.Context, resources chan *cloudcarbonexporter.Resource) error {
+func (explorer *Explorer) Find(ctx context.Context, resources chan *cloudcarbonexporter.Resource, errs chan error) {
 	req := &assetpb.ListAssetsRequest{
 		Parent:      fmt.Sprintf("projects/%s", explorer.projectID),
 		ContentType: assetpb.ContentType_RESOURCE,
@@ -86,7 +86,8 @@ func (explorer *Explorer) Find(ctx context.Context, resources chan *cloudcarbone
 			break
 		}
 		if err != nil {
-			return fmt.Errorf("failed to iterate on the next asset: %w", err)
+			errs <- &cloudcarbonexporter.ExplorerErr{Err: fmt.Errorf("failed to list assets inventory resources: %w", err), Operation: "asset/apiv1:ListAssets"}
+			return
 		}
 
 		r := &cloudcarbonexporter.Resource{
@@ -100,21 +101,20 @@ func (explorer *Explorer) Find(ctx context.Context, resources chan *cloudcarbone
 			},
 		}
 
-		errg := new(errgroup.Group)
+		wg := new(sync.WaitGroup)
 		if refiners, found := explorer.refiners[r.Kind]; found {
 			for _, refiner := range refiners {
-				errg.Go(func() error {
+				wg.Add(1)
+				go func() {
 					refiner(ctx, r)
-					return nil
-				})
+				}()
 			}
 		}
-		_ = errg.Wait()
+
+		wg.Wait()
 
 		resources <- r
 	}
-
-	return nil
 }
 
 func (explorer *Explorer) Close() error {
