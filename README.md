@@ -18,7 +18,7 @@ This exporter will discover all resources running in a specified Cloud project o
             cloud-carbon-exporter->>(eu-west-3) S3 API: Describe Buckets
             cloud-carbon-exporter->>(eu-west-3) Cloudwatch API: Get instances statistics
             cloud-carbon-exporter->>(eu-west-3) Cloudwatch API: Get Buckets statistics
-            Prometheus <<- cloud-carbon-exporter: Returns Watts and CO2 metrics
+            Prometheus -) cloud-carbon-exporter: Returns Watts and CO2 metrics
 ```
 
 ### Estimated Watts
