@@ -14,11 +14,9 @@ This exporter will discover all resources running in a specified Cloud project o
       sequenceDiagram
             Prometheus->>cloud-carbon-exporter: scrape metrics
             cloud-carbon-exporter->>AWS Cost Explorer API: query used services and regions
-            cloud-carbon-exporter->>(us-west-1) EC2 Instance API: Describe Instances
-            cloud-carbon-exporter->>(eu-west-3) S3 API: Describe Buckets
-            cloud-carbon-exporter->>(eu-west-3) Cloudwatch API: Get instances statistics
-            cloud-carbon-exporter->>(eu-west-3) Cloudwatch API: Get Buckets statistics
-            cloud-carbon-exporter->>Prometheus: Returns Watts and CO2 metrics
+            cloud-carbon-exporter->>AWS Resources API: Describe Resource
+            cloud-carbon-exporter->>Cloudwatch API: Get Resource statistics
+            cloud-carbon-exporter-->>Prometheus: Returns Watts and CO2 metrics
 ```
 
 ### Estimated Watts
