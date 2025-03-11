@@ -12,9 +12,13 @@ This exporter will discover all resources running in a specified Cloud project o
 
 ```mermaid
       sequenceDiagram
-            Alice->>John: Hello John, how are you?
-            John-->>Alice: Great!
-            Alice-)John: See you later!
+            Prometheus->>cloud-carbon-exporter: scrape metrics
+            cloud-carbon-exporter->>AWS Cost Explorer API: query used services and regions
+            cloud-carbon-exporter->>(us-west-1) EC2 Instance API: Describe Instances
+            cloud-carbon-exporter->>(eu-west-3) S3 API: Describe Buckets
+            cloud-carbon-exporter->>(eu-west-3) Cloudwatch API: Get instances statistics
+            cloud-carbon-exporter->>(eu-west-3) Cloudwatch API: Get Buckets statistics
+            Prometheus <<- cloud-carbon-exporter: Returns Watts and CO2 metrics
 ```
 
 ### Estimated Watts
@@ -129,8 +133,7 @@ Many of the most valuable contributions are in the forms of testing, feedback, a
 
 We want to give special thanks to individuals who invest much of their time and energy into the project to help make it better:
 
-* Thanks to [Hakim Rouatbi](https://github.com/hakro), [Raphaël Cosperec](https://github.com/rcosperec) for giving early AWS expertise feedback.
-
+- Thanks to [Hakim Rouatbi](https://github.com/hakro), [Raphaël Cosperec](https://github.com/rcosperec) for giving early AWS expertise feedback.
 
 ## ⭐ Sponsor
 
