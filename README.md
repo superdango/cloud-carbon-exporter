@@ -11,7 +11,10 @@ The exporter enables your Cloud team to adhere in [Carbon Driven Development](#)
 This exporter will discover all resources running in a specified Cloud project or account and estimate the energy ⚡ (watt) used by them and calculate the associated CO₂eq emissions ☁️ based on their location.
 
 ```mermaid
-    info
+      sequenceDiagram
+            Alice->>John: Hello John, how are you?
+            John-->>Alice: Great!
+            Alice-)John: See you later!
 ```
 
 ### Estimated Watts
