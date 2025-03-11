@@ -10,6 +10,10 @@ The exporter enables your Cloud team to adhere in [Carbon Driven Development](#)
 
 This exporter will discover all resources running in a specified Cloud project or account and estimate the energy ⚡ (watt) used by them and calculate the associated CO₂eq emissions ☁️ based on their location.
 
+```mermaid
+      info
+```
+
 ### Estimated Watts
 
 Each resource discovered by the exporter is embellished with additional data from specific apis or cloud monitoring. Those health signals are used by a calculation model to precisely estimate the current energy usage (CPU load, Storage used, requests/seconds, etc.)
