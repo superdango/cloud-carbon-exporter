@@ -10,6 +10,15 @@ The exporter enables your Cloud team to adhere in [Carbon Driven Development](#)
 
 This exporter will discover all resources running in a specified Cloud project or account and estimate the energy ⚡ (watt) used by them and calculate the associated CO₂eq emissions ☁️ based on their location.
 
+```mermaid
+      sequenceDiagram
+            Prometheus->>cloud-carbon-exporter: scrape metrics
+            cloud-carbon-exporter->>AWS Cost Explorer API: query used services and regions
+            cloud-carbon-exporter->>AWS Resources API: Describe Resource
+            cloud-carbon-exporter->>Cloudwatch API: Get Resource statistics
+            cloud-carbon-exporter-->>Prometheus: Returns Watts and CO2 metrics
+```
+
 ### Estimated Watts
 
 Each resource discovered by the exporter is embellished with additional data from specific apis or cloud monitoring. Those health signals are used by a calculation model to precisely estimate the current energy usage (CPU load, Storage used, requests/seconds, etc.)
@@ -122,8 +131,7 @@ Many of the most valuable contributions are in the forms of testing, feedback, a
 
 We want to give special thanks to individuals who invest much of their time and energy into the project to help make it better:
 
-* Thanks to [Hakim Rouatbi](https://github.com/hakro), [Raphaël Cosperec](https://github.com/rcosperec) for giving early AWS expertise feedback.
-
+- Thanks to [Hakim Rouatbi](https://github.com/hakro), [Raphaël Cosperec](https://github.com/rcosperec) for giving early AWS expertise feedback.
 
 ## ⭐ Sponsor
 
