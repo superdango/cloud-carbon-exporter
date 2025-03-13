@@ -1,37 +1,54 @@
 # Cloud Carbon Exporter
 
-> This work is currently in progress. Do not use before the official release announcement around May 2025. Nothing stable, data is wrong, everything broken, don't contribute yet. Thanks !
+![test-build-push badge](https://github.com/superdango/cloud-carbon-exporter/actions/workflows/test-build-push.yaml/badge.svg)
 
-Your cloud energy draw and carbon emissions in realtime.
+This exporter discovers all the resources of your cloud project and estimates the associated energy and carbon emissions in real time. Installing this service will enable your operational and development teams to follow the [Carbon-Driven Development](https://dangofish.com/carbon-driven-development) principles.
 
-The exporter enables your Cloud team to adhere in [Carbon Driven Development](#) principles.
+## Carbon-Driven Development
 
-## How it works
+The Carbon-Driven Development (CDD) philosophy is based on three main principles:
 
-This exporter will discover all resources running in a specified Cloud project or account and estimate the energy ⚡ (watt) used by them and calculate the associated CO₂eq emissions ☁️ based on their location.
+1. Estimate the **energy** consumed by each resource (servers, load balancers, buckets, etc.).
+2. Aggregate this data in **real time**
+3. In a **production** environment
 
-```mermaid
-      sequenceDiagram
-            Prometheus->>cloud-carbon-exporter: scrape metrics
-            cloud-carbon-exporter->>AWS Cost Explorer API: query used services and regions
-            cloud-carbon-exporter->>AWS Resources API: Describe Resource
-            cloud-carbon-exporter->>Cloudwatch API: Get Resource statistics
-            cloud-carbon-exporter-->>Prometheus: Returns Watts and CO2 metrics
-```
+By applying these few rules, production teams will be able to :
 
-### Estimated Watts
+1. Globally measure a **system's effectiveness** in relation to the business
+2. Engage other team members in production activities and **continuous improvement**
+3. Detect infrastructure anomalies **faster**
+4. Reduce the **carbon footprint** of applications
 
-Each resource discovered by the exporter is embellished with additional data from specific apis or cloud monitoring. Those health signals are used by a calculation model to precisely estimate the current energy usage (CPU load, Storage used, requests/seconds, etc.)
+[Check out the original article](https://dangofish.com/carbon-driven-development) which explains in detail the concepts of CDD.
 
-### Estimated CO₂eq/second
-
-Once the watt estimation is complete, we match the resource's location with a carbon coefficient to calculate the CO₂ equivalent (CO₂eq).
-
-The model is based on various [public data shared by cloud providers.](https://github.com/GoogleCloudPlatform/region-carbon-info).
 
 ### Demo
 
-You can find a demo grafana instance on : [https://demo.carbondriven.dev](https://demo.carbondriven.dev/public-dashboards/04a3c6d5961c4463b91a3333d488e584)
+![grafana demo cdd](./docs/demo-grafana-cdd.png)
+
+On this demo you can visualize and understand the estimated energy consumed by connected user, the current CO2 emissions and the equivalent in turned on lightbulbs.
+
+You can try this demo on the Grafana dashboard :
+<a href="https://demo.carbondriven.dev/public-dashboards/04a3c6d5961c4463b91a3333d488e584" target="_blank">https://demo.carbondriven.dev</a>
+
+## How it works
+
+**Multi Cloud** · We want to support as much cloud platform as possible. From hyperscalers to edge datacenters to regional provider. For now we support: AWS, GCP, Scaleway
+
+**Multi Model** · The exporter is designed to be model agnostic. We plan to support and contribute back to:
+
+- https://www.cloudcarbonfootprint.org/
+- https://boavizta.org/en
+- Other experimentations
+
+This tool will prioritize the number of supported resources over the precision of the exported metrics. Estimating precisely the energy consumption of a resource is a hard task. The complexity and opacity of a Cloud service increase the margin of error but trends should be respected.
+
+Once the resource energy draw is estimated, the exporter evaluates the carbon intensity of the resource at its location based on [publicly available datasets.](https://github.com/GoogleCloudPlatform/region-carbon-info)
+
+**OpenMetrics** · The exporter is compatible [OpenMetrics](https://prometheus.io/docs/specs/om/open_metrics_spec/) format. Therefore, you can ingest metrics into Prometheus, Datadog and every time series database that support this standard.
+
+**Performance** · We're paying close attention to the exporter performance. Most API requests are done concurrently and cached. Most scrapes finish under 1000ms even with thousand monitored resources.
+
 
 ## Install
 
@@ -43,15 +60,23 @@ $ docker pull ghcr.io/superdango/cloud-carbon-exporter:latest
 
 ## Configuration
 
-The Cloud Carbon Exporter can work on Google Cloud Platform, Amazon Web Service and Scaleway (more to come)
+The Cloud Carbon Exporter can work on Google Cloud Platform, Amazon Web Service and Scaleway (more to come).
 
 ### Google Cloud Platform
 
+```mermaid
+      sequenceDiagram
+            Prometheus->>cloud-carbon-exporter: scrape metrics
+            cloud-carbon-exporter->>Asset Inventory: Query all used resources
+            cloud-carbon-exporter->>Monitoring: Get Resource statistics
+            cloud-carbon-exporter-->>Prometheus: Returns Watts and CO2 metrics
+```
+
 The exporter uses GCP Application Default Credentials:
 
-- GOOGLE_APPLICATION_CREDENTIALS environment variable
+- `GOOGLE_APPLICATION_CREDENTIALS` environment variable
 - `gcloud auth application-default` login command
-- The attached service account, returned by the metadata server (inside GCP)
+- The attached service account, returned by the metadata server (inside GCP environment)
 
 ```
 $ docker run -p 2922 ghcr.io/superdango/cloud-carbon-exporter:latest \
@@ -61,9 +86,18 @@ $ docker run -p 2922 ghcr.io/superdango/cloud-carbon-exporter:latest \
 
 ### Amazon Web Services
 
-Configure the exporter via:
+```mermaid
+      sequenceDiagram
+            Prometheus->>cloud-carbon-exporter: scrape metrics
+            cloud-carbon-exporter->>AWS Cost Explorer API: Query used services and regions
+            cloud-carbon-exporter->>AWS Resources API: Describe Resource
+            cloud-carbon-exporter->>Cloudwatch API: Get Resource statistics
+            cloud-carbon-exporter-->>Prometheus: Returns Watts and CO2 metrics
+```
 
-- Environment Variables (AWS_SECRET_ACCESS_KEY, AWS_ACCESS_KEY_ID, AWS_SESSION_TOKEN)
+The exporter is :
+
+- Environment Variables (`AWS_SECRET_ACCESS_KEY`, `AWS_ACCESS_KEY_ID`, `AWS_SESSION_TOKEN`)
 - Shared Configuration
 - Shared Credentials files.
 
@@ -74,9 +108,17 @@ $ docker run -p 2922 ghcr.io/superdango/cloud-carbon-exporter:latest \
 
 ### Scaleway
 
+```mermaid
+      sequenceDiagram
+            Prometheus->>cloud-carbon-exporter: scrape metrics
+            cloud-carbon-exporter->>Regional APIs: Query all used resources
+            cloud-carbon-exporter->>Cockpit: Get Resource statistics
+            cloud-carbon-exporter-->>Prometheus: Returns Watts and CO2 metrics
+```
+
 Configure the exporter via:
 
-- Environment Variables (SCW_ACCESS_KEY, SCW_SECRET_KEY)
+- Environment Variables (`SCW_ACCESS_KEY`, `SCW_SECRET_KEY`)
 
 ```
 $ docker run -p 2922 ghcr.io/superdango/cloud-carbon-exporter:latest \
@@ -85,7 +127,7 @@ $ docker run -p 2922 ghcr.io/superdango/cloud-carbon-exporter:latest \
 
 ### Deployment
 
-Cloud Carbon Exporter can easily run on serverless platform like GCP Cloud Run or AWS Lambda.
+Cloud Carbon Exporter can easily run on serverless platform like GCP Cloud Run or AWS Lambda for testing purpose. However, we do recommend keeping the exporter alive as long as possible
 
 ### Usage
 
@@ -112,7 +154,22 @@ Environment Variables:
   SCW_ACCESS_KEY
         scaleway access key
   SCW_SECRET_KEY
+        scaleway secret key
 ```
+
+## Additional Cloud Cost
+
+Calls to cloud monitoring APIs can incur additional costs. The exporter will do its best to cache API
+responses and therefore, lower the impact on your bill. API costs are directly correlated to the number of
+resources the exporter generate data from. Here are the average costs you may observe per resource on your cloud account
+or project (instance, bucket, load balancer) for a 15 minutes cache TTL:
+
+- AWS: $0,20 per resource
+- GCP: $0,09 per resource (will be 10 times less in October 2025)
+- SCW: free
+
+You can use the [cost calculator file](docs/cloud-carbon-exporter-costs-estimation.xlsx) to do finer estimations with your own inputs.
+In this file, you can also anticipate the storage cost of carbon metrics if you choose to use the cloud provider monitoring service.
 
 ## Development
 
@@ -121,18 +178,18 @@ Environment Variables:
         github.com/superdango/cloud-carbon-exporter/cmd && \
         ./exporter -cloud.provider=aws -log.level=debug
 
-## Licence
-
-This software is provided as is, without waranty under [AGPL 3.0 licence](https://www.gnu.org/licenses/agpl-3.0.en.html)
-
 ## Acknowledgements
 
 Many of the most valuable contributions are in the forms of testing, feedback, and documentation. These help harden software and streamline usage for other users.
 
 We want to give special thanks to individuals who invest much of their time and energy into the project to help make it better:
 
-- Thanks to [Hakim Rouatbi](https://github.com/hakro), [Raphaël Cosperec](https://github.com/rcosperec) for giving early AWS expertise feedback.
+- Thanks to [Hakim Rouatbi](https://github.com/hakro), [Raphaël Cosperec](https://github.com/rcosperec) and [Souhail Hanfi](https://github.com/hanfi/) for giving early feedbacks.
 
-## ⭐ Sponsor
+## Sponsor
 
-[dangofish.com](dangofish.com) - Tools and Services for Cloud Carbon Developers.
+[dangofish.com](dangofish.com) - Tools and Services for Carbon Driven Developers.
+
+## Licence
+
+This software is provided as is, without waranty under [AGPL 3.0 licence](https://www.gnu.org/licenses/agpl-3.0.en.html)
