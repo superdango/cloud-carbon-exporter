@@ -39,7 +39,12 @@ You can easily customize the content of this dashboard using the data returned b
 Try our live demo with our Grafana dashboard :
 <a href="https://demo.carbondriven.dev/public-dashboards/04a3c6d5961c4463b91a3333d488e584" target="_blank">https://demo.carbondriven.dev</a>
 
-## Technical Overview
+## Technical 
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/schema-dark.png">
+  <img alt="the cloud carbon exporter takes Cloud API to export energy and carbon data to monitoring systems" src="./docs/schema-light.png">
+</picture>
 
 **Multi Cloud** · We want to support as much cloud platform as possible. From hyperscalers to edge datacenters to regional provider. For now we support: AWS, GCP, Scaleway
 
@@ -181,15 +186,11 @@ In this file, you can also anticipate the storage cost of carbon metrics if you 
 
 ## Permissions & Security
 
-The exporter may require many permissions depending on the number of services you use. The easiest 
-and quickest way would be to give it read-only rights to your entire cloud platform like
-`Project Viewer` role or `ViewOnlyAccess` policy.
+The exporter requires permissions to automatically discover resources in your cloud environment. For a quick and easy setup, you can grant it read-only access to your entire cloud platform, such as the `Project Viewer` role or `ViewOnlyAccess` policy.
 
-You can also choose to precisely authorize calls to services you use. Here's a list of required permissions for each cloud provider service: [link coming soon](#).
+If you'd prefer a more precise approach, you can authorize only the specific API calls needed for the services you use. A detailed list of required permissions for each cloud provider service will be available soon.
 
-In the event of an unauthorized API call, the exporter logs a warning specifying the missing
-permission and increments the `error_count{action="collect"}` metric. We advise you to regulary check this metric and set the needed permissions accordingly.
-
+If the exporter encounters a missing permission, it will log a warning with details about the issue and increment the `error_count{action="collect"}` value. We recommend periodically monitoring this metric and adjusting permissions as needed to ensure smooth operation.
 
 ## Development
 
