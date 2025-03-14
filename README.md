@@ -168,7 +168,7 @@ or project (instance, bucket, load balancer) for a 15 minutes cache TTL:
 - GCP: $0,09 per resource (will be 10 times less in October 2025)
 - SCW: free
 
-You can use the [cost calculator file](docs/cloud-carbon-exporter-costs-estimation.xlsx) to do finer estimations with your own inputs.
+You can use the [Cost Calculator file](docs/cloud-carbon-exporter-costs-estimation.xlsx) to do finer estimations with your own inputs.
 In this file, you can also anticipate the storage cost of carbon metrics if you choose to use the cloud provider monitoring service.
 
 ## Development
@@ -184,7 +184,7 @@ Many of the most valuable contributions are in the forms of testing, feedback, a
 
 We want to give special thanks to individuals who invest much of their time and energy into the project to help make it better:
 
-- Thanks to [Hakim Rouatbi](https://github.com/hakro), [Raphaël Cosperec](https://github.com/rcosperec) and [Souhail Hanfi](https://github.com/hanfi/) for giving early feedbacks.
+- Thanks to [Hakim Rouatbi](https://github.com/hakro), [Raphaël Cosperec](https://github.com/rcosperec) and [Souhail Hanfi](https://github.com/hanfi/) for giving early feedback.
 
 ## Sponsor
 
