@@ -39,7 +39,7 @@ You can easily customize the content of this dashboard using the data returned b
 Try our live demo with our Grafana dashboard :
 <a href="https://demo.carbondriven.dev/public-dashboards/04a3c6d5961c4463b91a3333d488e584" target="_blank">https://demo.carbondriven.dev</a>
 
-## Technical 
+## Technical Overview
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/schema-dark.png">
