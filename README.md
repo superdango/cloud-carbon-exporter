@@ -1,16 +1,19 @@
 # Cloud Carbon Exporter
+Monitor your cloud's carbon footprint in real-time
 
 ![test-build-push badge](https://github.com/superdango/cloud-carbon-exporter/actions/workflows/test-build-push.yaml/badge.svg)
 
-This exporter discovers all the resources of your cloud project and estimates the associated energy and carbon emissions in real time. Installing this service will enable your operational and development teams to follow the [Carbon-Driven Development](https://dangofish.com/carbon-driven-development) principles.
+
+Cloud Carbon Exporter automatically discovers cloud resources, estimates energy consumption and carbon emissions in real-time. This tool provides valuable insights for operational and tech teams interested in following the [Carbon-Driven Development](https://dangofish.com/carbon-driven-development) principles.
 
 ## Carbon-Driven Development
 
-The Carbon-Driven Development (CDD) philosophy is based on three main principles:
+Carbon-Driven Development (CDD) is a philosophy to build digital services and manage cloud infrastructure with environmental sustainability at its core.
 
-1. Estimate the **energy** consumed by each resource (servers, load balancers, buckets, etc.).
-2. Aggregate this data in **real time**
-3. In a **production** environment
+It revolves around three pillars:
+1. **Estimate energy consumption** for each cloud resource (servers, load balancers, storage, etc.)
+2. Collect data in **production environments**
+3. Aggregate data in **real-time**
 
 By applying these few rules, production teams will be able to :
 
@@ -26,12 +29,17 @@ By applying these few rules, production teams will be able to :
 
 ![grafana demo cdd](./docs/demo-grafana-cdd.png)
 
-On this demo you can visualize and understand the estimated energy consumed by connected user, the current CO2 emissions and the equivalent in turned on lightbulbs.
+On the screenshot above, you can visualize and understand easily:
+- the estimated energy consumed by connected user to the online service, 
+- the current CO2 emissions,
+- the equivalent in turned on lightbulbs.
 
-You can try this demo on the Grafana dashboard :
+You can easily customize the content of this dashboard using the data returned by the exporter.
+
+Try our live demo with our Grafana dashboard :
 <a href="https://demo.carbondriven.dev/public-dashboards/04a3c6d5961c4463b91a3333d488e584" target="_blank">https://demo.carbondriven.dev</a>
 
-## How it works
+## Technical Overview
 
 **Multi Cloud** · We want to support as much cloud platform as possible. From hyperscalers to edge datacenters to regional provider. For now we support: AWS, GCP, Scaleway
 
@@ -168,8 +176,20 @@ or project (instance, bucket, load balancer) for a 15 minutes cache TTL:
 - GCP: $0,09 per resource (will be 10 times less in October 2025)
 - SCW: free
 
-You can use the [cost calculator file](docs/cloud-carbon-exporter-costs-estimation.xlsx) to do finer estimations with your own inputs.
+You can use the [Cost Calculator file](https://github.com/superdango/cloud-carbon-exporter/raw/refs/heads/main/docs/cloud-carbon-exporter-costs-estimation.xlsx) to do finer estimations with your own inputs.
 In this file, you can also anticipate the storage cost of carbon metrics if you choose to use the cloud provider monitoring service.
+
+## Permissions & Security
+
+The exporter may require many permissions depending on the number of services you use. The easiest 
+and quickest way would be to give it read-only rights to your entire cloud platform like
+`Project Viewer` role or `ViewOnlyAccess` policy.
+
+You can also choose to precisely authorize calls to services you use. Here's a list of required permissions for each cloud provider service: [link coming soon](#).
+
+In the event of an unauthorized API call, the exporter logs a warning specifying the missing
+permission and increments the `error_count{action="collect"}` metric. We advise you to regulary check this metric and set the needed permissions accordingly.
+
 
 ## Development
 
@@ -184,11 +204,23 @@ Many of the most valuable contributions are in the forms of testing, feedback, a
 
 We want to give special thanks to individuals who invest much of their time and energy into the project to help make it better:
 
-- Thanks to [Hakim Rouatbi](https://github.com/hakro), [Raphaël Cosperec](https://github.com/rcosperec) and [Souhail Hanfi](https://github.com/hanfi/) for giving early feedbacks.
+- Thanks to [Hakim Rouatbi](https://github.com/hakro), [Raphaël Cosperec](https://github.com/rcosperec) and [Souhail Hanfi](https://github.com/hanfi/) for giving early feedback.
+
+## Contributing
+
+If you encounter a bug or would like to propose a feature idea, please open a [discussion](https://github.com/superdango/cloud-carbon-exporter/discussions)  before
+creating an issue. The best way to help us is to test and share feedback in the [Discussions](https://github.com/superdango/cloud-carbon-exporter/discussions) 
+section of Github. 
+
+
+If you'd like to contribute to the code, please note that we're in a constant refactoring cycle, and larger contributions will probably be refused. 
+
+
+If you would like to contribute to the models, please first consider your contribution at its source, whether at Boavizta or Cloud Carbon Footprint.
 
 ## Sponsor
 
-[dangofish.com](dangofish.com) - Tools and Services for Carbon Driven Developers.
+[dangofish.com](dangofish.com) - Tools and Services for Carbon-Driven Developers.
 
 ## Licence
 
