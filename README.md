@@ -17,9 +17,9 @@ It revolves around three pillars:
 
 By applying these few rules, production teams will be able to :
 
-1. Globally measure a **system's effectiveness** in relation to the business
-2. Engage other team members in production activities and **continuous improvement**
-3. Detect infrastructure anomalies **faster**
+1. Measure the overall energy efficiency of a system in relation to a business use (active user, transaction, etc.).
+2. Detect infrastructure anomalies **faster**
+3. Engage the company's operational teams and Execs more widely in **continuous improvement**
 4. Reduce the **carbon footprint** of applications
 
 [Check out the original article](https://dangofish.com/carbon-driven-development) which explains in detail the concepts of CDD.
@@ -46,7 +46,7 @@ Try our live demo with our Grafana dashboard :
   <img alt="the cloud carbon exporter takes Cloud API to export energy and carbon data to monitoring systems" src="./docs/schema-light.png">
 </picture>
 
-**Multi Cloud** · We want to support as much cloud platform as possible. From hyperscalers to edge datacenters to regional provider. For now we support: AWS, GCP, Scaleway
+**Multi Cloud** · We want to support as much cloud platform as possible. From hyperscalers to edge datacenters to regional provider. For now we support: [GCP](https://github.com/superdango/cloud-carbon-exporter?tab=readme-ov-file#google-cloud-platform), [AWS](https://github.com/superdango/cloud-carbon-exporter?tab=readme-ov-file#amazon-web-services), [Scaleway](https://github.com/superdango/cloud-carbon-exporter?tab=readme-ov-file#scaleway)
 
 **Multi Model** · The exporter is designed to be model agnostic. We plan to support and contribute back to:
 
@@ -180,6 +180,8 @@ or project (instance, bucket, load balancer) for a 15 minutes cache TTL:
 - AWS: $0,06 / month per resource
 - GCP: $0,03 / month per resource (will be 10 times less in October 2025)
 - SCW: free
+
+_The prices shown below are dated March 2025 and are subject to change by the cloud providers._
 
 You can use the [Cost Calculator file](https://github.com/superdango/cloud-carbon-exporter/raw/refs/heads/main/docs/cloud-carbon-exporter-costs-estimation.xlsx) to do finer estimations with your own inputs.
 In this file, you can also anticipate the storage cost of carbon metrics if you choose to use the cloud provider monitoring service.
