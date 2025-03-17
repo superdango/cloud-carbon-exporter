@@ -140,7 +140,7 @@ $ docker run -p 2922 ghcr.io/superdango/cloud-carbon-exporter:latest \
 
 ### Deployment
 
-Cloud Carbon Exporter can easily run on serverless platform like GCP Cloud Run or AWS Lambda for testing purpose. However, we do recommend keeping the exporter alive as long as possible
+Cloud Carbon Exporter can easily run on serverless platform like GCP Cloud Run or AWS Lambda for testing purpose. However, we do recommend running the exporter as a long lived process to keep its cache in memory ([lowering the cost](#additional-cloud-cost))
 
 ### Usage
 
@@ -178,7 +178,7 @@ resources the exporter generate data from. Here are the average costs you may ob
 or project (instance, bucket, load balancer) for a 15 minutes cache TTL:
 
 - AWS: $0,06 / month per resource
-- GCP: $0,03 per resource (will be 10 times less in October 2025)
+- GCP: $0,03 / month per resource (will be 10 times less in October 2025)
 - SCW: free
 
 You can use the [Cost Calculator file](https://github.com/superdango/cloud-carbon-exporter/raw/refs/heads/main/docs/cloud-carbon-exporter-costs-estimation.xlsx) to do finer estimations with your own inputs.
@@ -205,7 +205,7 @@ Many of the most valuable contributions are in the forms of testing, feedback, a
 
 We want to give special thanks to individuals who invest much of their time and energy into the project to help make it better:
 
-- Thanks to [Hakim Rouatbi](https://github.com/hakro), [Raphaël Cosperec](https://github.com/rcosperec) and [Souhail Hanfi](https://github.com/hanfi/) for giving early feedback.
+- Thanks to [Hakim Rouatbi](https://github.com/hakro), [Raphaël Cosperec](https://github.com/rcosperec), [Souhail Hanfi](https://github.com/hanfi/), [Jonathan Chardon](https://github.com/helldrum) for giving early feedback.
 
 ## Contributing
 
