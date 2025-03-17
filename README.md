@@ -177,8 +177,8 @@ responses and therefore, lower the impact on your bill. API costs are directly c
 resources the exporter generate data from. Here are the average costs you may observe per resource on your cloud account
 or project (instance, bucket, load balancer) for a 15 minutes cache TTL:
 
-- AWS: $0,20 per resource
-- GCP: $0,09 per resource (will be 10 times less in October 2025)
+- AWS: $0,06 / month per resource
+- GCP: $0,03 per resource (will be 10 times less in October 2025)
 - SCW: free
 
 You can use the [Cost Calculator file](https://github.com/superdango/cloud-carbon-exporter/raw/refs/heads/main/docs/cloud-carbon-exporter-costs-estimation.xlsx) to do finer estimations with your own inputs.
@@ -209,15 +209,17 @@ We want to give special thanks to individuals who invest much of their time and 
 
 ## Contributing
 
-If you encounter a bug or would like to propose a feature idea, please open a [discussion](https://github.com/superdango/cloud-carbon-exporter/discussions)  before
-creating an issue. The best way to help us is to test and share feedback in the [Discussions](https://github.com/superdango/cloud-carbon-exporter/discussions) 
-section of Github. 
+We appreciate your input and contributions to Cloud Carbon Exporter. Here's how you can help:
 
+**Share Feedback and Ideas** · Found a bug or have a feature idea? Start a discussion in our GitHub Discussions.
+Your testing and feedback are crucial to improving the project.
 
-If you'd like to contribute to the code, please note that we're in a constant refactoring cycle, and larger contributions will probably be refused. 
+**Code Contributions** · We're actively refactoring to improve the codebase. For now, we're focusing on smaller, targeted contributions to ensure a smooth integration.
 
+**Model Contributions** ·
+Contribute directly to source model like [Boavizta](https://boavizta.org/) or [Cloud Carbon Footprint](https://www.cloudcarbonfootprint.org/)
 
-If you would like to contribute to the models, please first consider your contribution at its source, whether at Boavizta or Cloud Carbon Footprint.
+Thank you for your support!
 
 ## Sponsor
 
