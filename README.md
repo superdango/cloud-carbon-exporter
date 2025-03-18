@@ -203,9 +203,9 @@ If the exporter encounters a missing permission, it will log a warning with deta
 
 ## Acknowledgements
 
-Many of the most valuable contributions are in the forms of testing, feedback, and documentation. These help harden software and streamline usage for other users.
+We're grateful for every contribution that helps shape Cloud Carbon Exporter. Whether it's through testing, feedback, or documentation, each effort strengthens our software and enhances the user experience.
 
-We want to give special thanks to individuals who invest much of their time and energy into the project to help make it better:
+We'd like to extend our heartfelt appreciation to the individuals who have invested significant time and energy into making this project better.
 
 - Thanks to [Hakim Rouatbi](https://github.com/hakro), [Raphaël Cosperec](https://github.com/rcosperec), [Souhail Hanfi](https://github.com/hanfi/), [Jonathan Chardon](https://github.com/helldrum) for giving early feedback.
 
