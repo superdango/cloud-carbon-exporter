@@ -17,9 +17,9 @@ It revolves around three pillars:
 
 By applying these few rules, production teams will be able to :
 
-1. Globally measure a **system's effectiveness** in relation to the business
-2. Engage other team members in production activities and **continuous improvement**
-3. Detect infrastructure anomalies **faster**
+1. Measure the overall energy efficiency of a system in relation to a business use (active user, transaction, etc.).
+2. Detect infrastructure anomalies **faster**
+3. Engage the company's operational teams and Execs more widely in **continuous improvement**
 4. Reduce the **carbon footprint** of applications
 
 [Check out the original article](https://dangofish.com/carbon-driven-development) which explains in detail the concepts of CDD.
@@ -46,7 +46,7 @@ Try our live demo with our Grafana dashboard :
   <img alt="the cloud carbon exporter takes Cloud API to export energy and carbon data to monitoring systems" src="./docs/schema-light.png">
 </picture>
 
-**Multi Cloud** · We want to support as much cloud platform as possible. From hyperscalers to edge datacenters to regional provider. For now we support: AWS, GCP, Scaleway
+**Multi Cloud** · We want to support as much cloud platform as possible. From hyperscalers to edge datacenters to regional provider. For now we support: [GCP](https://github.com/superdango/cloud-carbon-exporter?tab=readme-ov-file#google-cloud-platform), [AWS](https://github.com/superdango/cloud-carbon-exporter?tab=readme-ov-file#amazon-web-services), [Scaleway](https://github.com/superdango/cloud-carbon-exporter?tab=readme-ov-file#scaleway)
 
 **Multi Model** · The exporter is designed to be model agnostic. We plan to support and contribute back to:
 
@@ -140,7 +140,7 @@ $ docker run -p 2922 ghcr.io/superdango/cloud-carbon-exporter:latest \
 
 ### Deployment
 
-Cloud Carbon Exporter can easily run on serverless platform like GCP Cloud Run or AWS Lambda for testing purpose. However, we do recommend keeping the exporter alive as long as possible
+Cloud Carbon Exporter can easily run on serverless platform like GCP Cloud Run or AWS Lambda for testing purpose. However, we do recommend running the exporter as a long lived process to keep its cache in memory ([lowering the cost](#additional-cloud-cost))
 
 ### Usage
 
@@ -177,9 +177,11 @@ responses and therefore, lower the impact on your bill. API costs are directly c
 resources the exporter generate data from. Here are the average costs you may observe per resource on your cloud account
 or project (instance, bucket, load balancer) for a 15 minutes cache TTL:
 
-- AWS: $0,20 per resource
-- GCP: $0,09 per resource (will be 10 times less in October 2025)
+- AWS: $0,06 / month per resource
+- GCP: $0,03 / month per resource (will be 10 times less in October 2025)
 - SCW: free
+
+_The prices shown below are dated March 2025 and are subject to change by the cloud providers._
 
 You can use the [Cost Calculator file](https://github.com/superdango/cloud-carbon-exporter/raw/refs/heads/main/docs/cloud-carbon-exporter-costs-estimation.xlsx) to do finer estimations with your own inputs.
 In this file, you can also anticipate the storage cost of carbon metrics if you choose to use the cloud provider monitoring service.
@@ -201,23 +203,25 @@ If the exporter encounters a missing permission, it will log a warning with deta
 
 ## Acknowledgements
 
-Many of the most valuable contributions are in the forms of testing, feedback, and documentation. These help harden software and streamline usage for other users.
+We're grateful for every contribution that helps shape Cloud Carbon Exporter. Whether it's through testing, feedback, or documentation, each effort strengthens our software and enhances the user experience.
 
-We want to give special thanks to individuals who invest much of their time and energy into the project to help make it better:
+We'd like to extend our heartfelt appreciation to the individuals who have invested significant time and energy into making this project better.
 
-- Thanks to [Hakim Rouatbi](https://github.com/hakro), [Raphaël Cosperec](https://github.com/rcosperec) and [Souhail Hanfi](https://github.com/hanfi/) for giving early feedback.
+- Thanks to [Hakim Rouatbi](https://github.com/hakro), [Raphaël Cosperec](https://github.com/rcosperec), [Souhail Hanfi](https://github.com/hanfi/), [Jonathan Chardon](https://github.com/helldrum) for giving early feedback.
 
 ## Contributing
 
-If you encounter a bug or would like to propose a feature idea, please open a [discussion](https://github.com/superdango/cloud-carbon-exporter/discussions)  before
-creating an issue. The best way to help us is to test and share feedback in the [Discussions](https://github.com/superdango/cloud-carbon-exporter/discussions) 
-section of Github. 
+We appreciate your input and contributions to Cloud Carbon Exporter. Here's how you can help:
 
+**Share Feedback and Ideas** · Found a bug or have a feature idea? Start a discussion in our GitHub Discussions.
+Your testing and feedback are crucial to improving the project.
 
-If you'd like to contribute to the code, please note that we're in a constant refactoring cycle, and larger contributions will probably be refused. 
+**Code Contributions** · We're actively refactoring to improve the codebase. For now, we're focusing on smaller, targeted contributions to ensure a smooth integration.
 
+**Model Contributions** ·
+Contribute directly to source model like [Boavizta](https://boavizta.org/) or [Cloud Carbon Footprint](https://www.cloudcarbonfootprint.org/)
 
-If you would like to contribute to the models, please first consider your contribution at its source, whether at Boavizta or Cloud Carbon Footprint.
+Thank you for your support!
 
 ## Sponsor
 
