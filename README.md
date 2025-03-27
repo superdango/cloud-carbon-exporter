@@ -15,7 +15,7 @@ It revolves around three pillars:
 2. Collect data in **production environments**
 3. Aggregate data in **real-time**
 
-By applying these few rules, production teams will be able to :
+By applying these few rules, production teams will be able to:
 
 1. Measure the overall energy efficiency of a system in relation to a business use (active user, transaction, etc.).
 2. Detect infrastructure anomalies **faster**
@@ -36,7 +36,7 @@ On the screenshot above, you can visualize and understand easily:
 
 You can easily customize the content of this dashboard using the data returned by the exporter.
 
-Try our live demo with our Grafana dashboard :
+Try our live demo with our Grafana dashboard:
 <a href="https://demo.carbondriven.dev/public-dashboards/04a3c6d5961c4463b91a3333d488e584" target="_blank">https://demo.carbondriven.dev</a>
 
 ## Technical Overview
@@ -108,7 +108,7 @@ $ docker run -p 2922 ghcr.io/superdango/cloud-carbon-exporter:latest \
             cloud-carbon-exporter-->>Prometheus: Returns Watts and CO2 metrics
 ```
 
-The exporter is :
+The exporter is:
 
 - Environment Variables (`AWS_SECRET_ACCESS_KEY`, `AWS_ACCESS_KEY_ID`, `AWS_SESSION_TOKEN`)
 - Shared Configuration
@@ -225,7 +225,7 @@ Thank you for your support!
 
 ## Sponsor
 
-[dangofish.com](dangofish.com) - Tools and Services for Carbon-Driven Developers.
+[dangofish.com](https://dangofish.com) - Tools and Services for Carbon-Driven Developers.
 
 ## Licence
 
