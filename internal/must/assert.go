@@ -2,14 +2,11 @@ package must
 
 import (
 	"fmt"
-	"log/slog"
-	"os"
 )
 
 func Assert(cond bool, failMessage string) {
 	if !cond {
-		slog.Error(failMessage)
-		os.Exit(1)
+		panic(failMessage)
 	}
 }
 

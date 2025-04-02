@@ -16,8 +16,6 @@ import (
 	"github.com/superdango/cloud-carbon-exporter/internal/demo"
 	"github.com/superdango/cloud-carbon-exporter/internal/gcp"
 	"github.com/superdango/cloud-carbon-exporter/internal/scw"
-	"github.com/superdango/cloud-carbon-exporter/model/boavizta"
-	"github.com/superdango/cloud-carbon-exporter/model/cloudcarbonfootprint"
 	modeldemo "github.com/superdango/cloud-carbon-exporter/model/demo"
 
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -125,7 +123,6 @@ func setupCollectorOptions(ctx context.Context, params map[string]string) []clou
 					flag.PrintDefaults()
 					os.Exit(1)
 				}
-				model := cloudcarbonfootprint.NewGoogleCloudPlatformModel()
 				gcpExplorer, err := gcp.NewExplorer(ctx,
 					gcp.WithProjectID(params["cloud.gcp.projectid"]),
 				)
@@ -134,7 +131,6 @@ func setupCollectorOptions(ctx context.Context, params map[string]string) []clou
 					os.Exit(1)
 				}
 				c.SetOpt(cloudcarbonexporter.WithExplorer(gcpExplorer))
-				c.SetOpt(cloudcarbonexporter.WithModels(model))
 
 			case "aws":
 				config, err := config.LoadDefaultConfig(ctx)
@@ -149,14 +145,12 @@ func setupCollectorOptions(ctx context.Context, params map[string]string) []clou
 					aws.WithDefaultRegion(params["cloud.aws.defaultregion"]),
 				}
 
-				model := cloudcarbonfootprint.NewAWSModel()
 				explorer, err := aws.NewExplorer(ctx, awsopts...)
 				if err != nil {
 					slog.Error("failed to create aws explorer", "err", err)
 					os.Exit(1)
 				}
 
-				c.SetOpt(cloudcarbonexporter.WithModels(model))
 				c.SetOpt(cloudcarbonexporter.WithExplorer(explorer))
 			case "scw":
 				accessKey := os.Getenv("SCW_ACCESS_KEY")
@@ -168,14 +162,12 @@ func setupCollectorOptions(ctx context.Context, params map[string]string) []clou
 					os.Exit(1)
 				}
 
-				model := boavizta.NewScalewayModel()
 				explorer, err := scw.NewExplorer(scw.WithClient(client))
 				if err != nil {
 					slog.Error("failed to create scaleway explorer", "err", err)
 					os.Exit(1)
 				}
 
-				c.SetOpt(cloudcarbonexporter.WithModels(model))
 				c.SetOpt(cloudcarbonexporter.WithExplorer(explorer))
 			case "":
 				slog.Error("cloud provider is not set")

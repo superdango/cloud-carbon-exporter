@@ -18,15 +18,8 @@
 set -o pipefail
 set -eu
 
-cat <<EOF | duckdb -csv | tee instance_types.csv
-SELECT
-	distinct("Instance Type") as "instance_type",
-	"Physical Processor" as "physical_processor", 
-	cast("vCPU" as DOUBLE) as "vcpu",
-	cast(regexp_extract("Memory",'([0-9\.]+)\sGiB', 1) as DOUBLE) as "memory",
-	"GPU" as "gpu",
-	cast("Physical Cores" as DOUBLE) as "cores"
-FROM read_csv('$1') 
-WHERE "Product Family" LIKE 'Compute Instance%'
-ORDER BY "Instance Type"
+cat <<EOF | duckdb -csv | tee processors.csv
+	SELECT distinct(name) AS name, family, tdp, cores, threads
+	FROM read_csv('*.csv')
+	WHERE tdp > 0 order by tdp;
 EOF
