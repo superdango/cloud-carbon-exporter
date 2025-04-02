@@ -27,7 +27,7 @@ type Processor struct {
 // Tdp constant ratio, we need to adjust this number when
 // we enough data is collected
 var tdpToPowerRatio float64 = 1.6
-var processorNames []string
+var processorFullNames []string
 var processors []Processor
 
 func init() {
@@ -40,7 +40,7 @@ func init() {
 		}
 		must.NoError(err)
 
-		processorNames = append(processorNames, record[0])
+		processorFullNames = append(processorFullNames, record[0]+" "+record[1])
 		processors = append(processors, Processor{
 			Name:    record[0],
 			Family:  record[1],
@@ -66,10 +66,11 @@ func (p Processor) EstimatePowerUsageWithTDP(activeThreads float64, usage float6
 	return tdpToPower(p.Tdp, usage) / p.Threads
 }
 
-func FuzzyFindBestProcessor(processorName string) Processor {
-	ranks := fuzzy.RankFindNormalizedFold(processorName, processorNames)
+// LookupProcessorByName fuzzy find the best suitable processor in the internal database
+func LookupProcessorByName(processorName string) Processor {
+	ranks := fuzzy.RankFindNormalizedFold(processorName, processorFullNames)
 	if len(ranks) == 0 {
-		slog.Warn("no processor found in fuzzy finding")
+		slog.Warn("no processor found in fuzzy finding", "fullnames", processorFullNames)
 		return processors[0]
 	}
 

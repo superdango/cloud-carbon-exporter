@@ -6,7 +6,6 @@ import (
 	"strconv"
 
 	"github.com/superdango/cloud-carbon-exporter/internal/must"
-	"github.com/superdango/cloud-carbon-exporter/model"
 )
 
 //go:embed data/gcp_region_carbon_info_2023.csv
@@ -15,7 +14,7 @@ var carboninfo embed.FS
 // NewGCPCarbonIntensityMap loads and parse official carbon data provided by GCP
 // https://github.com/GoogleCloudPlatform/region-carbon-info
 // Should be updated each year.
-func NewGCPCarbonIntensityMap() model.CarbonIntensityMap {
+func NewGCPCarbonIntensityMap() IntensityMap {
 	f, err := carboninfo.Open("data/gcp_region_carbon_info_2023.csv")
 	must.NoError(err)
 
@@ -23,7 +22,7 @@ func NewGCPCarbonIntensityMap() model.CarbonIntensityMap {
 	locations, err := intensityData.ReadAll()
 	must.NoError(err)
 
-	intensity := make(model.CarbonIntensityMap)
+	intensity := make(IntensityMap)
 
 	for line, location := range locations {
 		// skip csv header

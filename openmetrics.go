@@ -31,7 +31,7 @@ func NewOpenMetricsHandler(collector *Collector) *OpenMetricsHandler {
 // collector and return them, formatted in the http response.
 func (rh *OpenMetricsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
-	metrics := make(chan Metric)
+	metrics := make(chan *Metric)
 
 	traceAttr := slog.Attr{}
 	if traceID := r.Header.Get("X-Cloud-Trace-Context"); traceID != "" {
@@ -43,7 +43,7 @@ func (rh *OpenMetricsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	defer cancel()
 
 	errg.Go(func() error {
-		rh.collector.Collect(errgctx, metrics)
+		rh.collector.CollectMetrics(errgctx, metrics)
 		return nil
 	})
 
@@ -63,7 +63,7 @@ func (rh *OpenMetricsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 
 // writeMetrics write all metrics sent over the channel and write them on the writer.
 // Metrics labels are sorted lexicographically before being written.
-func writeMetrics(ctx context.Context, w io.Writer, metrics chan Metric) error {
+func writeMetrics(ctx context.Context, w io.Writer, metrics chan *Metric) error {
 	for {
 		select {
 		case <-ctx.Done():
@@ -73,16 +73,27 @@ func writeMetrics(ctx context.Context, w io.Writer, metrics chan Metric) error {
 				return nil
 			}
 
-			labels := make([]string, 0, len(metric.Labels))
-			for labelName, labelValue := range metric.Labels {
-				labels = append(labels, fmt.Sprintf(`%s="%s"`, labelName, labelValue))
-			}
-			slices.SortFunc(labels, strings.Compare)
-
-			_, err := fmt.Fprintf(w, "%s{%s} %f\n", metric.Name, strings.Join(labels, ","), metric.Value)
-			if err != nil {
-				return fmt.Errorf("writing metric %s failed: %w", metric.Name, err)
+			if err := writeMetric(w, metric); err != nil {
+				return fmt.Errorf("failed to write metric on writer: %w", err)
 			}
 		}
 	}
+}
+
+func writeMetric(w io.Writer, metric *Metric) error {
+	// sort labels in lexicographical order
+	labels := make([]string, 0, len(metric.Labels))
+	for labelName, labelValue := range metric.Labels {
+		labels = append(labels, fmt.Sprintf(`%s="%s"`, labelName, labelValue))
+	}
+	slices.SortFunc(labels, strings.Compare)
+
+	_, err := fmt.Fprintf(w, "%s{%s} %f\n", metric.Name, strings.Join(labels, ","), metric.Value)
+	if err != nil {
+		return fmt.Errorf("writing metric %s failed: %w", metric.Name, err)
+	}
+
+	slog.Debug("metric sent")
+
+	return nil
 }

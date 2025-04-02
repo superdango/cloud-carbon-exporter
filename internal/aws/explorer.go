@@ -13,6 +13,7 @@ import (
 	"time"
 
 	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
+	"github.com/superdango/cloud-carbon-exporter/model/carbon"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -26,18 +27,19 @@ import (
 const DAY = 24 * time.Hour
 
 type awsResourceExplorer interface {
-	awsExploreResources(ctx context.Context, region string, resources chan *cloudcarbonexporter.Resource) error
+	awsExploreResources(ctx context.Context, region string, metrics chan *cloudcarbonexporter.Metric) error
 	load(ctx context.Context) error
 }
 
 type Explorer struct {
-	mu                *sync.Mutex
-	awscfg            aws.Config
-	defaultRegion     string
-	roleArn           string
-	accountAZs        []AvailabilityZone
-	services          map[string][]string
-	resourcesCreators map[string][]awsResourceExplorer
+	mu                 *sync.Mutex
+	awscfg             aws.Config
+	defaultRegion      string
+	roleArn            string
+	accountAZs         []AvailabilityZone
+	services           map[string][]string
+	resourcesCreators  map[string][]awsResourceExplorer
+	carbonIntensityMap carbon.IntensityMap
 }
 
 type ExplorerOption func(*Explorer)
@@ -63,9 +65,10 @@ func WithRoleArn(role string) ExplorerOption {
 // NewExplorer initialize and returns a new AWS Explorer.
 func NewExplorer(ctx context.Context, opts ...ExplorerOption) (explorer *Explorer, err error) {
 	explorer = &Explorer{
-		mu:            new(sync.Mutex),
-		defaultRegion: "us-east-1",
-		accountAZs:    make([]AvailabilityZone, 0),
+		mu:                 new(sync.Mutex),
+		defaultRegion:      "us-east-1",
+		accountAZs:         make([]AvailabilityZone, 0),
+		carbonIntensityMap: carbon.NewAWSCloudCarbonFootprintIntensityMap(),
 	}
 
 	for _, opt := range opts {
@@ -111,7 +114,24 @@ func NewExplorer(ctx context.Context, opts ...ExplorerOption) (explorer *Explore
 }
 
 // Find resources on the configured AWS Account and sends them in the resources chan
-func (explorer *Explorer) Find(ctx context.Context, resources chan *cloudcarbonexporter.Resource, errs chan error) {
+func (explorer *Explorer) Find(ctx context.Context, metrics chan *cloudcarbonexporter.Metric, errs chan error) {
+	energyMetrics := make(chan *cloudcarbonexporter.Metric)
+	defer close(energyMetrics)
+
+	go func() {
+		for {
+			select {
+			case energyMetric, ok := <-energyMetrics:
+				if !ok {
+					break
+				}
+
+				metrics <- energyMetric
+				metrics <- explorer.carbonIntensityMap.ComputeCO2eq(energyMetric)
+			}
+		}
+	}()
+
 	wg := new(sync.WaitGroup)
 	for service, regions := range explorer.services {
 		for _, region := range regions {
@@ -121,7 +141,7 @@ func (explorer *Explorer) Find(ctx context.Context, resources chan *cloudcarbone
 				wg.Add(1)
 				go func() {
 					defer wg.Done()
-					errs <- resourceCreator.awsExploreResources(ctx, region, resources)
+					errs <- resourceCreator.awsExploreResources(ctx, region, energyMetrics)
 				}()
 			}
 		}

@@ -31,6 +31,7 @@ import (
 	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
 	"github.com/superdango/cloud-carbon-exporter/internal/cache"
 	"github.com/superdango/cloud-carbon-exporter/internal/must"
+	"github.com/superdango/cloud-carbon-exporter/model/energy/primitives"
 )
 
 //go:embed data/instance_types/instance_types.json
@@ -82,7 +83,7 @@ func (rc *EC2InstanceExplorer) load(ctx context.Context) error {
 	return nil
 }
 
-func (ec2explorer *EC2InstanceExplorer) awsExploreResources(ctx context.Context, region string, resources chan *cloudcarbonexporter.Resource) error {
+func (ec2explorer *EC2InstanceExplorer) awsExploreResources(ctx context.Context, region string, metrics chan *cloudcarbonexporter.Metric) error {
 	if region == "global" {
 		return nil
 	}
@@ -111,18 +112,23 @@ func (ec2explorer *EC2InstanceExplorer) awsExploreResources(ctx context.Context,
 				if err != nil {
 					return fmt.Errorf("failed to get instance %s cpu average: %w", *instance.InstanceId, err)
 				}
-				resources <- &cloudcarbonexporter.Resource{
-					CloudProvider: "aws",
-					Kind:          "ec2/instance",
-					ID:            *instance.InstanceId,
-					Region:        region,
-					Labels:        parseEC2Tags(instance.Tags),
-					Source: map[string]any{
-						"ec2_instance_core_count":         instanceType.VCPU,
-						"ec2_instance_cpu_usage_percent":  intanceAverageCPU,
-						"ec2_instance_physical_processor": instanceType.PhysicalProcessor,
-						"ec2_instance_memory_gb":          instanceType.Memory,
-					},
+
+				processor := primitives.LookupProcessorByName(instanceType.PhysicalProcessor)
+				watts := processor.EstimatePowerUsageWithTDP(instanceType.VCPU, intanceAverageCPU)
+				watts += primitives.EstimateMemoryPowerUsage(instanceType.Memory)
+
+				metrics <- &cloudcarbonexporter.Metric{
+					Name:       "estimated_watts",
+					ResourceID: *instance.InstanceId,
+					Labels: cloudcarbonexporter.MergeLabels(
+						parseEC2Tags(instance.Tags),
+						map[string]string{
+							"region":         region,
+							"kind":           "ec2/instance",
+							"cloud_provider": "aws",
+						},
+					),
+					Value: watts,
 				}
 			}
 		}

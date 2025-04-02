@@ -34,28 +34,37 @@ func setupTests() {
 				Cores:   1,
 				Threads: 1,
 			},
+			{
+				Name:    "Intel Xeon E5-2690 V4",
+				Family:  "Intel Broadwell",
+				Tdp:     135,
+				Cores:   14,
+				Threads: 28,
+			},
 		}
-		processorNames = make([]string, len(processors))
+		processorFullNames = make([]string, len(processors))
 		for i, p := range processors {
-			processorNames[i] = p.Name
+			processorFullNames[i] = p.Name + " " + p.Family
 		}
 	})
 }
 
 func TestCPUPowerUsage(t *testing.T) {
 	setupTests()
-	watt := FuzzyFindBestProcessor("AMD EPYC 7571").EstimatePowerUsageWithTDP(1, 100)
+	watt := LookupProcessorByName("AMD EPYC 7571").EstimatePowerUsageWithTDP(1, 100)
 	assert.Equal(t, 10.0, watt)
 
-	watt = FuzzyFindBestProcessor("EPYC 70").EstimatePowerUsageWithTDP(1, 100)
+	watt = LookupProcessorByName("EPYC 70").EstimatePowerUsageWithTDP(1, 100)
 	assert.Equal(t, 2.5, watt)
 
-	watt = FuzzyFindBestProcessor("Intel").EstimatePowerUsageWithTDP(1, 100)
+	watt = LookupProcessorByName("Intel").EstimatePowerUsageWithTDP(1, 100)
 	assert.Equal(t, 1000.0, watt)
 
-	watt = FuzzyFindBestProcessor("Intel").EstimatePowerUsageWithTDP(1, 0)
+	watt = LookupProcessorByName("Intel").EstimatePowerUsageWithTDP(1, 0)
 	assert.Equal(t, 117.6470588235294, watt)
 
-	watt = FuzzyFindBestProcessor("").EstimatePowerUsageWithTDP(1, 0)
+	watt = LookupProcessorByName("").EstimatePowerUsageWithTDP(1, 0)
 	assert.Equal(t, 117.6470588235294, watt)
+
+	assert.Equal(t, "Intel Xeon E5-2690 V4", LookupProcessorByName("Broadwell").Name)
 }

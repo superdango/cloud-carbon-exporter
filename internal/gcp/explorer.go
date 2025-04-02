@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"sync"
 	"time"
 
 	asset "cloud.google.com/go/asset/apiv1"
@@ -24,7 +23,6 @@ type Explorer struct {
 	monitoringClient *monitoring.Service
 	projectID        string
 	cache            *cache.Memory
-	refiners         map[string][]func(ctx context.Context, r *cloudcarbonexporter.Resource)
 }
 
 func WithProjectID(projectID string) Option {
@@ -57,23 +55,11 @@ func NewExplorer(ctx context.Context, opts ...Option) (*Explorer, error) {
 
 	explorer.cache = cache.NewMemory(5 * time.Minute)
 
-	explorer.refiners = map[string][]func(ctx context.Context, r *cloudcarbonexporter.Resource){
-		"compute.googleapis.com/Instance": {
-			func(ctx context.Context, r *cloudcarbonexporter.Resource) {
-				var err error
-				r.Source["compute_instance_cpu_usage_percent"], err = explorer.GetInstanceCPUAverage(ctx, r.ID)
-				if err != nil {
-					slog.Warn("failed to run compute instance cpu average refiner", "id", r.ID, "err", err)
-				}
-				slog.Debug("compute cpu usage", "id", r.ID, "percent", r.Source["compute_instance_cpu_usage_percent"])
-			},
-		},
-	}
-
 	return explorer, nil
 }
 
-func (explorer *Explorer) Find(ctx context.Context, resources chan *cloudcarbonexporter.Resource, errs chan error) {
+func (explorer *Explorer) Find(ctx context.Context, metrics chan *cloudcarbonexporter.Metric, errs chan error) {
+	slog.Debug("listing assets", "projectID", explorer.projectID)
 	req := &assetpb.ListAssetsRequest{
 		Parent:      fmt.Sprintf("projects/%s", explorer.projectID),
 		ContentType: assetpb.ContentType_RESOURCE,
@@ -81,7 +67,7 @@ func (explorer *Explorer) Find(ctx context.Context, resources chan *cloudcarbone
 
 	it := explorer.assetClient.ListAssets(ctx, req)
 	for {
-		response, err := it.Next()
+		asset, err := it.Next()
 		if err == iterator.Done {
 			break
 		}
@@ -90,30 +76,10 @@ func (explorer *Explorer) Find(ctx context.Context, resources chan *cloudcarbone
 			return
 		}
 
-		r := &cloudcarbonexporter.Resource{
-			CloudProvider: "gcp",
-			Kind:          response.AssetType,
-			ID:            response.Resource.Data.GetFields()["name"].GetStringValue(),
-			Region:        response.Resource.Location,
-			Labels:        mapToStringMap(response.Resource.Data.AsMap()["labels"]),
-			Source: map[string]any{
-				"asset": response.Resource.Data.AsMap(),
-			},
+		switch asset.AssetType {
+		case "compute.googleapis.com/Instance":
+			explorer.instanceEnergyMetric(ctx, asset, metrics, errs)
 		}
-
-		wg := new(sync.WaitGroup)
-		if refiners, found := explorer.refiners[r.Kind]; found {
-			for _, refiner := range refiners {
-				wg.Add(1)
-				go func() {
-					refiner(ctx, r)
-				}()
-			}
-		}
-
-		wg.Wait()
-
-		resources <- r
 	}
 }
 

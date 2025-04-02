@@ -16,7 +16,6 @@ import (
 	"github.com/superdango/cloud-carbon-exporter/internal/demo"
 	"github.com/superdango/cloud-carbon-exporter/internal/gcp"
 	"github.com/superdango/cloud-carbon-exporter/internal/scw"
-	modeldemo "github.com/superdango/cloud-carbon-exporter/model/demo"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/lmittmann/tint"
@@ -112,7 +111,6 @@ func setupCollectorOptions(ctx context.Context, params map[string]string) []clou
 		func(c *cloudcarbonexporter.Collector) {
 			if params["demo.enabled"] == "true" {
 				c.SetOpt(cloudcarbonexporter.WithExplorer(demo.NewExplorer()))
-				c.SetOpt(cloudcarbonexporter.WithModels(new(modeldemo.Demo)))
 			}
 		},
 		func(c *cloudcarbonexporter.Collector) {
