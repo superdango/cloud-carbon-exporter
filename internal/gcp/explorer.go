@@ -8,6 +8,8 @@ import (
 
 	asset "cloud.google.com/go/asset/apiv1"
 	"cloud.google.com/go/asset/apiv1/assetpb"
+	compute "cloud.google.com/go/compute/apiv1"
+	"cloud.google.com/go/compute/apiv1/computepb"
 	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
 	"github.com/superdango/cloud-carbon-exporter/internal/cache"
 	"github.com/superdango/cloud-carbon-exporter/internal/must"
@@ -18,11 +20,47 @@ import (
 
 type Option func(e *Explorer)
 
+type Zone struct {
+	Name   string
+	Region string
+}
+
+type Zones []Zone
+
+func (zs Zones) GetRegion(location string) string {
+	if location == "global" {
+		return "global"
+	}
+
+	for _, zone := range zs {
+		if zone.Region == location {
+			return zone.Region
+		}
+
+		if zone.Name == location {
+			return zone.Region
+		}
+	}
+
+	return "global"
+}
+
+func (zs Zones) IsZone(location string) bool {
+	for _, zone := range zs {
+		if zone.Name == location {
+			return true
+		}
+	}
+
+	return false
+}
+
 type Explorer struct {
 	assetClient      *asset.Client
 	monitoringClient *monitoring.Service
 	projectID        string
 	cache            *cache.Memory
+	zones            Zones
 }
 
 func WithProjectID(projectID string) Option {
@@ -53,9 +91,37 @@ func NewExplorer(ctx context.Context, opts ...Option) (*Explorer, error) {
 		return nil, fmt.Errorf("failed to initialize gcp monitoring client: %w", err)
 	}
 
+	err = explorer.loadZones(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load zones: %w", err)
+	}
+
 	explorer.cache = cache.NewMemory(5 * time.Minute)
 
 	return explorer, nil
+}
+
+func (explorer *Explorer) loadZones(ctx context.Context) error {
+	zonesClient, err := compute.NewZonesRESTClient(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to initialize zone rest client: %w", err)
+	}
+	it := zonesClient.List(ctx, &computepb.ListZonesRequest{Project: explorer.projectID})
+	for {
+		zone, err := it.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return fmt.Errorf("failed to get zone: %w", err)
+		}
+
+		explorer.zones = append(explorer.zones, Zone{
+			Name:   *zone.Name,
+			Region: *zone.Region,
+		})
+	}
+	return nil
 }
 
 func (explorer *Explorer) CollectMetrics(ctx context.Context, metrics chan *cloudcarbonexporter.Metric, errs chan error) {
