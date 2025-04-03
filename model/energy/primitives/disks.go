@@ -15,10 +15,13 @@ func EstimateLocalHDDPowerUsage(diskCount int) (watts float64) {
 // https://cloud.google.com/blog/products/compute/high-durability-persistent-disk
 // [...] Each Persistent Disk byte is stored in three or more locations distributed
 // across separate fault domains within a given Compute Engine zone.
-func EstimateAttachedHDDDisk(diskCount int) (watts float64) {
-	return EstimateLocalHDDPowerUsage(diskCount) * 3
+const rackVolumeReplicationFactor = 3
+const rackAverageDiskSizeHypothesis = 2000 // 2 TB
+const rackVolumeEnergyOverhead = 1.1       // 10 percent
+func EstimateHDDVolume(diskSize float64) (watts float64) {
+	return diskSize / rackAverageDiskSizeHypothesis * EstimateLocalHDDPowerUsage(1) * rackVolumeReplicationFactor * rackVolumeEnergyOverhead
 }
 
-func EstimateAttachedSSDDisk(diskCount int) (watts float64) {
-	return EstimateLocalSSDPowerUsage(diskCount) * 3
+func EstimateSSDVolume(diskSize float64) (watts float64) {
+	return diskSize / rackAverageDiskSizeHypothesis * EstimateLocalSSDPowerUsage(1) * rackVolumeReplicationFactor * rackVolumeEnergyOverhead
 }

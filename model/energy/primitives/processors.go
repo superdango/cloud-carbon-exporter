@@ -7,6 +7,7 @@ import (
 	"io"
 	"log/slog"
 	"sort"
+	"strings"
 
 	"github.com/lithammer/fuzzysearch/fuzzy"
 	"github.com/superdango/cloud-carbon-exporter/internal/must"
@@ -68,15 +69,32 @@ func (p Processor) EstimatePowerUsageWithTDP(activeThreads float64, usage float6
 
 // LookupProcessorByName fuzzy find the best suitable processor in the internal database
 func LookupProcessorByName(processorName string) Processor {
-	ranks := fuzzy.RankFindNormalizedFold(processorName, processorFullNames)
-	if len(ranks) == 0 {
-		slog.Warn("no processor found in fuzzy finding", "fullnames", processorFullNames)
-		return processors[0]
+	var bestProcessorIndex = 0
+	for _, submatch := range submatches(processorName) {
+		ranks := fuzzy.RankFindNormalizedFold(submatch, processorFullNames)
+		if len(ranks) == 0 {
+			continue
+		}
+		sort.Sort(ranks)
+		bestProcessorIndex = ranks[0].OriginalIndex
 	}
 
-	sort.Sort(ranks)
+	slog.Debug("fuzzy found the closest processor", "source", processorName, "match", processors[bestProcessorIndex].Name)
 
-	slog.Debug("fuzzy found a close processor", "source", processorName, "found", ranks[0].Target, "distance", ranks[0].Distance)
+	return processors[bestProcessorIndex]
+}
 
-	return processors[ranks[0].OriginalIndex]
+// submatches splits string into subcomponents from small to entiere string
+// to help fuzzy matching finding the best option. For example, passing the
+// string: "foo bar baz" returns {"foo", "foo bar", "foo bar baz"}
+func submatches(s string) []string {
+	splited := strings.Split(s, " ")
+	submatches := make([]string, len(splited))
+	for i, substr := range splited {
+		submatches[i] = substr
+		if i > 0 {
+			submatches[i] = submatches[i-1] + " " + substr
+		}
+	}
+	return submatches
 }

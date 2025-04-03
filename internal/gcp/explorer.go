@@ -58,7 +58,7 @@ func NewExplorer(ctx context.Context, opts ...Option) (*Explorer, error) {
 	return explorer, nil
 }
 
-func (explorer *Explorer) Find(ctx context.Context, metrics chan *cloudcarbonexporter.Metric, errs chan error) {
+func (explorer *Explorer) CollectMetrics(ctx context.Context, metrics chan *cloudcarbonexporter.Metric, errs chan error) {
 	slog.Debug("listing assets", "projectID", explorer.projectID)
 	req := &assetpb.ListAssetsRequest{
 		Parent:      fmt.Sprintf("projects/%s", explorer.projectID),

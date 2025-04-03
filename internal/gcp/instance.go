@@ -22,9 +22,8 @@ func (explorer *Explorer) instanceEnergyMetric(ctx context.Context, asset *asset
 	watts += primitives.EstimateMemoryPowerUsage(4)
 
 	metrics <- &cloudcarbonexporter.Metric{
-		Name:       "estimated_watts",
-		ResourceID: instanceName,
-		Labels:     mapToStringMap(asset.Resource.Data.AsMap()["labels"]),
-		Value:      watts,
+		Name:   "estimated_watts",
+		Labels: mapToStringMap(asset.Resource.Data.AsMap()["labels"]),
+		Value:  watts,
 	}
 }

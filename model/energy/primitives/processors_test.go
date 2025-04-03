@@ -67,4 +67,11 @@ func TestCPUPowerUsage(t *testing.T) {
 	assert.Equal(t, 117.6470588235294, watt)
 
 	assert.Equal(t, "Intel Xeon E5-2690 V4", LookupProcessorByName("Broadwell").Name)
+	assert.Equal(t, "Intel Xeon", LookupProcessorByName("Intel Xeon Family").Name)
+}
+
+func TestSubMatches(t *testing.T) {
+	assert.Equal(t, []string{"foo"}, submatches("foo"))
+	assert.Equal(t, []string{"foo", "foo bar"}, submatches("foo bar"))
+	assert.Equal(t, []string{"foo", "foo bar", "foo bar baz"}, submatches("foo bar baz"))
 }

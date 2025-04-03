@@ -8,16 +8,14 @@ import (
 	"log/slog"
 	"maps"
 	"reflect"
-	"sync"
 	"sync/atomic"
 )
 
 // Metric olds the name and value of a measurement in addition to its labels.
 type Metric struct {
-	Name       string
-	ResourceID string
-	Labels     map[string]string
-	Value      float64
+	Name   string
+	Labels map[string]string
+	Value  float64
 }
 
 // Clone return a deep copy of a metric.
@@ -45,7 +43,7 @@ func (explorerErr *ExplorerErr) Unwrap() error {
 }
 
 type Explorer interface {
-	Find(ctx context.Context, metrics chan *Metric, errors chan error)
+	CollectMetrics(ctx context.Context, metrics chan *Metric, errors chan error)
 	IsReady() bool
 	io.Closer
 }
@@ -81,24 +79,10 @@ func (c *Collector) SetOpt(option CollectorOptions) {
 func (c *Collector) CollectMetrics(ctx context.Context, metrics chan *Metric) {
 	errs := make(chan error)
 	errCount := new(atomic.Int32)
-	defer func() {
-		metrics <- &Metric{
-			Name: "error_count",
-			Labels: map[string]string{
-				"action": "collect",
-			},
-			Value: float64(errCount.Load()),
-		}
-	}()
 
-	wg := new(sync.WaitGroup)
-
-	wg.Add(1)
 	go func() {
-		defer wg.Done()
+		defer close(errs)
 		c.explore(ctx, metrics, errs)
-		close(metrics)
-		close(errs)
 	}()
 
 	for err := range errs {
@@ -110,14 +94,18 @@ func (c *Collector) CollectMetrics(ctx context.Context, metrics chan *Metric) {
 
 		experr := new(ExplorerErr)
 		if errors.As(err, &experr) {
-			slog.Warn("resources collection failed", "err", experr, "op", experr.Operation)
+			slog.Warn("metrics collection failed", "err", experr, "op", experr.Operation)
 			continue
 		}
-
-		slog.Warn("failed to explore resources", "err", err)
 	}
 
-	wg.Wait()
+	metrics <- &Metric{
+		Name: "error_count",
+		Labels: map[string]string{
+			"action": "collect",
+		},
+		Value: float64(errCount.Load()),
+	}
 }
 
 func (c *Collector) Close() error {
@@ -135,7 +123,7 @@ func (c *Collector) explore(ctx context.Context, metrics chan *Metric, errs chan
 			slog.Warn("explorer is not ready", "explorer", reflect.TypeOf(explorer))
 			continue
 		}
-		explorer.Find(ctx, metrics, errs)
+		explorer.CollectMetrics(ctx, metrics, errs)
 	}
 }
 

@@ -43,6 +43,7 @@ func (rh *OpenMetricsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	defer cancel()
 
 	errg.Go(func() error {
+		defer close(metrics)
 		rh.collector.CollectMetrics(errgctx, metrics)
 		return nil
 	})
@@ -92,8 +93,6 @@ func writeMetric(w io.Writer, metric *Metric) error {
 	if err != nil {
 		return fmt.Errorf("writing metric %s failed: %w", metric.Name, err)
 	}
-
-	slog.Debug("metric sent")
 
 	return nil
 }

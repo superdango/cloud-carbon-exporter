@@ -12,7 +12,7 @@ func TestDemoExplorer(t *testing.T) {
 	metrics := make(chan *cloudcarbonexporter.Metric, 1)
 	errs := make(chan error)
 	demoExplorer := demo.NewExplorer()
-	demoExplorer.Find(t.Context(), metrics, errs)
+	demoExplorer.CollectMetrics(t.Context(), metrics, errs)
 	m := <-metrics
 	assert.Equal(t, "demo_connected_users", m.Name)
 }

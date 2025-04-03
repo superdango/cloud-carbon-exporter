@@ -25,7 +25,7 @@ func (explorer *Explorer) IsReady() bool {
 	return true
 }
 
-func (explorer *Explorer) Find(ctx context.Context, metrics chan *cloudcarbonexporter.Metric, errs chan error) {
+func (explorer *Explorer) CollectMetrics(ctx context.Context, metrics chan *cloudcarbonexporter.Metric, errs chan error) {
 	explorer.generatesDemoMetrics(metrics)
 }
 
@@ -38,7 +38,6 @@ func (explorer *Explorer) generatesDemoMetrics(metrics chan *cloudcarbonexporter
 			"app": "demo.carbondriven.dev",
 		},
 	}
-
 }
 
 // naturalTrafficInstant generate a trafic value with hourly variation

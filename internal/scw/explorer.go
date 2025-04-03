@@ -56,7 +56,7 @@ func NewExplorer(opts ...ExplorerOption) (*Explorer, error) {
 	return e, nil
 }
 
-func (explorer *Explorer) Find(ctx context.Context, metrics chan *cloudcarbonexporter.Metric, errs chan error) {
+func (explorer *Explorer) CollectMetrics(ctx context.Context, metrics chan *cloudcarbonexporter.Metric, errs chan error) {
 	wg := new(sync.WaitGroup)
 
 	energyMetrics := make(chan *cloudcarbonexporter.Metric)
@@ -106,13 +106,13 @@ func (explorer *Explorer) findRegionalInstances(ctx context.Context, region scw.
 		watts += primitives.EstimateMemoryPowerUsage(4)
 
 		metrics <- &cloudcarbonexporter.Metric{
-			Name:       "estimated_watts",
-			ResourceID: server.ID,
+			Name: "estimated_watts",
 			Labels: map[string]string{
-				"name":    server.Name,
-				"region":  string(region),
-				"project": server.Project,
-				"tags":    strings.Join(server.Tags, ","),
+				"name":          server.Name,
+				"region":        string(region),
+				"project":       server.Project,
+				"instance_name": server.Name,
+				"tags":          strings.Join(server.Tags, ","),
 			},
 			Value: watts,
 		}
