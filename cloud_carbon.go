@@ -8,7 +8,7 @@ import (
 	"log/slog"
 	"maps"
 	"reflect"
-	"sync/atomic"
+	"time"
 )
 
 // Metric olds the name and value of a measurement in addition to its labels.
@@ -27,6 +27,16 @@ func (m Metric) Clone() Metric {
 		Value:  m.Value,
 		Labels: copiedLabel,
 	}
+}
+
+func (m *Metric) SetLabel(key, value string) *Metric {
+	m.Labels = MergeLabels(
+		m.Labels,
+		map[string]string{
+			key: value,
+		},
+	)
+	return m
 }
 
 type ExplorerErr struct {
@@ -77,8 +87,9 @@ func (c *Collector) SetOpt(option CollectorOptions) {
 }
 
 func (c *Collector) CollectMetrics(ctx context.Context, metrics chan *Metric) {
+	start := time.Now()
 	errs := make(chan error)
-	errCount := new(atomic.Int32)
+	errCount := 0
 
 	go func() {
 		defer close(errs)
@@ -90,13 +101,14 @@ func (c *Collector) CollectMetrics(ctx context.Context, metrics chan *Metric) {
 			continue
 		}
 
-		errCount.Add(1)
+		errCount++
 
 		experr := new(ExplorerErr)
 		if errors.As(err, &experr) {
 			slog.Warn("metrics collection failed", "err", experr, "op", experr.Operation)
 			continue
 		}
+		slog.Warn("metrics collection failed", "err", err.Error())
 	}
 
 	metrics <- &Metric{
@@ -104,7 +116,15 @@ func (c *Collector) CollectMetrics(ctx context.Context, metrics chan *Metric) {
 		Labels: map[string]string{
 			"action": "collect",
 		},
-		Value: float64(errCount.Load()),
+		Value: float64(errCount),
+	}
+
+	metrics <- &Metric{
+		Name: "collect_duration_ms",
+		Labels: map[string]string{
+			"action": "collect",
+		},
+		Value: float64(time.Since(start).Milliseconds()),
 	}
 }
 

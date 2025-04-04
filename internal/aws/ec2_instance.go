@@ -89,7 +89,7 @@ func (rc *EC2InstanceEnergyEstimator) load(ctx context.Context) error {
 	return nil
 }
 
-func (ec2explorer *EC2InstanceEnergyEstimator) explore(ctx context.Context, region string, metrics chan *cloudcarbonexporter.Metric) error {
+func (ec2explorer *EC2InstanceEnergyEstimator) collectMetrics(ctx context.Context, region string, metrics chan *cloudcarbonexporter.Metric) error {
 	if region == "global" {
 		return nil
 	}
@@ -128,11 +128,10 @@ func (ec2explorer *EC2InstanceEnergyEstimator) explore(ctx context.Context, regi
 					Labels: cloudcarbonexporter.MergeLabels(
 						parseEC2Tags(instance.Tags),
 						map[string]string{
-							"cloud_provider": "aws",
-							"region":         region,
-							"az":             *instance.Placement.AvailabilityZone,
-							"kind":           "ec2/instance",
-							"instance_id":  *instance.InstanceId,
+							"region":      region,
+							"az":          *instance.Placement.AvailabilityZone,
+							"kind":        "ec2/instance",
+							"instance_id": *instance.InstanceId,
 						},
 					),
 					Value: watts,

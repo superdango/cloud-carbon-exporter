@@ -26,8 +26,8 @@ import (
 
 const DAY = 24 * time.Hour
 
-type energyEstimator interface {
-	explore(ctx context.Context, region string, metrics chan *cloudcarbonexporter.Metric) error
+type energyCollector interface {
+	collectMetrics(ctx context.Context, region string, metrics chan *cloudcarbonexporter.Metric) error
 	load(ctx context.Context) error
 }
 
@@ -38,7 +38,7 @@ type Explorer struct {
 	roleArn            string
 	accountAZs         []AvailabilityZone
 	activeServices     map[string][]string // serviceName: [region1, region2, ...]
-	energyEstimators   map[string][]energyEstimator
+	energyCollectors   map[string][]energyCollector
 	carbonIntensityMap carbon.IntensityMap
 }
 
@@ -101,7 +101,7 @@ func NewExplorer(ctx context.Context, opts ...ExplorerOption) (explorer *Explore
 }
 
 func (explorer *Explorer) loadAllEnergyEstimators(ctx context.Context) error {
-	explorer.energyEstimators = map[string][]energyEstimator{
+	explorer.energyCollectors = map[string][]energyCollector{
 		"Amazon Elastic Compute Cloud - Compute": {
 			NewEC2InstanceEnergyEstimator(explorer.awscfg, explorer.defaultRegion),
 			NewEC2VolumeEstimator(explorer.awscfg, explorer.defaultRegion),
@@ -109,7 +109,7 @@ func (explorer *Explorer) loadAllEnergyEstimators(ctx context.Context) error {
 	}
 
 	errg, errgctx := errgroup.WithContext(ctx)
-	for _, energyEstimators := range explorer.energyEstimators {
+	for _, energyEstimators := range explorer.energyCollectors {
 		for _, energyEstimator := range energyEstimators {
 			energyEstimator := energyEstimator
 			errg.Go(func() error {
@@ -130,6 +130,7 @@ func (explorer *Explorer) CollectMetrics(ctx context.Context, metrics chan *clou
 
 	go func() {
 		for energyMetric := range energyMetrics {
+			energyMetric.SetLabel("cloud_provider", "aws")
 			metrics <- energyMetric
 			metrics <- explorer.carbonIntensityMap.ComputeCO2eq(energyMetric)
 		}
@@ -138,13 +139,13 @@ func (explorer *Explorer) CollectMetrics(ctx context.Context, metrics chan *clou
 	wg := new(sync.WaitGroup)
 	for service, regions := range explorer.activeServices {
 		for _, region := range regions {
-			for _, resourceCreator := range explorer.energyEstimators[service] {
+			for _, collector := range explorer.energyCollectors[service] {
 				region := region
-				resourceCreator := resourceCreator
+				collector := collector
 				wg.Add(1)
 				go func() {
 					defer wg.Done()
-					errs <- resourceCreator.explore(ctx, region, energyMetrics)
+					errs <- collector.collectMetrics(ctx, region, energyMetrics)
 				}()
 			}
 		}

@@ -44,7 +44,7 @@ func NewEC2VolumeEstimator(awscfg aws.Config, defaultRegion string) *EC2VolumeEs
 	}
 }
 
-func (ec2explorer *EC2VolumeEstimator) explore(ctx context.Context, region string, metrics chan *cloudcarbonexporter.Metric) error {
+func (ec2explorer *EC2VolumeEstimator) collectMetrics(ctx context.Context, region string, metrics chan *cloudcarbonexporter.Metric) error {
 	if region == "global" {
 		return nil
 	}
@@ -76,12 +76,11 @@ func (ec2explorer *EC2VolumeEstimator) explore(ctx context.Context, region strin
 				Name: "estimated_watts",
 				Labels: cloudcarbonexporter.MergeLabels(
 					map[string]string{
-						"cloud_provider": "aws",
-						"region":         region,
-						"az":             *volume.AvailabilityZone,
-						"kind":           "ec2/volume",
-						"volume_id":      *volume.VolumeId,
-						"volume_type":    string(volume.VolumeType),
+						"region":      region,
+						"az":          *volume.AvailabilityZone,
+						"kind":        "ec2/volume",
+						"volume_id":   *volume.VolumeId,
+						"volume_type": string(volume.VolumeType),
 					},
 					parseEC2Tags(volume.Tags),
 				),
