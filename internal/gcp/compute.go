@@ -14,6 +14,7 @@ import (
 	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
 	machinetypes "github.com/superdango/cloud-carbon-exporter/internal/gcp/data/machine_types"
 	"github.com/superdango/cloud-carbon-exporter/internal/must"
+	"github.com/superdango/cloud-carbon-exporter/model/energy/cloud"
 	"github.com/superdango/cloud-carbon-exporter/model/energy/primitives"
 	"google.golang.org/api/iterator"
 )
@@ -210,9 +211,9 @@ func (disksExplorer *DisksExplorer) collectMetrics(ctx context.Context, zone str
 		watts := 0.0
 		switch lastURLPathFragment(disk.GetType()) {
 		case "pd-standard":
-			watts = primitives.EstimateHDDVolume(float64(*disk.SizeGb))
+			watts = cloud.EstimateHDDBlockStorage(float64(*disk.SizeGb))
 		default:
-			watts = primitives.EstimateSSDVolume(float64(*disk.SizeGb))
+			watts = cloud.EstimateSSDBlockStorage(float64(*disk.SizeGb))
 		}
 		replicas := 1
 		if len(disk.ReplicaZones) > 0 {
@@ -282,9 +283,9 @@ func (disksExplorer *RegionDisksExplorer) collectMetrics(ctx context.Context, re
 		watts := 0.0
 		switch lastURLPathFragment(disk.GetType()) {
 		case "pd-standard":
-			watts = primitives.EstimateHDDVolume(float64(*disk.SizeGb))
+			watts = cloud.EstimateHDDBlockStorage(float64(*disk.SizeGb))
 		default:
-			watts = primitives.EstimateSSDVolume(float64(*disk.SizeGb))
+			watts = cloud.EstimateSSDBlockStorage(float64(*disk.SizeGb))
 		}
 
 		replicas := 2

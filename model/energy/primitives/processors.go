@@ -14,7 +14,7 @@ import (
 	"gonum.org/v1/gonum/interp"
 )
 
-//go:embed processors.csv
+//go:embed data/processors/processors.csv
 var processorsCSV []byte
 
 type Processor struct {
@@ -56,11 +56,11 @@ func tdpToPower(tdp float64, cpuUsage float64) (watts float64) {
 	// Extracted from Boavista API. TDP divider relative to CPU load
 	var tdpDivider interp.FritschButland
 	tdpDivider.Fit(
-		[]float64{0.0, 10., 50., 100},
-		[]float64{8.5, 3.2, 1.4, 1.0},
+		[]float64{0.0, 10., 50., 100.},
+		[]float64{12., 33., 75., 102.},
 	)
 
-	return (tdp / tdpDivider.Predict(cpuUsage)) * tdpToPowerRatio
+	return tdp * (tdpDivider.Predict(cpuUsage) / 100) * tdpToPowerRatio
 }
 
 func (p Processor) EstimatePowerUsageWithTDP(activeThreads float64, usage float64) (watts float64) {
@@ -84,7 +84,7 @@ func LookupProcessorByName(processorName string) Processor {
 	return processors[bestProcessorIndex]
 }
 
-// submatches splits string into subcomponents from small to entiere string
+// submatches splits string into subcomponents from small to entier string
 // to help fuzzy matching finding the best option. For example, passing the
 // string: "foo bar baz" returns {"foo", "foo bar", "foo bar baz"}
 func submatches(s string) []string {

@@ -6,10 +6,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestZonesRegions(t *testing.T) {
-	
-}
-
 func TestURLFragments(t *testing.T) {
 	assert.Equal(t, "bar", fragmentURLPath("http://test.com/foo/bar")[1])
 	assert.Equal(t, "bar", fragmentURLPath("http://test.com/foo/bar/baz?raw=true")[1])

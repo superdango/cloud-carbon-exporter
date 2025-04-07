@@ -53,7 +53,12 @@ func (intensity IntensityMap) Get(location string) float64 {
 	return locationIntensity
 }
 
+// ComputeCO2eq takes an energy metric as input and return its carbon emission equivalent using
+// the source region label.
 func (intensityMap IntensityMap) ComputeCO2eq(wattMetric *cloudcarbonexporter.Metric) *cloudcarbonexporter.Metric {
+	if _, found := wattMetric.Labels["region"]; !found {
+		return nil
+	}
 	emissionMetric := wattMetric.Clone()
 	emissionMetric.Name = "estimated_g_co2eq_second"
 	gramPerKWh := intensityMap.Get(wattMetric.Labels["region"]) / 1000 / 60 / 60

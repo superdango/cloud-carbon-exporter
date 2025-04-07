@@ -25,7 +25,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
 	"github.com/superdango/cloud-carbon-exporter/internal/cache"
-	"github.com/superdango/cloud-carbon-exporter/model/energy/primitives"
+	"github.com/superdango/cloud-carbon-exporter/model/energy/cloud"
 )
 
 type EC2VolumeEstimator struct {
@@ -66,10 +66,10 @@ func (ec2explorer *EC2VolumeEstimator) collectMetrics(ctx context.Context, regio
 		for _, volume := range output.Volumes {
 			watts := 0.0
 			if isVolumeHDD(volume.VolumeType) {
-				watts = primitives.EstimateHDDVolume(float64(*volume.Size))
+				watts = cloud.EstimateHDDBlockStorage(float64(*volume.Size))
 			}
 			if isVolumeSSD(volume.VolumeType) {
-				watts = primitives.EstimateSSDVolume(float64(*volume.Size))
+				watts = cloud.EstimateSSDBlockStorage(float64(*volume.Size))
 			}
 
 			metrics <- &cloudcarbonexporter.Metric{
