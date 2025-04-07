@@ -63,16 +63,9 @@ func (explorer *Explorer) CollectMetrics(ctx context.Context, metrics chan *clou
 	defer close(energyMetrics)
 
 	go func() {
-		for {
-			select {
-			case energyMetric, ok := <-energyMetrics:
-				if !ok {
-					break
-				}
-
-				metrics <- energyMetric
-				metrics <- explorer.carbonIntensityMap.ComputeCO2eq(energyMetric)
-			}
+		for energyMetric := range energyMetrics {
+			metrics <- energyMetric
+			metrics <- explorer.carbonIntensityMap.ComputeCO2eq(energyMetric)
 		}
 	}()
 
