@@ -88,6 +88,7 @@ func (instanceExplorer *InstancesExplorer) collectMetrics(ctx context.Context, z
 	for {
 		instance, err := instancesIter.Next()
 		if err == iterator.Done {
+			instanceExplorer.apiCalls.Add(1)
 			break
 		}
 		if err != nil {
@@ -124,7 +125,7 @@ func (instanceExplorer *InstancesExplorer) collectMetrics(ctx context.Context, z
 					"kind":          "compute/Instance",
 					"instance_name": instanceName,
 					"zone":          lastURLPathFragment(instance.GetZone()),
-					"region":        instanceExplorer.zones.GetRegion(lastURLPathFragment(instance.GetZone())),
+					"region":        instanceExplorer.gcpZones.GetRegion(lastURLPathFragment(instance.GetZone())),
 				},
 				instance.Labels,
 			),
@@ -169,6 +170,8 @@ func (explorer *InstancesExplorer) ListInstanceCPUAverage(ctx context.Context) (
 		return nil, fmt.Errorf("failed to query for instance monitoring data: %w", err)
 	}
 
+	explorer.apiCalls.Add(1)
+
 	return instanceList, nil
 }
 
@@ -199,6 +202,7 @@ func (disksExplorer *DisksExplorer) collectMetrics(ctx context.Context, zone str
 	for {
 		disk, err := disksIter.Next()
 		if err == iterator.Done {
+			disksExplorer.apiCalls.Add(1)
 			break
 		}
 		if err != nil {
@@ -206,7 +210,6 @@ func (disksExplorer *DisksExplorer) collectMetrics(ctx context.Context, zone str
 		}
 
 		diskName := disk.GetName()
-		fmt.Println("got disk", diskName, zone)
 
 		watts := 0.0
 		switch lastURLPathFragment(disk.GetType()) {
@@ -229,7 +232,7 @@ func (disksExplorer *DisksExplorer) collectMetrics(ctx context.Context, zone str
 					"kind":      "compute/Disk",
 					"disk_name": diskName,
 					"zone":      lastURLPathFragment(disk.GetZone()),
-					"region":    disksExplorer.zones.GetRegion(lastURLPathFragment(disk.GetZone())),
+					"region":    disksExplorer.gcpZones.GetRegion(lastURLPathFragment(disk.GetZone())),
 				},
 				disk.Labels,
 			),
@@ -258,19 +261,20 @@ func NewRegionDisksExplorer(ctx context.Context, explorer *Explorer) (disksExplo
 	return disksExplorer, nil
 }
 
-func (disksExplorer *RegionDisksExplorer) collectMetrics(ctx context.Context, region string, metrics chan *cloudcarbonexporter.Metric) error {
+func (regionDisksExplorer *RegionDisksExplorer) collectMetrics(ctx context.Context, region string, metrics chan *cloudcarbonexporter.Metric) error {
 	if region == "global" {
 		return nil
 	}
 
-	regionDisksIter := disksExplorer.client.List(ctx, &computepb.ListRegionDisksRequest{
-		Project: disksExplorer.projectID,
+	regionDisksIter := regionDisksExplorer.client.List(ctx, &computepb.ListRegionDisksRequest{
+		Project: regionDisksExplorer.projectID,
 		Region:  region,
 	})
 
 	for {
 		disk, err := regionDisksIter.Next()
 		if err == iterator.Done {
+			regionDisksExplorer.apiCalls.Add(1)
 			break
 		}
 		if err != nil {

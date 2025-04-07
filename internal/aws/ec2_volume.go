@@ -35,12 +35,12 @@ type EC2VolumeEstimator struct {
 	cache             *cache.Memory
 }
 
-func NewEC2VolumeEstimator(awscfg aws.Config, defaultRegion string) *EC2VolumeEstimator {
+func NewEC2VolumeEstimator(ctx context.Context, awscfg aws.Config, defaultRegion string) *EC2VolumeEstimator {
 	return &EC2VolumeEstimator{
 		awscfg:            awscfg,
 		defaultRegion:     defaultRegion,
 		instanceTypeInfos: make(map[string]instanceTypeInfos),
-		cache:             cache.NewMemory(5 * time.Minute),
+		cache:             cache.NewMemory(ctx, 5*time.Minute),
 	}
 }
 

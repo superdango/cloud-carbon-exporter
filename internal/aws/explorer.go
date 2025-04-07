@@ -14,6 +14,7 @@ import (
 
 	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
 	"github.com/superdango/cloud-carbon-exporter/model/carbon"
+	"github.com/superdango/cloud-carbon-exporter/model/energy/primitives"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -103,8 +104,8 @@ func NewExplorer(ctx context.Context, opts ...ExplorerOption) (explorer *Explore
 func (explorer *Explorer) loadAllEnergyEstimators(ctx context.Context) error {
 	explorer.energyCollectors = map[string][]energyCollector{
 		"Amazon Elastic Compute Cloud - Compute": {
-			NewEC2InstanceEnergyEstimator(explorer.awscfg, explorer.defaultRegion),
-			NewEC2VolumeEstimator(explorer.awscfg, explorer.defaultRegion),
+			NewEC2InstanceEnergyEstimator(ctx, explorer.awscfg, explorer.defaultRegion),
+			NewEC2VolumeEstimator(ctx, explorer.awscfg, explorer.defaultRegion),
 		},
 	}
 
@@ -131,6 +132,7 @@ func (explorer *Explorer) CollectMetrics(ctx context.Context, metrics chan *clou
 	go func() {
 		for energyMetric := range energyMetrics {
 			energyMetric.SetLabel("cloud_provider", "aws")
+			energyMetric.Value *= primitives.GoodPUE
 			metrics <- energyMetric
 			metrics <- explorer.carbonIntensityMap.ComputeCO2eq(energyMetric)
 		}

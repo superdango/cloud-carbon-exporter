@@ -57,12 +57,12 @@ type EC2InstanceEnergyEstimator struct {
 	cache             *cache.Memory
 }
 
-func NewEC2InstanceEnergyEstimator(awscfg aws.Config, defaultRegion string) *EC2InstanceEnergyEstimator {
+func NewEC2InstanceEnergyEstimator(ctx context.Context, awscfg aws.Config, defaultRegion string) *EC2InstanceEnergyEstimator {
 	return &EC2InstanceEnergyEstimator{
 		awscfg:            awscfg,
 		defaultRegion:     defaultRegion,
 		instanceTypeInfos: make(map[string]instanceTypeInfos),
-		cache:             cache.NewMemory(5 * time.Minute),
+		cache:             cache.NewMemory(ctx, 5*time.Minute),
 	}
 }
 

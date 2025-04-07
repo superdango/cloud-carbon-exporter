@@ -7,6 +7,6 @@ import (
 )
 
 func TestEstimateDisksPowerUsage(t *testing.T) {
-	assert.Equal(t, 18.0, EstimateSSDBlockStorage(2))
-	assert.Equal(t, 57.0, EstimateHDDBlockStorage(2))
+	assert.Equal(t, 1.2375, EstimateSSDBlockStorage(1000))
+	assert.Equal(t, 1.959375, EstimateHDDBlockStorage(1000))
 }

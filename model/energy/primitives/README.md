@@ -1,6 +1,13 @@
 # Primitives Hypothesis
 
-## Estimating power consumption
+## Datacenter effectiveness
+
+Cloud data center power usage effectiveness (PUE) can vary, but it typically averages around 1.15.
+
+- https://sustainability.aboutamazon.com/products-services/aws-cloud
+- https://www.cloudcarbonfootprint.org/docs/methodology/#power-usage-effectiveness
+
+## Estimating power consumption of server components
 
 ### CPU
 

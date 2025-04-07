@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	asset "cloud.google.com/go/asset/apiv1"
@@ -15,7 +16,9 @@ import (
 	"cloud.google.com/go/compute/apiv1/computepb"
 	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
 	"github.com/superdango/cloud-carbon-exporter/internal/cache"
+	"github.com/superdango/cloud-carbon-exporter/internal/must"
 	"github.com/superdango/cloud-carbon-exporter/model/carbon"
+	"github.com/superdango/cloud-carbon-exporter/model/energy/primitives"
 	"golang.org/x/sync/errgroup"
 
 	"google.golang.org/api/iterator"
@@ -64,12 +67,14 @@ type Explorer struct {
 	monitoringClient   *monitoring.Service
 	projectID          string
 	cache              *cache.Memory
-	zones              Zones
+	gcpZones           Zones
 	carbonIntensityMap carbon.IntensityMap
 
 	instances   *InstancesExplorer
 	disks       *DisksExplorer
 	regionDisks *RegionDisksExplorer
+
+	apiCalls *atomic.Int64
 }
 
 func WithProjectID(projectID string) Option {
@@ -81,8 +86,9 @@ func WithProjectID(projectID string) Option {
 func NewExplorer(ctx context.Context, opts ...Option) (*Explorer, error) {
 	var err error
 	explorer := new(Explorer)
-	explorer.cache = cache.NewMemory(5 * time.Minute)
+	explorer.cache = cache.NewMemory(ctx, 5*time.Minute)
 	explorer.carbonIntensityMap = carbon.NewGCPCarbonIntensityMap()
+	explorer.apiCalls = new(atomic.Int64)
 
 	for _, c := range opts {
 		c(explorer)
@@ -92,8 +98,12 @@ func NewExplorer(ctx context.Context, opts ...Option) (*Explorer, error) {
 		return nil, fmt.Errorf("project id is not set")
 	}
 
-	errg, errgctx := errgroup.WithContext(ctx)
+	err = explorer.cache.Set(ctx, "assets_zones_regions", cache.DynamicValue(explorer.discoverServicesZonesRegions()))
+	if err != nil {
+		return nil, fmt.Errorf("failed to set assets zones and regions cache: %w", err)
+	}
 
+	errg, errgctx := errgroup.WithContext(ctx)
 	errg.Go(func() error {
 		explorer.assets, err = asset.NewClient(errgctx)
 		if err != nil {
@@ -155,19 +165,20 @@ func (explorer *Explorer) loadZones(ctx context.Context) error {
 	for {
 		zone, err := it.Next()
 		if err == iterator.Done {
+			explorer.apiCalls.Add(1)
 			break
 		}
 		if err != nil {
 			return fmt.Errorf("failed to get zone: %w", err)
 		}
 
-		explorer.zones = append(explorer.zones, Zone{
+		explorer.gcpZones = append(explorer.gcpZones, Zone{
 			Name:   *zone.Name,
 			Region: lastURLPathFragment(*zone.Region),
 		})
 	}
 
-	slog.Info("zones and regions successfully loaded", "zones", len(explorer.zones))
+	slog.Info("zones and regions successfully loaded", "zones", len(explorer.gcpZones))
 	return nil
 }
 
@@ -195,73 +206,101 @@ func fragmentURLPath(source string) []string {
 }
 
 func (explorer *Explorer) CollectMetrics(ctx context.Context, metrics chan *cloudcarbonexporter.Metric, errs chan error) {
+	explorer.apiCalls.Store(0)
 	energyMetrics := make(chan *cloudcarbonexporter.Metric)
 	defer close(energyMetrics)
 
 	go func() {
 		for energyMetric := range energyMetrics {
 			energyMetric.SetLabel("cloud_provider", "gcp")
+			energyMetric.Value *= primitives.GoodPUE
 			metrics <- energyMetric
 			metrics <- explorer.carbonIntensityMap.ComputeCO2eq(energyMetric)
 		}
 	}()
 
-	slog.Debug("listing assets", "projectID", explorer.projectID)
-	req := &assetpb.ListAssetsRequest{
-		Parent:      fmt.Sprintf("projects/%s", explorer.projectID),
-		ContentType: assetpb.ContentType_RESOURCE,
+	v, err := explorer.cache.Get(ctx, "assets_zones_regions")
+	if err != nil {
+		errs <- err
+		return
 	}
 
-	assetTypes := make([]string, 0)
-	activeZones := make([]string, 0)
-	activeRegions := make([]string, 0)
-
-	it := explorer.assets.ListAssets(ctx, req)
-	for {
-		asset, err := it.Next()
-		if err == iterator.Done {
-			break
-		}
-
-		if err != nil {
-			errs <- &cloudcarbonexporter.ExplorerErr{Err: fmt.Errorf("failed to list assets inventory resources: %w", err), Operation: "asset/apiv1:ListAssets"}
-			return
-		}
-
-		assetTypes = append(assetTypes, asset.AssetType)
-		if explorer.zones.IsValidZone(asset.Resource.Location) {
-			activeZones = append(activeZones, asset.Resource.Location)
-		}
-		activeRegions = append(activeRegions, explorer.zones.GetRegion(asset.Resource.Location))
-
-	}
-
-	assetTypes = distinct(assetTypes)
-	activeZones = distinct(activeZones)
-	activeRegions = distinct(activeRegions)
+	assets, ok := v.(map[string][]string)
+	must.Assert(ok, "wrong cache entry type")
 
 	wg := new(sync.WaitGroup)
-	for _, assetType := range assetTypes {
+	for _, assetType := range assets["types"] {
 		switch assetType {
 		case "compute.googleapis.com/Instance":
-			for _, zone := range activeZones {
+			for _, zone := range assets["zones"] {
 				async(wg, func() { errs <- explorer.instances.collectMetrics(ctx, zone, energyMetrics) })
 			}
 		case "compute.googleapis.com/Disk":
-			fmt.Println(activeZones)
-			for _, zone := range activeZones {
+			for _, zone := range assets["zones"] {
 				async(wg, func() { errs <- explorer.disks.collectMetrics(ctx, zone, energyMetrics) })
 			}
 		case "compute.googleapis.com/RegionDisk":
-			fmt.Println(activeRegions)
-			for _, zone := range activeRegions {
-				async(wg, func() { errs <- explorer.regionDisks.collectMetrics(ctx, zone, energyMetrics) })
+			for _, region := range assets["regions"] {
+				async(wg, func() { errs <- explorer.regionDisks.collectMetrics(ctx, region, energyMetrics) })
 			}
 		default:
-			slog.Debug("asset not supported", "asset", assetType)
+			slog.Debug("asset type is not supported", "asset", assetType)
 		}
 	}
+
 	wg.Wait()
+
+	metrics <- &cloudcarbonexporter.Metric{
+		Name: "api_calls",
+		Labels: map[string]string{
+			"provider": "gcp",
+		},
+		Value: float64(explorer.apiCalls.Load()),
+	}
+}
+
+func (explorer *Explorer) discoverServicesZonesRegions() cache.DynamicValue {
+	return cache.DynamicValue(func(ctx context.Context) (any, error) {
+		slog.Debug("listing assets", "projectID", explorer.projectID)
+		req := &assetpb.ListAssetsRequest{
+			Parent:      fmt.Sprintf("projects/%s", explorer.projectID),
+			ContentType: assetpb.ContentType_RESOURCE,
+		}
+
+		assetTypes := make([]string, 0)
+		activeZones := make([]string, 0)
+		activeRegions := make([]string, 0)
+
+		it := explorer.assets.ListAssets(ctx, req)
+		for {
+			asset, err := it.Next()
+			if err == iterator.Done {
+				explorer.apiCalls.Add(1)
+				break
+			}
+
+			if err != nil {
+				return nil, &cloudcarbonexporter.ExplorerErr{Err: fmt.Errorf("failed to list assets inventory resources: %w", err), Operation: "asset/apiv1:ListAssets"}
+			}
+
+			assetTypes = append(assetTypes, asset.AssetType)
+			if explorer.gcpZones.IsValidZone(asset.Resource.Location) {
+				activeZones = append(activeZones, asset.Resource.Location)
+			}
+			activeRegions = append(activeRegions, explorer.gcpZones.GetRegion(asset.Resource.Location))
+
+		}
+
+		assetTypes = distinct(assetTypes)
+		activeZones = distinct(activeZones)
+		activeRegions = distinct(activeRegions)
+
+		return map[string][]string{
+			"types":   assetTypes,
+			"zones":   activeZones,
+			"regions": activeRegions,
+		}, nil
+	})
 }
 
 // distinct remove all duplicates in string slice
