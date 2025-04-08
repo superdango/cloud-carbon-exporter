@@ -39,6 +39,11 @@ func NewGCPCarbonIntensityMap() IntensityMap {
 	intensity["emea"] = intensity.Average([]string{"eu", "me", "af"}...)
 	intensity["apac"] = intensity.Average([]string{"as", "au"}...)
 	intensity["amer"] = intensity.Average([]string{"no", "so", "us"}...)
+
+	intensity["asia"] = intensity.Average([]string{"as"}...)
+	intensity["eu"] = intensity.Average([]string{"eu"}...)
+	intensity["us"] = intensity["amer"]
+
 	intensity["global"] = intensity.Average("emea", "apac", "amer")
 
 	return intensity

@@ -1,6 +1,7 @@
 package carbon
 
 import (
+	"log/slog"
 	"strings"
 
 	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
@@ -57,6 +58,7 @@ func (intensity IntensityMap) Get(location string) float64 {
 // the source region label.
 func (intensityMap IntensityMap) ComputeCO2eq(wattMetric *cloudcarbonexporter.Metric) *cloudcarbonexporter.Metric {
 	if _, found := wattMetric.Labels["region"]; !found {
+		slog.Warn("watt metric does not contains a region, cannot estimate co2 emission", "metric_labels", wattMetric.Labels)
 		return nil
 	}
 	emissionMetric := wattMetric.Clone()

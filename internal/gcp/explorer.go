@@ -28,8 +28,9 @@ import (
 type Option func(e *Explorer)
 
 type Zone struct {
-	Name   string
-	Region string
+	Name      string
+	Region    string
+	Continent string
 }
 
 type Zones []Zone
@@ -73,6 +74,7 @@ type Explorer struct {
 	instances   *InstancesExplorer
 	disks       *DisksExplorer
 	regionDisks *RegionDisksExplorer
+	buckets     *BucketsExplorer
 
 	apiCalls *atomic.Int64
 }
@@ -148,6 +150,14 @@ func NewExplorer(ctx context.Context, opts ...Option) (*Explorer, error) {
 		err = explorer.loadZones(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to load zones: %w", err)
+		}
+		return nil
+	})
+
+	errg.Go(func() error {
+		explorer.buckets, err = NewBucketsExplorer(ctx, explorer)
+		if err != nil {
+			return fmt.Errorf("failed to initialize buckets explorer: %w", err)
 		}
 		return nil
 	})
@@ -243,6 +253,8 @@ func (explorer *Explorer) CollectMetrics(ctx context.Context, metrics chan *clou
 			for _, region := range assets["regions"] {
 				async(wg, func() { errs <- explorer.regionDisks.collectMetrics(ctx, region, energyMetrics) })
 			}
+		case "storage.googleapis.com/Bucket":
+			async(wg, func() { errs <- explorer.buckets.collectMetrics(ctx, energyMetrics) })
 		default:
 			slog.Debug("asset type is not supported", "asset", assetType)
 		}

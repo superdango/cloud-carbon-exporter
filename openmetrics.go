@@ -74,6 +74,10 @@ func writeMetrics(ctx context.Context, w io.Writer, metrics chan *Metric) error 
 				return nil
 			}
 
+			if metric == nil {
+				slog.Warn("discarding nil metric")
+				continue
+			}
 			if err := writeMetric(w, metric); err != nil {
 				return fmt.Errorf("failed to write metric on writer: %w", err)
 			}
