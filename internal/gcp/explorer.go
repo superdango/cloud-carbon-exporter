@@ -218,9 +218,12 @@ func fragmentURLPath(source string) []string {
 func (explorer *Explorer) CollectMetrics(ctx context.Context, metrics chan *cloudcarbonexporter.Metric, errs chan error) {
 	explorer.apiCalls.Store(0)
 	energyMetrics := make(chan *cloudcarbonexporter.Metric)
-	defer close(energyMetrics)
+
+	wg := new(sync.WaitGroup)
+	wg.Add(1)
 
 	go func() {
+		defer wg.Done()
 		for energyMetric := range energyMetrics {
 			energyMetric.SetLabel("cloud_provider", "gcp")
 			energyMetric.Value *= primitives.GoodPUE
@@ -229,6 +232,15 @@ func (explorer *Explorer) CollectMetrics(ctx context.Context, metrics chan *clou
 		}
 	}()
 
+	go func() {
+		defer close(energyMetrics)
+		explorer.collectMetrics(ctx, metrics, errs, energyMetrics)
+	}()
+
+	wg.Wait()
+}
+
+func (explorer *Explorer) collectMetrics(ctx context.Context, metrics chan *cloudcarbonexporter.Metric, errs chan error, energyMetrics chan *cloudcarbonexporter.Metric) {
 	v, err := explorer.cache.Get(ctx, "assets_zones_regions")
 	if err != nil {
 		errs <- err
