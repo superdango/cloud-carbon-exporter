@@ -28,19 +28,5 @@ cat <<EOF | duckdb -json | tee machine_types.json
 		acceleratorCount as "gpu",
 		acceleratorType as "gpu_type",
 	FROM read_csv('https://gcloud-compute.com/machine-types-regions.csv')
+	ORDER BY name
 EOF
-
-# Regex explanations:
-#
-# ([0-9]+)\s[xX]\s([0-9]+)(.+)SSD$ matches
-# 8 x 1000 SSD
-# 1 x 50 NVMe SSD
-# 1 x 900 NVMe SSD
-# 2 x 120 SSD
-# 4 x 3750 NVMe SSD
-#
-# ^(?!.*SSD)([0-9]+)\s[xX]\s([0-9]+) matches
-# 1 x 3750GB
-# 4 x 2000 HDD
-# 12 x 3750GB
-# 8 x 2000 HDD
