@@ -60,7 +60,7 @@ jobs:
 
           # This uses the pull request branch name in the event of a pull request (branch merge)
           # replacing all slashes (/) by underscores (_)
-          [ "$VERSION" == "merge" ] && VERSION="pr-${GITHUB_HEAD_REF/\//-}"
+          [ "$VERSION" == "merge" ] && VERSION="pr-$(echo $GITHUB_HEAD_REF | tr "\/" "-" )"
 
           echo IMAGE=$IMAGE_ID:$VERSION
 
