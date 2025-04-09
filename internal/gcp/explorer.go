@@ -27,7 +27,6 @@ import (
 
 type Option func(e *Explorer)
 
-
 type Explorer struct {
 	assets             *asset.Client
 	monitoringClient   *monitoring.Service
