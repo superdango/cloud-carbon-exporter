@@ -1,13 +1,9 @@
 package carbon
 
-import (
-	"github.com/superdango/cloud-carbon-exporter/model"
-)
-
 // NewAWSCloudCarbonFootprintIntensityMap is based on Cloud Carbon Footprint project estimation for AWS
 // https://github.com/cloud-carbon-footprint/cloud-carbon-footprint/blob/trunk/packages/aws/src/domain/AwsFootprintEstimationConstants.ts
-func NewAWSCloudCarbonFootprintIntensityMap() model.CarbonIntensityMap {
-	awsIntensityMap := model.CarbonIntensityMap{
+func NewAWSCloudCarbonFootprintIntensityMap() IntensityMap {
+	awsIntensityMap := IntensityMap{
 		"af-south-1":     900.6,
 		"ap-east-1":      710.0,
 		"ap-south-1":     708.2,

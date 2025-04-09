@@ -13,6 +13,8 @@ import (
 	"time"
 
 	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
+	"github.com/superdango/cloud-carbon-exporter/model/carbon"
+	"github.com/superdango/cloud-carbon-exporter/model/energy/primitives"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -25,19 +27,20 @@ import (
 
 const DAY = 24 * time.Hour
 
-type awsResourceExplorer interface {
-	awsExploreResources(ctx context.Context, region string, resources chan *cloudcarbonexporter.Resource) error
+type energyCollector interface {
+	collectMetrics(ctx context.Context, region string, metrics chan *cloudcarbonexporter.Metric) error
 	load(ctx context.Context) error
 }
 
 type Explorer struct {
-	mu                *sync.Mutex
-	awscfg            aws.Config
-	defaultRegion     string
-	roleArn           string
-	accountAZs        []AvailabilityZone
-	services          map[string][]string
-	resourcesCreators map[string][]awsResourceExplorer
+	mu                 *sync.Mutex
+	awscfg             aws.Config
+	defaultRegion      string
+	roleArn            string
+	accountAZs         []AvailabilityZone
+	activeServices     map[string][]string // serviceName: [region1, region2, ...]
+	energyCollectors   map[string][]energyCollector
+	carbonIntensityMap carbon.IntensityMap
 }
 
 type ExplorerOption func(*Explorer)
@@ -63,9 +66,10 @@ func WithRoleArn(role string) ExplorerOption {
 // NewExplorer initialize and returns a new AWS Explorer.
 func NewExplorer(ctx context.Context, opts ...ExplorerOption) (explorer *Explorer, err error) {
 	explorer = &Explorer{
-		mu:            new(sync.Mutex),
-		defaultRegion: "us-east-1",
-		accountAZs:    make([]AvailabilityZone, 0),
+		mu:                 new(sync.Mutex),
+		defaultRegion:      "us-east-1",
+		accountAZs:         make([]AvailabilityZone, 0),
+		carbonIntensityMap: carbon.NewAWSCloudCarbonFootprintIntensityMap(),
 	}
 
 	for _, opt := range opts {
@@ -84,44 +88,66 @@ func NewExplorer(ctx context.Context, opts ...ExplorerOption) (explorer *Explore
 		slog.Info("assuming aws role for resource services api calls", "role", explorer.roleArn)
 	}
 
-	explorer.resourcesCreators = map[string][]awsResourceExplorer{
-		"Amazon Elastic Compute Cloud - Compute": {
-			NewEC2InstanceExplorer(explorer.awscfg, explorer.defaultRegion),
-		},
-	}
 	errg, errgctx := errgroup.WithContext(ctx)
 
-	for _, rcs := range explorer.resourcesCreators {
-		for _, rc := range rcs {
-			rc := rc
+	errg.Go(func() error {
+		return explorer.loadAllEnergyEstimators(errgctx)
+	})
+
+	errg.Go(func() error {
+		return explorer.discoverActiveServicesAndRegions(errgctx)
+	})
+
+	return explorer, errg.Wait()
+}
+
+func (explorer *Explorer) loadAllEnergyEstimators(ctx context.Context) error {
+	explorer.energyCollectors = map[string][]energyCollector{
+		"Amazon Elastic Compute Cloud - Compute": {
+			NewEC2InstanceEnergyEstimator(ctx, explorer.awscfg, explorer.defaultRegion),
+			NewEC2VolumeEstimator(ctx, explorer.awscfg, explorer.defaultRegion),
+		},
+	}
+
+	errg, errgctx := errgroup.WithContext(ctx)
+	for _, energyEstimators := range explorer.energyCollectors {
+		for _, energyEstimator := range energyEstimators {
+			energyEstimator := energyEstimator
 			errg.Go(func() error {
-				if err := rc.load(errgctx); err != nil {
+				if err := energyEstimator.load(errgctx); err != nil {
 					return fmt.Errorf("failed to load resources creator: %w", err)
 				}
 				return nil
 			})
 		}
 	}
-
-	errg.Go(func() error {
-		return explorer.discoverActiveServicesAndRegions(ctx)
-	})
-
-	return explorer, errg.Wait()
+	return errg.Wait()
 }
 
-// Find resources on the configured AWS Account and sends them in the resources chan
-func (explorer *Explorer) Find(ctx context.Context, resources chan *cloudcarbonexporter.Resource, errs chan error) {
+// CollectMetrics resources on the configured AWS Account and sends them in the resources chan
+func (explorer *Explorer) CollectMetrics(ctx context.Context, metrics chan *cloudcarbonexporter.Metric, errs chan error) {
+	energyMetrics := make(chan *cloudcarbonexporter.Metric)
+	defer close(energyMetrics)
+
+	go func() {
+		for energyMetric := range energyMetrics {
+			energyMetric.SetLabel("cloud_provider", "aws")
+			energyMetric.Value *= primitives.GoodPUE
+			metrics <- energyMetric
+			metrics <- explorer.carbonIntensityMap.ComputeCO2eq(energyMetric)
+		}
+	}()
+
 	wg := new(sync.WaitGroup)
-	for service, regions := range explorer.services {
+	for service, regions := range explorer.activeServices {
 		for _, region := range regions {
-			for _, resourceCreator := range explorer.resourcesCreators[service] {
+			for _, collector := range explorer.energyCollectors[service] {
 				region := region
-				resourceCreator := resourceCreator
+				collector := collector
 				wg.Add(1)
 				go func() {
 					defer wg.Done()
-					errs <- resourceCreator.awsExploreResources(ctx, region, resources)
+					errs <- collector.collectMetrics(ctx, region, energyMetrics)
 				}()
 			}
 		}
@@ -254,7 +280,6 @@ func (e *Explorer) discoverActiveServicesAndRegions(ctx context.Context) error {
 		for _, group := range result.Groups {
 			service, az := group.Keys[0], group.Keys[1]
 			services[service] = append(services[service], e.Region(az))
-			slog.Debug("discovered service", "service", service, "region", e.Region(az))
 		}
 	}
 
@@ -266,7 +291,11 @@ func (e *Explorer) discoverActiveServicesAndRegions(ctx context.Context) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	e.services = services
+	e.activeServices = services
+	for service, locations := range services {
+		slog.Debug("discovered service", "service", service, "locations", locations)
+
+	}
 
 	return nil
 }

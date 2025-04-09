@@ -31,6 +31,7 @@ import (
 	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
 	"github.com/superdango/cloud-carbon-exporter/internal/cache"
 	"github.com/superdango/cloud-carbon-exporter/internal/must"
+	"github.com/superdango/cloud-carbon-exporter/model/energy/primitives"
 )
 
 //go:embed data/instance_types/instance_types.json
@@ -41,25 +42,31 @@ type instanceTypeInfos struct {
 	PhysicalProcessor string  `json:"physical_processor"`
 	VCPU              float64 `json:"vcpu"`
 	Memory            float64 `json:"memory"`
+	GPU               float64 `json:"gpu"`
+	GPUMemory         float64 `json:"gpu_memory"`
+	SSDCount          float64 `json:"ssd_count"`
+	SSDSize           float64 `json:"ssd_size"`
+	HDDCount          float64 `json:"hdd_count"`
+	HDDSize           float64 `json:"hdd_size"`
 }
 
-type EC2InstanceExplorer struct {
+type EC2InstanceEnergyEstimator struct {
 	awscfg            aws.Config
 	defaultRegion     string
 	instanceTypeInfos map[string]instanceTypeInfos
 	cache             *cache.Memory
 }
 
-func NewEC2InstanceExplorer(awscfg aws.Config, defaultRegion string) *EC2InstanceExplorer {
-	return &EC2InstanceExplorer{
+func NewEC2InstanceEnergyEstimator(ctx context.Context, awscfg aws.Config, defaultRegion string) *EC2InstanceEnergyEstimator {
+	return &EC2InstanceEnergyEstimator{
 		awscfg:            awscfg,
 		defaultRegion:     defaultRegion,
 		instanceTypeInfos: make(map[string]instanceTypeInfos),
-		cache:             cache.NewMemory(5 * time.Minute),
+		cache:             cache.NewMemory(ctx, 5*time.Minute),
 	}
 }
 
-func (rc *EC2InstanceExplorer) load(ctx context.Context) error {
+func (rc *EC2InstanceEnergyEstimator) load(ctx context.Context) error {
 	file, err := instanceTypeJsonFile.Open("data/instance_types/instance_types.json")
 	if err != nil {
 		return fmt.Errorf("failed to open instance type json file: %w", err)
@@ -82,7 +89,7 @@ func (rc *EC2InstanceExplorer) load(ctx context.Context) error {
 	return nil
 }
 
-func (ec2explorer *EC2InstanceExplorer) awsExploreResources(ctx context.Context, region string, resources chan *cloudcarbonexporter.Resource) error {
+func (ec2explorer *EC2InstanceEnergyEstimator) collectMetrics(ctx context.Context, region string, metrics chan *cloudcarbonexporter.Metric) error {
 	if region == "global" {
 		return nil
 	}
@@ -111,18 +118,23 @@ func (ec2explorer *EC2InstanceExplorer) awsExploreResources(ctx context.Context,
 				if err != nil {
 					return fmt.Errorf("failed to get instance %s cpu average: %w", *instance.InstanceId, err)
 				}
-				resources <- &cloudcarbonexporter.Resource{
-					CloudProvider: "aws",
-					Kind:          "ec2/instance",
-					ID:            *instance.InstanceId,
-					Region:        region,
-					Labels:        parseEC2Tags(instance.Tags),
-					Source: map[string]any{
-						"ec2_instance_core_count":         instanceType.VCPU,
-						"ec2_instance_cpu_usage_percent":  intanceAverageCPU,
-						"ec2_instance_physical_processor": instanceType.PhysicalProcessor,
-						"ec2_instance_memory_gb":          instanceType.Memory,
-					},
+
+				processor := primitives.LookupProcessorByName(instanceType.PhysicalProcessor)
+				watts := processor.EstimatePowerUsageWithTDP(instanceType.VCPU, intanceAverageCPU)
+				watts += primitives.EstimateMemoryPowerUsage(instanceType.Memory)
+
+				metrics <- &cloudcarbonexporter.Metric{
+					Name: "estimated_watts",
+					Labels: cloudcarbonexporter.MergeLabels(
+						parseEC2Tags(instance.Tags),
+						map[string]string{
+							"location":    region,
+							"az":          *instance.Placement.AvailabilityZone,
+							"kind":        "ec2/instance",
+							"instance_id": *instance.InstanceId,
+						},
+					),
+					Value: watts,
 				}
 			}
 		}
@@ -131,11 +143,17 @@ func (ec2explorer *EC2InstanceExplorer) awsExploreResources(ctx context.Context,
 	return nil
 }
 
-func (ec2explorer *EC2InstanceExplorer) GetInstanceCPUAverage(ctx context.Context, region string, instanceID string) (float64, error) {
+func (ec2explorer *EC2InstanceEnergyEstimator) GetInstanceCPUAverage(ctx context.Context, region string, instanceID string) (float64, error) {
 	key := fmt.Sprintf("%s/instances_average_cpu", region)
-	entry, err := ec2explorer.cache.GetOrSet(ctx, key, func(ctx context.Context) (any, error) {
-		return ec2explorer.ListInstanceCPUAverage(ctx, region)
-	}, 5*time.Minute)
+
+	// add dynamic cache entry if key does not exist yet
+	if exists, err := ec2explorer.cache.Exists(ctx, key); !exists || err != nil {
+		ec2explorer.cache.SetDynamic(ctx, key, func(ctx context.Context) (any, error) {
+			return ec2explorer.ListInstanceCPUAverage(ctx, region)
+		}, 5*time.Minute)
+	}
+
+	entry, err := ec2explorer.cache.Get(ctx, key)
 	if err != nil {
 		return 0.0, fmt.Errorf("failed to list instance cpu average: %w", err)
 	}
@@ -152,7 +170,7 @@ func (ec2explorer *EC2InstanceExplorer) GetInstanceCPUAverage(ctx context.Contex
 }
 
 // ListInstanceCPUAverage returns the 10 minutes average cpu for all instances in the region
-func (ec2explorer *EC2InstanceExplorer) ListInstanceCPUAverage(ctx context.Context, region string) (map[string]float64, error) {
+func (ec2explorer *EC2InstanceEnergyEstimator) ListInstanceCPUAverage(ctx context.Context, region string) (map[string]float64, error) {
 	metricName := "cpu_utilization_by_instance_id"
 	cloudwatchExpression := `SELECT AVG(CPUUtilization) FROM "AWS/EC2" GROUP BY InstanceId`
 	period := 10 * time.Minute

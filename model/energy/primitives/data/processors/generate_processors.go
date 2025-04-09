@@ -2,15 +2,15 @@ package main
 
 import (
 	"context"
+	"encoding/csv"
 	"encoding/json"
 	"flag"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 	"strings"
 	"sync"
-
-	"golang.org/x/sync/errgroup"
 )
 
 type BoaviztaAPI struct {
@@ -19,61 +19,59 @@ type BoaviztaAPI struct {
 }
 
 func main() {
-
 	ctx := context.Background()
 	apiBoavizta := flag.String("boavizta-api-url", "http://localhost:5000", "url of the boavizta api")
-	cloudProvider := flag.String("provider", "scaleway", "provider to export data from")
 	flag.Parse()
 
-	api := &BoaviztaAPI{url: *apiBoavizta, client: http.DefaultClient}
+	wg := new(sync.WaitGroup)
+	for provider := range strings.SplitSeq("aws,azure,gcp,scaleway", ",") {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			extractProviderProcessorsTDP(ctx, *apiBoavizta, provider)
+		}()
+	}
+	wg.Wait()
+}
 
-	types, err := api.ListCloudInstanceTypes(ctx, *cloudProvider)
+func extractProviderProcessorsTDP(ctx context.Context, apiBoavizta string, cloudProvider string) {
+	api := &BoaviztaAPI{url: apiBoavizta, client: http.DefaultClient}
+
+	types, err := api.ListCloudInstanceTypes(ctx, cloudProvider)
 	if err != nil {
 		panic(err)
 	}
 
-	mu := new(sync.Mutex)
-	typeIntensity := make(map[string][]JSONFloat)
-	errg, errgctx := errgroup.WithContext(ctx)
+	f, err := os.Create(cloudProvider + ".csv")
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+
+	w := csv.NewWriter(f)
+	defer w.Flush()
+	w.Comma = ';'
+	w.Write([]string{"name", "family", "tdp", "cores", "threads"})
+
 	for _, t := range types {
-		t := t
-		loads := make([]JSONFloat, 100)
-		errg.Go(func() error {
-			for i := range 100 {
-				impact, err := api.InstanceImpact(errgctx, *cloudProvider, t, i)
-				if err != nil {
-					return err
-				}
-				loads[i] = impact.Verbose.AVGPower.Value
-			}
-			mu.Lock()
-			defer mu.Unlock()
-			typeIntensity[t] = loads
-			return nil
-		})
-	}
-
-	if err := errg.Wait(); err != nil {
-		panic(err)
-	}
-
-	if *cloudProvider == "scaleway" {
-		startdustIntensity := make([]JSONFloat, len(typeIntensity["dev1-s"]))
-		copy(startdustIntensity, typeIntensity["dev1-s"])
-		for i := range len(startdustIntensity) {
-			startdustIntensity[i] = startdustIntensity[i] / 2
+		impact, err := api.InstanceImpact(ctx, cloudProvider, t, 0)
+		if err != nil {
+			slog.Warn(err.Error())
+			continue
 		}
-		typeIntensity["stardust1-s"] = startdustIntensity
-	}
 
-	f, err := os.Create(*cloudProvider + ".json")
-	if err != nil {
-		panic(err)
-	}
+		if impact.Verbose.CPU_1.Name.Value == "" ||
+			impact.Verbose.CPU_1.Family.Value == "" ||
+			impact.Verbose.CPU_1.CoreUnits.Value == 0 {
+			continue
+		}
 
-	err = json.NewEncoder(f).Encode(typeIntensity)
-	if err != nil {
-		panic(err)
+		w.Write([]string{
+			impact.Verbose.CPU_1.Name.Value,
+			impact.Verbose.CPU_1.Family.Value,
+			fmt.Sprintf("%.0f", impact.Verbose.CPU_1.TDP.Value),
+			fmt.Sprintf("%d", impact.Verbose.CPU_1.CoreUnits.Value),
+			fmt.Sprintf("%.0f", impact.Verbose.CPU_1.Threads.Value)})
 	}
 }
 
@@ -119,9 +117,29 @@ type InstanceImpactResult struct {
 		} `json:"pe"`
 	} `json:"impacts"`
 	Verbose struct {
+		VCPU struct {
+			Value float64 `json:"value"`
+		} `json:"vcpu"`
 		AVGPower struct {
 			Value JSONFloat `json:"value"`
 		} `json:"avg_power"`
+		CPU_1 struct {
+			CoreUnits struct {
+				Value int `json:"value"`
+			} `json:"core_units"`
+			Family struct {
+				Value string `json:"value"`
+			} `json:"family"`
+			Name struct {
+				Value string `json:"value"`
+			} `json:"name"`
+			TDP struct {
+				Value float64 `json:"value"`
+			} `json:"tdp"`
+			Threads struct {
+				Value float64 `json:"value"`
+			} `json:"threads"`
+		} `json:"CPU-1"`
 	} `json:"verbose"`
 }
 

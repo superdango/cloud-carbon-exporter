@@ -6,7 +6,6 @@ import (
 	"strconv"
 
 	"github.com/superdango/cloud-carbon-exporter/internal/must"
-	"github.com/superdango/cloud-carbon-exporter/model"
 )
 
 //go:embed data/gcp_region_carbon_info_2023.csv
@@ -15,7 +14,7 @@ var carboninfo embed.FS
 // NewGCPCarbonIntensityMap loads and parse official carbon data provided by GCP
 // https://github.com/GoogleCloudPlatform/region-carbon-info
 // Should be updated each year.
-func NewGCPCarbonIntensityMap() model.CarbonIntensityMap {
+func NewGCPCarbonIntensityMap() IntensityMap {
 	f, err := carboninfo.Open("data/gcp_region_carbon_info_2023.csv")
 	must.NoError(err)
 
@@ -23,7 +22,7 @@ func NewGCPCarbonIntensityMap() model.CarbonIntensityMap {
 	locations, err := intensityData.ReadAll()
 	must.NoError(err)
 
-	intensity := make(model.CarbonIntensityMap)
+	intensity := make(IntensityMap)
 
 	for line, location := range locations {
 		// skip csv header
@@ -37,9 +36,23 @@ func NewGCPCarbonIntensityMap() model.CarbonIntensityMap {
 		intensity[region] = co2eqbykwh
 	}
 
-	intensity["emea"] = intensity.Average([]string{"eu", "me", "af"}...)
-	intensity["apac"] = intensity.Average([]string{"as", "au"}...)
-	intensity["amer"] = intensity.Average([]string{"no", "so", "us"}...)
+	intensity["emea"] = intensity.Average("eu", "me", "af")
+	intensity["apac"] = intensity.Average("as", "au")
+	intensity["amer"] = intensity.Average("no", "so", "us")
+
+	//https://cloud.google.com/storage/docs/locations#predefined
+	intensity["asia1"] = intensity.Average("asia-east1", "asia-southeast1")
+	intensity["eur4"] = intensity.Average("europe-north1", "europe-west4")
+	intensity["eur5"] = intensity.Average("europe-west1", "europe-west2")
+	intensity["eur7"] = intensity.Average("europe-west2", "europe-west3")
+	intensity["eur8"] = intensity.Average("europe-west3", "europe-west6")
+	intensity["nam4"] = intensity.Average("us-central1", "us-east1")
+
+	//https://cloud.google.com/storage/docs/locations#location-mr
+	intensity["asia"] = intensity.Average("as")
+	intensity["eu"] = intensity.Average("eu")
+	intensity["us"] = intensity.Average("us")
+
 	intensity["global"] = intensity.Average("emea", "apac", "amer")
 
 	return intensity

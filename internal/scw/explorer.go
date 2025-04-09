@@ -9,6 +9,8 @@ import (
 	"github.com/scaleway/scaleway-sdk-go/api/instance/v1"
 	"github.com/scaleway/scaleway-sdk-go/scw"
 	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
+	"github.com/superdango/cloud-carbon-exporter/model/carbon"
+	"github.com/superdango/cloud-carbon-exporter/model/energy/primitives"
 )
 
 type ExplorerOption func(*Explorer)
@@ -32,13 +34,15 @@ func WithRegions(regions ...string) ExplorerOption {
 }
 
 type Explorer struct {
-	client  *scw.Client
-	regions []scw.Region
+	client             *scw.Client
+	regions            []scw.Region
+	carbonIntensityMap carbon.IntensityMap
 }
 
 func NewExplorer(opts ...ExplorerOption) (*Explorer, error) {
 	e := &Explorer{
-		regions: scw.AllRegions,
+		regions:            scw.AllRegions,
+		carbonIntensityMap: carbon.NewScalewayCloudCarbonFootprintIntensityMap(),
 	}
 
 	for _, opt := range opts {
@@ -52,26 +56,37 @@ func NewExplorer(opts ...ExplorerOption) (*Explorer, error) {
 	return e, nil
 }
 
-func (e *Explorer) Find(ctx context.Context, resources chan *cloudcarbonexporter.Resource, errs chan error) {
+func (explorer *Explorer) CollectMetrics(ctx context.Context, metrics chan *cloudcarbonexporter.Metric, errs chan error) {
 	wg := new(sync.WaitGroup)
-	for _, region := range e.regions {
+
+	energyMetrics := make(chan *cloudcarbonexporter.Metric)
+	defer close(energyMetrics)
+
+	go func() {
+		for energyMetric := range energyMetrics {
+			metrics <- energyMetric
+			metrics <- explorer.carbonIntensityMap.ComputeCO2eq(energyMetric)
+		}
+	}()
+
+	for _, region := range explorer.regions {
 		region := region
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			errs <- e.findRegionalInstances(ctx, region, resources)
+			errs <- explorer.findRegionalInstances(ctx, region, energyMetrics)
 		}()
 	}
 	wg.Wait()
 
 }
 
-func (e *Explorer) IsReady() bool { return true }
+func (explorer *Explorer) IsReady() bool { return true }
 
-func (e *Explorer) Close() error { return nil }
+func (explorer *Explorer) Close() error { return nil }
 
-func (e *Explorer) findRegionalInstances(ctx context.Context, region scw.Region, resources chan *cloudcarbonexporter.Resource) error {
-	api := instance.NewAPI(e.client)
+func (explorer *Explorer) findRegionalInstances(ctx context.Context, region scw.Region, metrics chan *cloudcarbonexporter.Metric) error {
+	api := instance.NewAPI(explorer.client)
 
 	resp, err := api.ListServers(&instance.ListServersRequest{Zone: scw.ZonePlWaw1}, scw.WithContext(ctx), scw.WithAllPages(), scw.WithZones(region.GetZones()...))
 	if err != nil {
@@ -79,20 +94,20 @@ func (e *Explorer) findRegionalInstances(ctx context.Context, region scw.Region,
 	}
 
 	for _, server := range resp.Servers {
-		resources <- &cloudcarbonexporter.Resource{
-			CloudProvider: "scw",
-			Kind:          "instance",
-			ID:            server.ID,
-			Region:        region.String(),
+		processor := primitives.LookupProcessorByName("TODO")
+		watts := processor.EstimatePowerUsageWithTDP(1, 0)
+		watts += primitives.EstimateMemoryPowerUsage(4)
+
+		metrics <- &cloudcarbonexporter.Metric{
+			Name: "estimated_watts",
 			Labels: map[string]string{
 				"name":          server.Name,
+				"region":        string(region),
 				"project":       server.Project,
-				"instance_type": server.CommercialType,
+				"instance_name": server.Name,
 				"tags":          strings.Join(server.Tags, ","),
 			},
-			Source: cloudcarbonexporter.AnyMap{
-				"server": server,
-			},
+			Value: watts,
 		}
 	}
 

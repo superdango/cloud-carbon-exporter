@@ -1,0 +1,52 @@
+name,family,tdp,cores,threads
+Apple M1,Tonga,20,8,8
+Annapurna Labs Graviton,Graviton,40,16,16
+Intel Core i7-8700B,Coffee Lake,65,6,12
+Intel Xeon E5-2651 V2,Ivy Bridge,95,12,24
+Intel Xeon E-2288G,Coffee Lake,95,8,16
+Intel Xeon E5-2665,Sandy Bridge,115,8,16
+Intel Xeon E5-2670,Sandy Bridge,115,8,16
+Intel Xeon E5-2680 V2,Ivy Bridge,115,10,20
+Intel Xeon E5-2676 V3,Haswell,120,12,24
+Intel Xeon E5-2690 V4,Broadwell,135,14,28
+Intel Xeon E5-2666 V3,Haswell,135,10,20
+Intel Xeon E5-2686 v4,Broadwell,145,18,36
+Intel Xeon E7-8880 V3,Haswell,150,18,36
+Intel Xeon Gold 6148,Skylake,150,20,40
+Annapurna Labs Graviton2,Graviton2,150,64,64
+AMD EPYC 7452,Rome,155,32,64
+Intel Xeon Scalable Platinum 8173M ,Skylake,165,28,56
+Intel Xeon Platinum 8176M,Skylake,165,28,56
+AMD EPYC 7281,Naples,170,16,32
+AMD EPYC 7413,Milan,180,24,48
+AMD EPYC 7551P,Naples,180,32,64
+Ampere Altra Q64-30,Quicksilver,180,64,64
+AMD EPYC 7571,Naples,200,32,64
+Intel Xeon Platinum 8180M,Skylake-SP,205,28,56
+Intel Xeon Gold 6246R,Cascade Lake,205,16,32
+Intel Xeon Platinum 8280L,Cascade Lake,205,28,56
+Intel Xeon Platinum 8280,Cascade Lake-SP,205,28,56
+AMD EPYC 9334,Genoa,210,32,64
+Intel Xeon Platinum 8259CL,Cascade Lake,210,24,48
+Annapurna Labs Graviton3,Graviton3,220,64,64
+AMD EPYC 7543,Milan,225,32,64
+AMD EPYC 7R13,Milan,225,48,96
+Intel Xeon Platinum 8252C,Cascade Lake,240,12,24
+Intel Xeon Platinum 8175M,Skylake,240,24,48
+AMD EPYC 7V12,Rome,240,64,128
+Intel Xeon Platinum 8124M,Skylake,240,18,36
+Intel Xeon Platinum 8275CL,Cascade Lake,240,24,48
+Intel Xeon Platinum 8151,Skylake,240,12,24
+Ampere Altra Max M128-30,Mystique,250,128,256
+Annapurna Labs Graviton3E,Graviton3E,250,64,64
+Intel Xeon Platinum 8370C,Ice Lake-SP,270,32,64
+AMD EPYC 7R32,Rome,280,48,96
+AMD EPYC 7763,Milan,280,64,128
+AMD EPYC 9R14,Genoa,280,96,96
+Annapurna Labs Graviton4,Graviton4,300,96,96
+Intel Xeon Platinum 8375C,Ice Lake,300,32,64
+Intel Xeon Platinum 8373C,Ice Lake,300,36,72
+Intel Xeon Platinum 8490H,Sapphire Rapids,350,60,120
+Intel Xeon 6455B,Sapphire Rapids,350,32,64
+Intel Xeon Platinum 8488C,Sapphire Rapids,385,48,96
+Intel Xeon Platinum 8272CL,Cascade Lake-SP,390,52,104
