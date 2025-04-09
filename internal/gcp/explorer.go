@@ -28,9 +28,9 @@ import (
 type Option func(e *Explorer)
 
 type Zone struct {
-	Name      string
-	Region    string
-	Continent string
+	Name        string
+	Region      string
+	MultiRegion string
 }
 
 type Zones []Zone
@@ -76,7 +76,7 @@ type Explorer struct {
 	regionDisks *RegionDisksExplorer
 	buckets     *BucketsExplorer
 
-	apiCalls *atomic.Int64
+	apiCallsCounter *atomic.Int64
 }
 
 func WithProjectID(projectID string) Option {
@@ -90,7 +90,7 @@ func NewExplorer(ctx context.Context, opts ...Option) (*Explorer, error) {
 	explorer := new(Explorer)
 	explorer.cache = cache.NewMemory(ctx, 5*time.Minute)
 	explorer.carbonIntensityMap = carbon.NewGCPCarbonIntensityMap()
-	explorer.apiCalls = new(atomic.Int64)
+	explorer.apiCallsCounter = new(atomic.Int64)
 
 	for _, c := range opts {
 		c(explorer)
@@ -100,10 +100,7 @@ func NewExplorer(ctx context.Context, opts ...Option) (*Explorer, error) {
 		return nil, fmt.Errorf("project id is not set")
 	}
 
-	err = explorer.cache.Set(ctx, "assets_zones_regions", cache.DynamicValue(explorer.discoverServicesZonesRegions()))
-	if err != nil {
-		return nil, fmt.Errorf("failed to set assets zones and regions cache: %w", err)
-	}
+	explorer.cache.SetDynamic(ctx, "assets_zones_regions", explorer.discoverServicesZonesRegions())
 
 	errg, errgctx := errgroup.WithContext(ctx)
 	errg.Go(func() error {
@@ -175,16 +172,17 @@ func (explorer *Explorer) loadZones(ctx context.Context) error {
 	for {
 		zone, err := it.Next()
 		if err == iterator.Done {
-			explorer.apiCalls.Add(1)
+			explorer.apiCallsCounter.Add(1)
 			break
 		}
 		if err != nil {
 			return fmt.Errorf("failed to get zone: %w", err)
 		}
 
+		region := lastURLPathFragment(*zone.Region)
 		explorer.gcpZones = append(explorer.gcpZones, Zone{
 			Name:   *zone.Name,
-			Region: lastURLPathFragment(*zone.Region),
+			Region: region,
 		})
 	}
 
@@ -216,7 +214,7 @@ func fragmentURLPath(source string) []string {
 }
 
 func (explorer *Explorer) CollectMetrics(ctx context.Context, metrics chan *cloudcarbonexporter.Metric, errs chan error) {
-	explorer.apiCalls.Store(0)
+	explorer.apiCallsCounter.Store(0) // reset api calls counter
 	energyMetrics := make(chan *cloudcarbonexporter.Metric)
 
 	wg := new(sync.WaitGroup)
@@ -234,13 +232,21 @@ func (explorer *Explorer) CollectMetrics(ctx context.Context, metrics chan *clou
 
 	go func() {
 		defer close(energyMetrics)
-		explorer.collectMetrics(ctx, metrics, errs, energyMetrics)
+		explorer.collectMetrics(ctx, energyMetrics, errs)
 	}()
 
 	wg.Wait()
+
+	metrics <- &cloudcarbonexporter.Metric{
+		Name: "api_calls",
+		Labels: map[string]string{
+			"provider": "gcp",
+		},
+		Value: float64(explorer.apiCallsCounter.Load()),
+	}
 }
 
-func (explorer *Explorer) collectMetrics(ctx context.Context, metrics chan *cloudcarbonexporter.Metric, errs chan error, energyMetrics chan *cloudcarbonexporter.Metric) {
+func (explorer *Explorer) collectMetrics(ctx context.Context, energyMetrics chan *cloudcarbonexporter.Metric, errs chan error) {
 	v, err := explorer.cache.Get(ctx, "assets_zones_regions")
 	if err != nil {
 		errs <- err
@@ -273,18 +279,10 @@ func (explorer *Explorer) collectMetrics(ctx context.Context, metrics chan *clou
 	}
 
 	wg.Wait()
-
-	metrics <- &cloudcarbonexporter.Metric{
-		Name: "api_calls",
-		Labels: map[string]string{
-			"provider": "gcp",
-		},
-		Value: float64(explorer.apiCalls.Load()),
-	}
 }
 
-func (explorer *Explorer) discoverServicesZonesRegions() cache.DynamicValue {
-	return cache.DynamicValue(func(ctx context.Context) (any, error) {
+func (explorer *Explorer) discoverServicesZonesRegions() cache.DynamicValueFunc {
+	return cache.DynamicValueFunc(func(ctx context.Context) (any, error) {
 		slog.Debug("listing assets", "projectID", explorer.projectID)
 		req := &assetpb.ListAssetsRequest{
 			Parent:      fmt.Sprintf("projects/%s", explorer.projectID),
@@ -299,7 +297,7 @@ func (explorer *Explorer) discoverServicesZonesRegions() cache.DynamicValue {
 		for {
 			asset, err := it.Next()
 			if err == iterator.Done {
-				explorer.apiCalls.Add(1)
+				explorer.apiCallsCounter.Add(1)
 				break
 			}
 

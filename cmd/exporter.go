@@ -13,7 +13,6 @@ import (
 	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
 
 	"github.com/superdango/cloud-carbon-exporter/internal/aws"
-	"github.com/superdango/cloud-carbon-exporter/internal/demo"
 	"github.com/superdango/cloud-carbon-exporter/internal/gcp"
 	"github.com/superdango/cloud-carbon-exporter/internal/scw"
 
@@ -42,7 +41,6 @@ func main() {
 	flagCloudAWSRoleArn := ""
 	flagCloudAWSDefaultRegion := ""
 	flagListen := ""
-	flagDemoEnabled := ""
 	flagLogLevel := ""
 	flagLogFormat := ""
 
@@ -51,7 +49,6 @@ func main() {
 	flag.StringVar(&flagCloudAWSRoleArn, "cloud.aws.rolearn", "", "aws role arn to assume")
 	flag.StringVar(&flagCloudAWSDefaultRegion, "cloud.aws.defaultregion", "us-east-1", "aws default region")
 	flag.StringVar(&flagListen, "listen", "0.0.0.0:2922", "addr to listen to")
-	flag.StringVar(&flagDemoEnabled, "demo.enabled", "false", "return fictive demo data")
 	flag.StringVar(&flagLogLevel, "log.level", "info", "log severity (debug, info, warn, error)")
 	flag.StringVar(&flagLogFormat, "log.format", "text", "log format (text, json)")
 
@@ -59,19 +56,20 @@ func main() {
 
 	initLogging(flagLogLevel, flagLogFormat)
 
-	collector := cloudcarbonexporter.NewCollector(
-		setupCollectorOptions(ctx, map[string]string{
-			"cloud.provider":          flagCloudProvider,
-			"cloud.gcp.projectid":     flagCloudGCPProjectID,
-			"cloud.aws.rolearn":       flagCloudAWSRoleArn,
-			"cloud.aws.defaultregion": flagCloudAWSDefaultRegion,
-			"demo.enabled":            flagDemoEnabled,
-		})...)
-
-	defer collector.Close()
+	explorer, err := setupExplorer(ctx, map[string]string{
+		"cloud.provider":          flagCloudProvider,
+		"cloud.gcp.projectid":     flagCloudGCPProjectID,
+		"cloud.aws.rolearn":       flagCloudAWSRoleArn,
+		"cloud.aws.defaultregion": flagCloudAWSDefaultRegion,
+	})
+	if err != nil {
+		slog.Error("failed to create explorer", "err", err.Error())
+		os.Exit(1)
+	}
+	defer explorer.Close()
 
 	mux := http.NewServeMux()
-	mux.Handle("/metrics", cloudcarbonexporter.NewOpenMetricsHandler(collector))
+	mux.Handle("/metrics", cloudcarbonexporter.NewOpenMetricsHandler(explorer))
 
 	slog.Info("starting cloud carbon exporter", "listen", flagListen)
 	if err := http.ListenAndServe(flagListen, mux); err != nil {
@@ -106,77 +104,49 @@ func initLogging(logLevel string, logFormat string) {
 	}
 }
 
-func setupCollectorOptions(ctx context.Context, params map[string]string) []cloudcarbonexporter.CollectorOptions {
-	return []cloudcarbonexporter.CollectorOptions{
-		func(c *cloudcarbonexporter.Collector) {
-			if params["demo.enabled"] == "true" {
-				c.SetOpt(cloudcarbonexporter.WithExplorer(demo.NewExplorer()))
-			}
-		},
-		func(c *cloudcarbonexporter.Collector) {
-			switch params["cloud.provider"] {
-			case "gcp":
-				if params["cloud.gcp.projectid"] == "" {
-					slog.Error("project id is not set")
-					flag.PrintDefaults()
-					os.Exit(1)
-				}
-				gcpExplorer, err := gcp.NewExplorer(ctx,
-					gcp.WithProjectID(params["cloud.gcp.projectid"]),
-				)
-				if err != nil {
-					slog.Error("failed to create gcp explorer", "project_id", params["projectID"], "err", err)
-					os.Exit(1)
-				}
-				c.SetOpt(cloudcarbonexporter.WithExplorer(gcpExplorer))
+func setupExplorer(ctx context.Context, params map[string]string) (cloudcarbonexporter.Explorer, error) {
+	switch params["cloud.provider"] {
+	case "gcp":
+		if params["cloud.gcp.projectid"] == "" {
+			slog.Error("project id is not set")
+			flag.PrintDefaults()
+			os.Exit(1)
+		}
+		return gcp.NewExplorer(ctx,
+			gcp.WithProjectID(params["cloud.gcp.projectid"]),
+		)
 
-			case "aws":
-				config, err := config.LoadDefaultConfig(ctx)
-				if err != nil {
-					slog.Error("failed to load aws config", "err", err)
-					os.Exit(1)
-				}
+	case "aws":
+		config, err := config.LoadDefaultConfig(ctx)
+		if err != nil {
+			slog.Error("failed to load aws config", "err", err)
+			os.Exit(1)
+		}
 
-				awsopts := []aws.ExplorerOption{
-					aws.WithAWSConfig(config),
-					aws.WithRoleArn(params["cloud.aws.rolearn"]),
-					aws.WithDefaultRegion(params["cloud.aws.defaultregion"]),
-				}
+		awsopts := []aws.ExplorerOption{
+			aws.WithAWSConfig(config),
+			aws.WithRoleArn(params["cloud.aws.rolearn"]),
+			aws.WithDefaultRegion(params["cloud.aws.defaultregion"]),
+		}
 
-				explorer, err := aws.NewExplorer(ctx, awsopts...)
-				if err != nil {
-					slog.Error("failed to create aws explorer", "err", err)
-					os.Exit(1)
-				}
+		return aws.NewExplorer(ctx, awsopts...)
 
-				c.SetOpt(cloudcarbonexporter.WithExplorer(explorer))
-			case "scw":
-				accessKey := os.Getenv("SCW_ACCESS_KEY")
-				secretKey := os.Getenv("SCW_SECRET_KEY")
+	case "scw":
+		accessKey := os.Getenv("SCW_ACCESS_KEY")
+		secretKey := os.Getenv("SCW_SECRET_KEY")
 
-				client, err := _scw.NewClient(_scw.WithAuth(accessKey, secretKey))
-				if err != nil {
-					slog.Error("failed to load scaleway client", "err", err)
-					os.Exit(1)
-				}
+		client, err := _scw.NewClient(_scw.WithAuth(accessKey, secretKey))
+		if err != nil {
+			return nil, fmt.Errorf("failed to load scaleway client: %w", err)
+		}
 
-				explorer, err := scw.NewExplorer(scw.WithClient(client))
-				if err != nil {
-					slog.Error("failed to create scaleway explorer", "err", err)
-					os.Exit(1)
-				}
+		return scw.NewExplorer(scw.WithClient(client))
 
-				c.SetOpt(cloudcarbonexporter.WithExplorer(explorer))
-			case "":
-				slog.Error("cloud provider is not set")
-				flag.PrintDefaults()
-				os.Exit(1)
+	case "":
+		return nil, fmt.Errorf("cloud provider is not set")
 
-			default:
-				slog.Error("cloud provider is not supported yet", "cloud.provider", params["cloud.provider"])
-				os.Exit(1)
-			}
-		},
+	default:
+		return nil, fmt.Errorf("cloud provider %s is not supported", params["cloud.provider"])
 	}
 }
 

@@ -69,6 +69,10 @@ func NewInstancesExplorer(ctx context.Context, explorer *Explorer) (instanceExpl
 		return nil, fmt.Errorf("failed to create compute instances rest client: %w", err)
 	}
 
+	explorer.cache.SetDynamic(ctx, "instances_average_cpu", func(ctx context.Context) (any, error) {
+		return instanceExplorer.ListInstanceCPUAverage(ctx)
+	}, 5*time.Minute)
+
 	instanceExplorer.loadMachineTypes()
 
 	return instanceExplorer, nil
@@ -88,7 +92,7 @@ func (instanceExplorer *InstancesExplorer) collectMetrics(ctx context.Context, z
 	for {
 		instance, err := instancesIter.Next()
 		if err == iterator.Done {
-			instanceExplorer.apiCalls.Add(1)
+			instanceExplorer.apiCallsCounter.Add(1)
 			break
 		}
 		if err != nil {
@@ -141,12 +145,9 @@ func (instanceExplorer *InstancesExplorer) GetInstanceAverageCPULoad(ctx context
 	instanceExplorer.mu.Lock()
 	defer instanceExplorer.mu.Unlock()
 
-	key := "instances_average_cpu"
-	entry, err := instanceExplorer.cache.GetOrSet(ctx, key, func(ctx context.Context) (any, error) {
-		return instanceExplorer.ListInstanceCPUAverage(ctx)
-	}, 5*time.Minute)
+	entry, err := instanceExplorer.cache.Get(ctx, "instances_average_cpu")
 	if err != nil {
-		return 1.0, fmt.Errorf("failed to list instance cpu average: %w", err)
+		return 0, fmt.Errorf("failed to get explorer instance average cpu cache: %w", err)
 	}
 
 	instancesAverageCPU, ok := entry.(map[string]float64)
@@ -170,7 +171,7 @@ func (explorer *InstancesExplorer) ListInstanceCPUAverage(ctx context.Context) (
 		return nil, fmt.Errorf("failed to query for instance monitoring data: %w", err)
 	}
 
-	explorer.apiCalls.Add(1)
+	explorer.apiCallsCounter.Add(1)
 
 	return instanceList, nil
 }
@@ -202,7 +203,7 @@ func (disksExplorer *DisksExplorer) collectMetrics(ctx context.Context, zone str
 	for {
 		disk, err := disksIter.Next()
 		if err == iterator.Done {
-			disksExplorer.apiCalls.Add(1)
+			disksExplorer.apiCallsCounter.Add(1)
 			break
 		}
 		if err != nil {
@@ -274,7 +275,7 @@ func (regionDisksExplorer *RegionDisksExplorer) collectMetrics(ctx context.Conte
 	for {
 		disk, err := regionDisksIter.Next()
 		if err == iterator.Done {
-			regionDisksExplorer.apiCalls.Add(1)
+			regionDisksExplorer.apiCallsCounter.Add(1)
 			break
 		}
 		if err != nil {

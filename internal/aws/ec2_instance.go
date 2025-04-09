@@ -145,9 +145,15 @@ func (ec2explorer *EC2InstanceEnergyEstimator) collectMetrics(ctx context.Contex
 
 func (ec2explorer *EC2InstanceEnergyEstimator) GetInstanceCPUAverage(ctx context.Context, region string, instanceID string) (float64, error) {
 	key := fmt.Sprintf("%s/instances_average_cpu", region)
-	entry, err := ec2explorer.cache.GetOrSet(ctx, key, func(ctx context.Context) (any, error) {
-		return ec2explorer.ListInstanceCPUAverage(ctx, region)
-	}, 5*time.Minute)
+
+	// add dynamic cache entry if key does not exist yet
+	if exists, err := ec2explorer.cache.Exists(ctx, key); !exists || err != nil {
+		ec2explorer.cache.SetDynamic(ctx, key, func(ctx context.Context) (any, error) {
+			return ec2explorer.ListInstanceCPUAverage(ctx, region)
+		}, 5*time.Minute)
+	}
+
+	entry, err := ec2explorer.cache.Get(ctx, key)
 	if err != nil {
 		return 0.0, fmt.Errorf("failed to list instance cpu average: %w", err)
 	}

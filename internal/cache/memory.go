@@ -9,12 +9,12 @@ import (
 	"github.com/superdango/cloud-carbon-exporter/internal/must"
 )
 
-type DynamicValue func(ctx context.Context) (any, error)
+type DynamicValueFunc func(ctx context.Context) (any, error)
 
 type entry struct {
 	expiresAt     time.Time
 	v             any
-	fn            DynamicValue
+	dynamicFunc   DynamicValueFunc
 	cacheDuration time.Duration
 }
 
@@ -23,11 +23,11 @@ func (e *entry) isExpired() bool {
 }
 
 func (e *entry) isDynamic() bool {
-	return e.fn != nil
+	return e.dynamicFunc != nil
 }
 
 func (e *entry) refresh(ctx context.Context) error {
-	v, err := e.fn(ctx)
+	v, err := e.dynamicFunc(ctx)
 	if err != nil {
 		return err
 	}
@@ -58,13 +58,13 @@ func (m *Memory) Set(ctx context.Context, k string, v any, ttl ...time.Duration)
 		defaultTTL = ttl[0]
 	}
 
-	if fn, ok := v.(DynamicValue); ok {
+	if fn, ok := v.(DynamicValueFunc); ok {
 		// store dynamic value as expired to force refresh on the first Get
 		m.m.Store(k, &entry{
 			expiresAt:     time.Now(),
 			v:             v,
-			fn:            fn,
 			cacheDuration: defaultTTL,
+			dynamicFunc:   fn,
 		})
 
 		slog.Debug("new dynamic cache entry", "key", k)
@@ -82,26 +82,22 @@ func (m *Memory) Set(ctx context.Context, k string, v any, ttl ...time.Duration)
 	return nil
 }
 
-func (m *Memory) GetOrSet(ctx context.Context, key string, valueFunc func(ctx context.Context) (any, error), ttl ...time.Duration) (v any, err error) {
-	v, err = m.Get(ctx, key)
-	if err != nil {
-		if err == ErrNotFound {
-			v, err = valueFunc(ctx)
-			if err != nil {
-				return nil, err
-			}
-
-			err = m.Set(ctx, key, v, ttl...)
-			if err != nil {
-				return nil, err
-			}
-
-			return v, nil
-		}
-		return nil, err
+// SetDynamic creates cache entry with dynamic value.
+func (m *Memory) SetDynamic(ctx context.Context, k string, fn DynamicValueFunc, ttl ...time.Duration) error {
+	defaultTTL := m.defaultTTL
+	if len(ttl) > 0 {
+		defaultTTL = ttl[0]
 	}
 
-	return v, nil
+	m.m.Store(k, &entry{
+		expiresAt:     time.Now(),
+		cacheDuration: defaultTTL,
+		dynamicFunc:   fn,
+	})
+
+	slog.Debug("new dynamic cache entry", "key", k)
+
+	return nil
 }
 
 func (m *Memory) Get(ctx context.Context, k string) (v any, err error) {
@@ -127,6 +123,11 @@ func (m *Memory) Get(ctx context.Context, k string) (v any, err error) {
 	}
 
 	return entry.v, nil
+}
+
+func (m *Memory) Exists(ctx context.Context, k string) (bool, error) {
+	_, found := m.m.Load(k)
+	return found, nil
 }
 
 func (m *Memory) expirerer(ctx context.Context) {

@@ -30,6 +30,10 @@ func NewBucketsExplorer(ctx context.Context, explorer *Explorer) (bucketsExplore
 		return nil, fmt.Errorf("failed to create buckets client: %w", err)
 	}
 
+	explorer.cache.SetDynamic(ctx, "buckets_size", func(ctx context.Context) (any, error) {
+		return bucketsExplorer.ListBucketSize(ctx)
+	}, 6*time.Hour)
+
 	return bucketsExplorer, nil
 }
 
@@ -39,7 +43,7 @@ func (bucketsExplorer *BucketsExplorer) collectMetrics(ctx context.Context, metr
 	for {
 		bucket, err := bucketsIter.Next()
 		if err == iterator.Done {
-			bucketsExplorer.apiCalls.Add(1)
+			bucketsExplorer.apiCallsCounter.Add(1)
 			break
 		}
 
@@ -60,8 +64,8 @@ func (bucketsExplorer *BucketsExplorer) collectMetrics(ctx context.Context, metr
 			Labels: cloudcarbonexporter.MergeLabels(
 				map[string]string{
 					"kind":        "storage/Bucket",
-					"bucket_name": bucketName,
 					"region":      "global", // TODO: more specific location
+					"bucket_name": bucketName,
 				},
 				bucket.Labels,
 			),
@@ -78,16 +82,13 @@ func bytesToGigabytes(bytes float64) float64 {
 }
 
 func (explorer *BucketsExplorer) GetBucketSize(ctx context.Context, bucketName string) (float64, error) {
+	// locking mutex prevents monitoring requests sent in parallel
 	explorer.mu.Lock()
 	defer explorer.mu.Unlock()
 
-	key := "bucket_size"
-	ttl := 5 * time.Minute
-	entry, err := explorer.cache.GetOrSet(ctx, key, func(ctx context.Context) (any, error) {
-		return explorer.ListBucketSize(ctx)
-	}, ttl)
+	entry, err := explorer.cache.Get(ctx, "buckets_size")
 	if err != nil {
-		return 0, fmt.Errorf("failed to list bucket size: %w", err)
+		return 0, fmt.Errorf("failed to get explorer cache bucket size: %w", err)
 	}
 
 	bucketsSize, ok := entry.(map[string]float64)
@@ -110,7 +111,7 @@ func (explorer *BucketsExplorer) ListBucketSize(ctx context.Context) (map[string
 		return nil, fmt.Errorf("failed to query for bucket monitoring data: %w", err)
 	}
 
-	explorer.apiCalls.Add(1)
+	explorer.apiCallsCounter.Add(1)
 
 	return bucketList, nil
 }

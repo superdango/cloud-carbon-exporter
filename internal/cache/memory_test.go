@@ -21,7 +21,7 @@ func TestMemory(t *testing.T) {
 	_, err = memory.Get(t.Context(), "k1")
 	assert.ErrorIs(t, err, ErrNotFound)
 
-	err = memory.Set(t.Context(), "d1", DynamicValue(func(ctx context.Context) (any, error) {
+	err = memory.Set(t.Context(), "d1", DynamicValueFunc(func(ctx context.Context) (any, error) {
 		return "v1", nil
 	}))
 	assert.NoError(t, err)
@@ -30,7 +30,7 @@ func TestMemory(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "v1", v)
 
-	err = memory.Set(t.Context(), "d2", DynamicValue(func(ctx context.Context) (any, error) {
+	err = memory.Set(t.Context(), "d2", DynamicValueFunc(func(ctx context.Context) (any, error) {
 		return "v1", nil
 	}), 0)
 	assert.NoError(t, err)
@@ -40,7 +40,7 @@ func TestMemory(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "v1", v)
 
-	err = memory.Set(t.Context(), "d3", DynamicValue(func(ctx context.Context) (any, error) {
+	err = memory.Set(t.Context(), "d3", DynamicValueFunc(func(ctx context.Context) (any, error) {
 		return nil, fmt.Errorf("expected error")
 	}), 0)
 	assert.NoError(t, err)
