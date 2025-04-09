@@ -76,7 +76,7 @@ func (ec2explorer *EC2VolumeEstimator) collectMetrics(ctx context.Context, regio
 				Name: "estimated_watts",
 				Labels: cloudcarbonexporter.MergeLabels(
 					map[string]string{
-						"region":      region,
+						"location":    region,
 						"az":          *volume.AvailabilityZone,
 						"kind":        "ec2/volume",
 						"volume_id":   *volume.VolumeId,

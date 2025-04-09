@@ -69,9 +69,12 @@ func main() {
 	defer explorer.Close()
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "<a href=\"/metrics\">go to /metrics</a>")
+	})
 	mux.Handle("/metrics", cloudcarbonexporter.NewOpenMetricsHandler(explorer))
 
-	slog.Info("starting cloud carbon exporter", "listen", flagListen)
+	slog.Info("starting cloud carbon exporter", "listen", "http://"+flagListen)
 	if err := http.ListenAndServe(flagListen, mux); err != nil {
 		slog.Error("failed to start cloud carbon exporter", "err", err)
 		os.Exit(1)

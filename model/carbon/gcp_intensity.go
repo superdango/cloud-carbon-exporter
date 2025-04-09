@@ -36,13 +36,22 @@ func NewGCPCarbonIntensityMap() IntensityMap {
 		intensity[region] = co2eqbykwh
 	}
 
-	intensity["emea"] = intensity.Average([]string{"eu", "me", "af"}...)
-	intensity["apac"] = intensity.Average([]string{"as", "au"}...)
-	intensity["amer"] = intensity.Average([]string{"no", "so", "us"}...)
+	intensity["emea"] = intensity.Average("eu", "me", "af")
+	intensity["apac"] = intensity.Average("as", "au")
+	intensity["amer"] = intensity.Average("no", "so", "us")
 
-	intensity["asia"] = intensity.Average([]string{"as"}...)
-	intensity["eu"] = intensity.Average([]string{"eu"}...)
-	intensity["us"] = intensity["amer"]
+	//https://cloud.google.com/storage/docs/locations#predefined
+	intensity["asia1"] = intensity.Average("asia-east1", "asia-southeast1")
+	intensity["eur4"] = intensity.Average("europe-north1", "europe-west4")
+	intensity["eur5"] = intensity.Average("europe-west1", "europe-west2")
+	intensity["eur7"] = intensity.Average("europe-west2", "europe-west3")
+	intensity["eur8"] = intensity.Average("europe-west3", "europe-west6")
+	intensity["nam4"] = intensity.Average("us-central1", "us-east1")
+
+	//https://cloud.google.com/storage/docs/locations#location-mr
+	intensity["asia"] = intensity.Average("as")
+	intensity["eu"] = intensity.Average("eu")
+	intensity["us"] = intensity.Average("us")
 
 	intensity["global"] = intensity.Average("emea", "apac", "amer")
 

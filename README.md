@@ -48,13 +48,8 @@ Try our live demo with our Grafana dashboard:
 
 **Multi Cloud** · We want to support as much cloud platform as possible. From hyperscalers to edge datacenters to regional provider. For now we support: [GCP](https://github.com/superdango/cloud-carbon-exporter?tab=readme-ov-file#google-cloud-platform), [AWS](https://github.com/superdango/cloud-carbon-exporter?tab=readme-ov-file#amazon-web-services), [Scaleway](https://github.com/superdango/cloud-carbon-exporter?tab=readme-ov-file#scaleway)
 
-**Multi Model** · The exporter is designed to be model agnostic. We plan to support and contribute back to:
+**Dangofish Model** · This tool will prioritize the number of supported resources over the precision of the exported metrics. Estimating precisely the energy consumption of a resource is a hard task. The complexity and opacity of a Cloud service increase the margin of error but trends should be respected. Model calculations are based on public data - mixed with our own hypothesis documented in [primitives model](https://github.com/superdango/cloud-carbon-exporter/blob/main/model/energy/primitives/README.md) and [cloud model](https://github.com/superdango/cloud-carbon-exporter/blob/main/model/energy/cloud/README.md)
 
-- https://www.cloudcarbonfootprint.org/
-- https://boavizta.org/en
-- Other experimentations
-
-This tool will prioritize the number of supported resources over the precision of the exported metrics. Estimating precisely the energy consumption of a resource is a hard task. The complexity and opacity of a Cloud service increase the margin of error but trends should be respected.
 
 Once the resource energy draw is estimated, the exporter evaluates the carbon intensity of the resource at its location based on [publicly available datasets.](https://github.com/GoogleCloudPlatform/region-carbon-info)
 
@@ -81,6 +76,7 @@ The Cloud Carbon Exporter can work on Google Cloud Platform, Amazon Web Service 
       sequenceDiagram
             Prometheus->>cloud-carbon-exporter: scrape metrics
             cloud-carbon-exporter->>Asset Inventory: Query all used resources
+            cloud-carbon-exporter->>GCP Resources API: Describe Resource
             cloud-carbon-exporter->>Monitoring: Get Resource statistics
             cloud-carbon-exporter-->>Prometheus: Returns Watts and CO2 metrics
 ```
@@ -94,7 +90,7 @@ The exporter uses GCP Application Default Credentials:
 ```
 $ docker run -p 2922 ghcr.io/superdango/cloud-carbon-exporter:latest \
         -cloud.provider=gcp \
-        -gcp.projectid=myproject
+        -cloud.gcp.projectid=myproject
 ```
 
 ### Amazon Web Services

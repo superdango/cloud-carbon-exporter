@@ -3,6 +3,7 @@ package gcp
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -64,7 +65,7 @@ func (bucketsExplorer *BucketsExplorer) collectMetrics(ctx context.Context, metr
 			Labels: cloudcarbonexporter.MergeLabels(
 				map[string]string{
 					"kind":        "storage/Bucket",
-					"region":      "global", // TODO: more specific location
+					"location":    strings.ToLower(bucket.Location),
 					"bucket_name": bucketName,
 				},
 				bucket.Labels,

@@ -39,9 +39,9 @@ func hasOnePrefix(s string, prefixes ...string) bool {
 }
 
 func (intensity IntensityMap) Get(location string) float64 {
+	location = strings.ToLower(location)
 	locationsize := 0
-	locationIntensity, found := intensity["global"]
-	must.Assert(found, "global coefficient not set")
+	locationIntensity := 0.0
 
 	for l, carbonIntensity := range intensity {
 		if strings.HasPrefix(location, l) {
@@ -51,19 +51,26 @@ func (intensity IntensityMap) Get(location string) float64 {
 			}
 		}
 	}
+	if locationIntensity == 0.0 {
+		slog.Debug("location co2 intensity not found, assuming global intensity", "location", location)
+		var found bool
+		locationIntensity, found = intensity["global"]
+		must.Assert(found, "global coefficient not set")
+	}
+
 	return locationIntensity
 }
 
 // ComputeCO2eq takes an energy metric as input and return its carbon emission equivalent using
-// the source region label.
+// the source location label.
 func (intensityMap IntensityMap) ComputeCO2eq(wattMetric *cloudcarbonexporter.Metric) *cloudcarbonexporter.Metric {
-	if _, found := wattMetric.Labels["region"]; !found {
-		slog.Warn("watt metric does not contains a region, cannot estimate co2 emission", "metric_labels", wattMetric.Labels)
+	if _, found := wattMetric.Labels["location"]; !found {
+		slog.Warn("watt metric does not contains a location, cannot estimate co2 emission", "metric_labels", wattMetric.Labels)
 		return nil
 	}
 	emissionMetric := wattMetric.Clone()
 	emissionMetric.Name = "estimated_g_co2eq_second"
-	gramPerKWh := intensityMap.Get(wattMetric.Labels["region"]) / 1000 / 60 / 60
+	gramPerKWh := intensityMap.Get(wattMetric.Labels["location"]) / 1000 / 60 / 60
 	emissionMetric.Value = wattMetric.Value * gramPerKWh
 	return &emissionMetric
 }

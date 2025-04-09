@@ -128,7 +128,7 @@ func (ec2explorer *EC2InstanceEnergyEstimator) collectMetrics(ctx context.Contex
 					Labels: cloudcarbonexporter.MergeLabels(
 						parseEC2Tags(instance.Tags),
 						map[string]string{
-							"region":      region,
+							"location":    region,
 							"az":          *instance.Placement.AvailabilityZone,
 							"kind":        "ec2/instance",
 							"instance_id": *instance.InstanceId,
