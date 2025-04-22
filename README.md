@@ -1,8 +1,8 @@
 # Cloud Carbon Exporter
+
 Monitor your cloud's carbon footprint in real-time
 
 ![test-build-push badge](https://github.com/superdango/cloud-carbon-exporter/actions/workflows/test-build-push.yaml/badge.svg)
-
 
 Cloud Carbon Exporter automatically discovers cloud resources, estimates energy consumption and carbon emissions in real-time. This tool provides valuable insights for operational and tech teams interested in following the [Carbon-Driven Development](https://dangofish.com/carbon-driven-development) principles.
 
@@ -11,6 +11,7 @@ Cloud Carbon Exporter automatically discovers cloud resources, estimates energy 
 Carbon-Driven Development (CDD) is a philosophy to build digital services and manage cloud infrastructure with environmental sustainability at its core.
 
 It revolves around three pillars:
+
 1. **Estimate energy consumption** for each cloud resource (servers, load balancers, storage, etc.)
 2. Collect data in **production environments**
 3. Aggregate data in **real-time**
@@ -24,20 +25,19 @@ By applying these few rules, production teams will be able to:
 
 [Check out the original article](https://dangofish.com/carbon-driven-development) which explains in detail the concepts of CDD.
 
-
 ### Demo
 
 ![grafana demo cdd](./docs/demo-grafana-cdd.png)
 
 On the screenshot above, you can visualize and understand easily:
-- the estimated energy consumed by connected user to the online service, 
+
+- the estimated energy consumed by connected user to the online service,
 - the current CO2 emissions,
 - the equivalent in turned on lightbulbs.
 
 You can easily customize the content of this dashboard using the data returned by the exporter.
 
-Try our live demo with our Grafana dashboard:
-[https://demo.carbondriven.dev]("https://demo.carbondriven.dev/public-dashboards/04a3c6d5961c4463b91a3333d488e584")
+Try our live demo with our Grafana dashboard: [https://demo.carbondriven.dev]("https://demo.carbondriven.dev/public-dashboards/04a3c6d5961c4463b91a3333d488e584")
 
 ## Technical Overview
 
@@ -50,13 +50,11 @@ Try our live demo with our Grafana dashboard:
 
 **Dangofish Model** · This tool will prioritize the number of supported resources over the precision of the exported metrics. Estimating precisely the energy consumption of a resource is a hard task. The complexity and opacity of a Cloud service increase the margin of error but trends should be respected. Model calculations are based on public data - mixed with our own hypothesis documented in [primitives model](https://github.com/superdango/cloud-carbon-exporter/blob/main/model/energy/primitives/README.md) and [cloud model](https://github.com/superdango/cloud-carbon-exporter/blob/main/model/energy/cloud/README.md)
 
-
 Once the resource energy draw is estimated, the exporter evaluates the carbon intensity of the resource at its location based on [publicly available datasets.](https://github.com/GoogleCloudPlatform/region-carbon-info)
 
 **OpenMetrics** · The exporter is compatible [OpenMetrics](https://prometheus.io/docs/specs/om/open_metrics_spec/) format. Therefore, you can ingest metrics into Prometheus, Datadog and every time series database that support this standard.
 
 **Performance** · We're paying close attention to the exporter performance. Most API requests are done concurrently and cached. Most scrapes finish under 1000ms even with thousand monitored resources.
-
 
 ## Install
 
