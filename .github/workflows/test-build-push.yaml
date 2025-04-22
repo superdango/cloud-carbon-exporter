@@ -32,6 +32,7 @@ jobs:
       packages: write
       contents: read
     strategy:
+      fail-fast: true
       matrix:
         architecture: [amd64, arm64]
 
