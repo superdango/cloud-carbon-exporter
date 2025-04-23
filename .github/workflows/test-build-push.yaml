@@ -31,14 +31,13 @@ jobs:
     permissions:
       packages: write
       contents: read
+    strategy:
+      fail-fast: true
+      matrix:
+        architecture: [amd64, arm64]
+
     steps:
       - uses: actions/checkout@v4
-
-      - name: build image
-        run: docker build . --file Dockerfile --tag $IMAGE_NAME --label "runnumber=${GITHUB_RUN_ID}"
-
-      - name: log in to registry
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
       - name: push image
         run: |
@@ -47,6 +46,8 @@ jobs:
 
           # This changes all uppercase characters to lowercase.
           IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
+
+          echo "IMAGE_ID=$IMAGE_ID" >> $GITHUB_ENV
 
           # This strips the git ref prefix from the version.
           echo "${{ github.ref }}" # debug 
@@ -62,10 +63,21 @@ jobs:
           # replacing all slashes (/) by underscores (_)
           [ "$VERSION" == "merge" ] && VERSION="pr-$(echo $GITHUB_HEAD_REF | tr "\/" "-" )"
 
-          echo IMAGE=$IMAGE_ID:$VERSION
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
 
-          docker tag $IMAGE_NAME $IMAGE_ID:$VERSION
-          docker tag $IMAGE_NAME $IMAGE_ID:${GITHUB_SHA::7}
+      - name: log in to registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-          docker push $IMAGE_ID:$VERSION
-          docker push $IMAGE_ID:${GITHUB_SHA::7}
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          tags: "${{env.IMAGE_ID}}:${{env.VERSION}},${{env.IMAGE_ID}}:${{env.SHORT_SHA}}"
+          platforms: linux/${{ matrix.architecture }}
