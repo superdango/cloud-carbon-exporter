@@ -41,6 +41,27 @@ func setupTests() {
 				Cores:   14,
 				Threads: 28,
 			},
+			{
+				Name:    "Annapurna Labs Graviton2",
+				Family:  "Graviton2",
+				Tdp:     135,
+				Cores:   14,
+				Threads: 28,
+			},
+			{
+				Name:    "Annapurna Labs Graviton3",
+				Family:  "Graviton3",
+				Tdp:     135,
+				Cores:   14,
+				Threads: 28,
+			},
+			{
+				Name:    "Annapurna Labs Graviton4",
+				Family:  "Graviton3",
+				Tdp:     135,
+				Cores:   14,
+				Threads: 28,
+			},
 		}
 		processorFullNames = make([]string, len(processors))
 		for i, p := range processors {
@@ -68,6 +89,9 @@ func TestCPUPowerUsage(t *testing.T) {
 
 	assert.Equal(t, "Intel Xeon E5-2690 V4", LookupProcessorByName("Broadwell").Name)
 	assert.Equal(t, "Intel Xeon", LookupProcessorByName("Intel Xeon Family").Name)
+	assert.Equal(t, "Annapurna Labs Graviton2", LookupProcessorByName("AWS Graviton2 Processor").Name)
+	assert.Equal(t, "Annapurna Labs Graviton3", LookupProcessorByName("AWS Graviton3 Processor").Name)
+	assert.Equal(t, "Annapurna Labs Graviton4", LookupProcessorByName("Graviton4").Name)
 }
 
 func TestSubMatches(t *testing.T) {

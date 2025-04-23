@@ -29,7 +29,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
-	"github.com/superdango/cloud-carbon-exporter/internal/cache"
 	"github.com/superdango/cloud-carbon-exporter/internal/must"
 	"github.com/superdango/cloud-carbon-exporter/model/energy/primitives"
 )
@@ -50,23 +49,17 @@ type instanceTypeInfos struct {
 	HDDSize           float64 `json:"hdd_size"`
 }
 
-type EC2InstanceEnergyEstimator struct {
-	awscfg            aws.Config
-	defaultRegion     string
-	instanceTypeInfos map[string]instanceTypeInfos
-	cache             *cache.Memory
+type EC2InstanceExplorer struct {
+	*Explorer
 }
 
-func NewEC2InstanceEnergyEstimator(ctx context.Context, awscfg aws.Config, defaultRegion string) *EC2InstanceEnergyEstimator {
-	return &EC2InstanceEnergyEstimator{
-		awscfg:            awscfg,
-		defaultRegion:     defaultRegion,
-		instanceTypeInfos: make(map[string]instanceTypeInfos),
-		cache:             cache.NewMemory(ctx, 5*time.Minute),
+func NewEC2InstanceExplorer(ctx context.Context, explorer *Explorer) *EC2InstanceExplorer {
+	return &EC2InstanceExplorer{
+		Explorer: explorer,
 	}
 }
 
-func (rc *EC2InstanceEnergyEstimator) load(ctx context.Context) error {
+func (ec2explorer *EC2InstanceExplorer) load(ctx context.Context) error {
 	file, err := instanceTypeJsonFile.Open("data/instance_types/instance_types.json")
 	if err != nil {
 		return fmt.Errorf("failed to open instance type json file: %w", err)
@@ -80,8 +73,11 @@ func (rc *EC2InstanceEnergyEstimator) load(ctx context.Context) error {
 		return fmt.Errorf("failed to decode instance type json file: %w", err)
 	}
 
+	ec2explorer.mu.Lock()
+	defer ec2explorer.mu.Unlock()
+
 	for _, infos := range instancesTypeInfos {
-		rc.instanceTypeInfos[infos.InstanceType] = infos
+		ec2explorer.instanceTypeInfos[infos.InstanceType] = infos
 	}
 
 	slog.Info("ec2 instance types infos loaded")
@@ -89,7 +85,7 @@ func (rc *EC2InstanceEnergyEstimator) load(ctx context.Context) error {
 	return nil
 }
 
-func (ec2explorer *EC2InstanceEnergyEstimator) collectMetrics(ctx context.Context, region string, metrics chan *cloudcarbonexporter.Metric) error {
+func (ec2explorer *EC2InstanceExplorer) collectMetrics(ctx context.Context, region string, metrics chan *cloudcarbonexporter.Metric) error {
 	if region == "global" {
 		return nil
 	}
@@ -103,6 +99,7 @@ func (ec2explorer *EC2InstanceEnergyEstimator) collectMetrics(ctx context.Contex
 	})
 
 	for paginator.HasMorePages() {
+		ec2explorer.apiCallsCounter.Add(1)
 		output, err := paginator.NextPage(ctx)
 		if err != nil {
 			return &cloudcarbonexporter.ExplorerErr{Err: fmt.Errorf("failed to list region ec2 instances: %w", err), Operation: "service/ec2:DescribeInstances"}
@@ -143,7 +140,7 @@ func (ec2explorer *EC2InstanceEnergyEstimator) collectMetrics(ctx context.Contex
 	return nil
 }
 
-func (ec2explorer *EC2InstanceEnergyEstimator) GetInstanceCPUAverage(ctx context.Context, region string, instanceID string) (float64, error) {
+func (ec2explorer *EC2InstanceExplorer) GetInstanceCPUAverage(ctx context.Context, region string, instanceID string) (float64, error) {
 	key := fmt.Sprintf("%s/instances_average_cpu", region)
 
 	// add dynamic cache entry if key does not exist yet
@@ -170,7 +167,7 @@ func (ec2explorer *EC2InstanceEnergyEstimator) GetInstanceCPUAverage(ctx context
 }
 
 // ListInstanceCPUAverage returns the 10 minutes average cpu for all instances in the region
-func (ec2explorer *EC2InstanceEnergyEstimator) ListInstanceCPUAverage(ctx context.Context, region string) (map[string]float64, error) {
+func (ec2explorer *EC2InstanceExplorer) ListInstanceCPUAverage(ctx context.Context, region string) (map[string]float64, error) {
 	metricName := "cpu_utilization_by_instance_id"
 	cloudwatchExpression := `SELECT AVG(CPUUtilization) FROM "AWS/EC2" GROUP BY InstanceId`
 	period := 10 * time.Minute
@@ -194,6 +191,7 @@ func (ec2explorer *EC2InstanceEnergyEstimator) ListInstanceCPUAverage(ctx contex
 	})
 
 	for paginator.HasMorePages() {
+		ec2explorer.apiCallsCounter.Add(1)
 		page, err := paginator.NextPage(ctx)
 		if err != nil {
 			return nil, &cloudcarbonexporter.ExplorerErr{

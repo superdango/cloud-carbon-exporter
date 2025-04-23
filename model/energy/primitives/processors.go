@@ -86,15 +86,15 @@ func LookupProcessorByName(processorName string) Processor {
 
 // submatches splits string into subcomponents from small to entier string
 // to help fuzzy matching finding the best option. For example, passing the
-// string: "foo bar baz" returns {"foo", "foo bar", "foo bar baz"}
+// string: "foo bar baz" returns {"foo bar", "foo bar baz", "foo", "bar", "baz"}
 func submatches(s string) []string {
 	splited := strings.Split(s, " ")
 	submatches := make([]string, len(splited))
 	for i, substr := range splited {
-		submatches[i] = substr
 		if i > 0 {
 			submatches[i] = submatches[i-1] + " " + substr
 		}
 	}
+	submatches = append(submatches, splited...)
 	return submatches
 }
