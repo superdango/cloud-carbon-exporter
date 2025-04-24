@@ -16,6 +16,7 @@ import (
 	"cloud.google.com/go/compute/apiv1/computepb"
 	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
 	"github.com/superdango/cloud-carbon-exporter/internal/cache"
+	machinetypes "github.com/superdango/cloud-carbon-exporter/internal/gcp/data/machine_types"
 	"github.com/superdango/cloud-carbon-exporter/internal/must"
 	"github.com/superdango/cloud-carbon-exporter/model/carbon"
 	"github.com/superdango/cloud-carbon-exporter/model/energy/primitives"
@@ -35,10 +36,13 @@ type Explorer struct {
 	gcpZones           Zones
 	carbonIntensityMap carbon.IntensityMap
 
+	machineTypes machinetypes.MachineTypes
+
 	instances   *InstancesExplorer
 	disks       *DisksExplorer
 	regionDisks *RegionDisksExplorer
 	buckets     *BucketsExplorer
+	sql         *CloudSQLExplorer
 
 	apiCallsCounter *atomic.Int64
 }
@@ -64,13 +68,23 @@ func NewExplorer(ctx context.Context, opts ...Option) (*Explorer, error) {
 		return nil, fmt.Errorf("project id is not set")
 	}
 
-	explorer.cache.SetDynamic(ctx, "assets_zones_regions", explorer.discoverServicesZonesRegions())
+	// Load Machine Types in explorer memory
+	explorer.machineTypes = machinetypes.MustLoad()
 
 	errg, errgctx := errgroup.WithContext(ctx)
 	errg.Go(func() error {
 		explorer.assets, err = asset.NewClient(errgctx)
 		if err != nil {
 			return fmt.Errorf("failed to create asset inventory client: %w", err)
+		}
+
+		return explorer.cache.SetDynamic(ctx, "assets_zones_regions", explorer.discoverServicesZonesRegions())
+	})
+
+	errg.Go(func() error {
+		err = explorer.loadZones(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to load zones: %w", err)
 		}
 		return nil
 	})
@@ -108,17 +122,17 @@ func NewExplorer(ctx context.Context, opts ...Option) (*Explorer, error) {
 	})
 
 	errg.Go(func() error {
-		err = explorer.loadZones(ctx)
+		explorer.buckets, err = NewBucketsExplorer(ctx, explorer)
 		if err != nil {
-			return fmt.Errorf("failed to load zones: %w", err)
+			return fmt.Errorf("failed to initialize buckets explorer: %w", err)
 		}
 		return nil
 	})
 
 	errg.Go(func() error {
-		explorer.buckets, err = NewBucketsExplorer(ctx, explorer)
+		explorer.sql, err = NewCloudSQLExplorer(ctx, explorer)
 		if err != nil {
-			return fmt.Errorf("failed to initialize buckets explorer: %w", err)
+			return fmt.Errorf("failed to initialize cloudsql explorer: %w", err)
 		}
 		return nil
 	})
@@ -237,6 +251,10 @@ func (explorer *Explorer) collectMetrics(ctx context.Context, energyMetrics chan
 			}
 		case "storage.googleapis.com/Bucket":
 			async(wg, func() { errs <- explorer.buckets.collectMetrics(ctx, energyMetrics) })
+
+		case "sqladmin.googleapis.com/Instance":
+			async(wg, func() { errs <- explorer.sql.collectMetrics(ctx, energyMetrics) })
+
 		default:
 			slog.Debug("asset type is not supported", "asset", assetType)
 		}
@@ -247,7 +265,7 @@ func (explorer *Explorer) collectMetrics(ctx context.Context, energyMetrics chan
 
 func (explorer *Explorer) discoverServicesZonesRegions() cache.DynamicValueFunc {
 	return cache.DynamicValueFunc(func(ctx context.Context) (any, error) {
-		slog.Debug("listing assets", "projectID", explorer.projectID)
+		start := time.Now()
 		req := &assetpb.ListAssetsRequest{
 			Parent:      fmt.Sprintf("projects/%s", explorer.projectID),
 			ContentType: assetpb.ContentType_RESOURCE,
@@ -280,6 +298,8 @@ func (explorer *Explorer) discoverServicesZonesRegions() cache.DynamicValueFunc 
 		assetTypes = distinct(assetTypes)
 		activeZones = distinct(activeZones)
 		activeRegions = distinct(activeRegions)
+
+		slog.Debug("assets listed", "projectID", explorer.projectID, "duration_ms", time.Since(start))
 
 		return map[string][]string{
 			"types":   assetTypes,

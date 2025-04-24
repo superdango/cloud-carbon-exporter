@@ -1,9 +1,7 @@
 package gcp
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"log/slog"
 	"sync"
@@ -12,50 +10,16 @@ import (
 	compute "cloud.google.com/go/compute/apiv1"
 	"cloud.google.com/go/compute/apiv1/computepb"
 	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
-	machinetypes "github.com/superdango/cloud-carbon-exporter/internal/gcp/data/machine_types"
 	"github.com/superdango/cloud-carbon-exporter/internal/must"
 	"github.com/superdango/cloud-carbon-exporter/model/energy/cloud"
 	"github.com/superdango/cloud-carbon-exporter/model/energy/primitives"
 	"google.golang.org/api/iterator"
 )
 
-type MachineType struct {
-	Name    string  `json:"name"`
-	VCPU    float64 `json:"vcpu"`
-	Memory  float64 `json:"memory"`
-	GPU     float64 `json:"gpu"`
-	GPUType string  `json:"gpu_type"`
-}
-
-type MachineTypes []MachineType
-
-func (types MachineTypes) Get(name string) MachineType {
-	// TODO: support custom instance type: e2-custom-2-14848
-	//   isCustomeMachineType := strings.Contains(name, "-custom-")
-	//   if isCustomMachineType {
-	//   	...
-	//   }
-
-	for _, machineType := range types {
-		if machineType.Name == name {
-			return machineType
-		}
-	}
-
-	return MachineType{
-		Name:    "unknown",
-		VCPU:    1,
-		Memory:  1,
-		GPU:     0,
-		GPUType: "none",
-	}
-}
-
 type InstancesExplorer struct {
 	*Explorer
-	client       *compute.InstancesClient
-	machineTypes MachineTypes
-	mu           *sync.Mutex
+	client *compute.InstancesClient
+	mu     *sync.Mutex
 }
 
 func NewInstancesExplorer(ctx context.Context, explorer *Explorer) (instanceExplorer *InstancesExplorer, err error) {
@@ -73,14 +37,7 @@ func NewInstancesExplorer(ctx context.Context, explorer *Explorer) (instanceExpl
 		return instanceExplorer.ListInstanceCPUAverage(ctx)
 	}, 5*time.Minute)
 
-	instanceExplorer.loadMachineTypes()
-
 	return instanceExplorer, nil
-}
-
-func (instanceExplorer *InstancesExplorer) loadMachineTypes() {
-	err := json.NewDecoder(bytes.NewReader(machinetypes.JSONFile)).Decode(&instanceExplorer.machineTypes)
-	must.NoError(err)
 }
 
 func (instanceExplorer *InstancesExplorer) collectMetrics(ctx context.Context, zone string, metrics chan *cloudcarbonexporter.Metric) error {
