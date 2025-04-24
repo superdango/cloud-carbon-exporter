@@ -115,7 +115,7 @@ func (explorer *Explorer) loadSubExplorers(ctx context.Context) error {
 			NewEC2InstanceExplorer(ctx, explorer),
 			NewEC2VolumeExplorer(ctx, explorer),
 		},
-		"Amazon Relational Database": {
+		"Amazon Relational Database Service": {
 			NewRDSInstanceEstimator(ctx, explorer),
 		},
 	}
@@ -325,8 +325,6 @@ func (explorer *Explorer) discoverActiveServicesAndRegions(ctx context.Context) 
 	defer explorer.mu.Unlock()
 
 	explorer.activeServices = services
-	// debug  to remove
-	explorer.activeServices["Amazon Relational Database"] = []string{"eu-west-3"}
 
 	for service, locations := range services {
 		slog.Debug("discovered service", "service", service, "locations", locations)
