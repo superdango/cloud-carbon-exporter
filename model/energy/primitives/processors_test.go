@@ -41,6 +41,27 @@ func setupTests() {
 				Cores:   14,
 				Threads: 28,
 			},
+			{
+				Name:    "Annapurna Labs Graviton2",
+				Family:  "Graviton2",
+				Tdp:     135,
+				Cores:   14,
+				Threads: 28,
+			},
+			{
+				Name:    "Annapurna Labs Graviton3",
+				Family:  "Graviton3",
+				Tdp:     135,
+				Cores:   14,
+				Threads: 28,
+			},
+			{
+				Name:    "Annapurna Labs Graviton4",
+				Family:  "Graviton3",
+				Tdp:     135,
+				Cores:   14,
+				Threads: 28,
+			},
 		}
 		processorFullNames = make([]string, len(processors))
 		for i, p := range processors {
@@ -51,27 +72,30 @@ func setupTests() {
 
 func TestCPUPowerUsage(t *testing.T) {
 	setupTests()
-	watt := LookupProcessorByName("AMD EPYC 7571").EstimatePowerUsageWithTDP(1, 100)
+	watt := LookupProcessorByName("AMD EPYC 7571").EstimateCPUWatts(1, 100)
 	assert.Equal(t, 10.2, watt)
 
-	watt = LookupProcessorByName("EPYC 70").EstimatePowerUsageWithTDP(1, 100)
+	watt = LookupProcessorByName("EPYC 70").EstimateCPUWatts(1, 100)
 	assert.Equal(t, 2.55, watt)
 
-	watt = LookupProcessorByName("Intel").EstimatePowerUsageWithTDP(1, 100)
+	watt = LookupProcessorByName("Intel").EstimateCPUWatts(1, 100)
 	assert.Equal(t, 1020.0, watt)
 
-	watt = LookupProcessorByName("Intel").EstimatePowerUsageWithTDP(1, 0)
+	watt = LookupProcessorByName("Intel").EstimateCPUWatts(1, 0)
 	assert.Equal(t, 120.0, watt)
 
-	watt = LookupProcessorByName("").EstimatePowerUsageWithTDP(1, 0)
+	watt = LookupProcessorByName("").EstimateCPUWatts(1, 0)
 	assert.Equal(t, 120.0, watt)
 
 	assert.Equal(t, "Intel Xeon E5-2690 V4", LookupProcessorByName("Broadwell").Name)
 	assert.Equal(t, "Intel Xeon", LookupProcessorByName("Intel Xeon Family").Name)
+	assert.Equal(t, "Annapurna Labs Graviton2", LookupProcessorByName("AWS Graviton2 Processor").Name)
+	assert.Equal(t, "Annapurna Labs Graviton3", LookupProcessorByName("AWS Graviton3 Processor").Name)
+	assert.Equal(t, "Annapurna Labs Graviton4", LookupProcessorByName("Graviton4").Name)
 }
 
 func TestSubMatches(t *testing.T) {
 	assert.Equal(t, []string{"foo"}, submatches("foo"))
-	assert.Equal(t, []string{"foo", "foo bar"}, submatches("foo bar"))
-	assert.Equal(t, []string{"foo", "foo bar", "foo bar baz"}, submatches("foo bar baz"))
+	assert.Equal(t, []string{"foo", "foo bar", "bar"}, submatches("foo bar"))
+	assert.Equal(t, []string{"foo", "foo bar", "foo bar baz", "bar", "baz"}, submatches("foo bar baz"))
 }

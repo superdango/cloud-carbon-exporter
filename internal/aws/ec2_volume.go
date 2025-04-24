@@ -18,33 +18,24 @@ package aws
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
-	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
-	"github.com/superdango/cloud-carbon-exporter/internal/cache"
 	"github.com/superdango/cloud-carbon-exporter/model/energy/cloud"
 )
 
-type EC2VolumeEstimator struct {
-	awscfg            aws.Config
-	defaultRegion     string
-	instanceTypeInfos map[string]instanceTypeInfos
-	cache             *cache.Memory
+type EC2VolumeExplorer struct {
+	*Explorer
 }
 
-func NewEC2VolumeEstimator(ctx context.Context, awscfg aws.Config, defaultRegion string) *EC2VolumeEstimator {
-	return &EC2VolumeEstimator{
-		awscfg:            awscfg,
-		defaultRegion:     defaultRegion,
-		instanceTypeInfos: make(map[string]instanceTypeInfos),
-		cache:             cache.NewMemory(ctx, 5*time.Minute),
+func NewEC2VolumeExplorer(ctx context.Context, explorer *Explorer) *EC2VolumeExplorer {
+	return &EC2VolumeExplorer{
+		Explorer: explorer,
 	}
 }
 
-func (ec2explorer *EC2VolumeEstimator) collectMetrics(ctx context.Context, region string, metrics chan *cloudcarbonexporter.Metric) error {
+func (ec2explorer *EC2VolumeExplorer) collectMetrics(ctx context.Context, region string, metrics chan *cloudcarbonexporter.Metric) error {
 	if region == "global" {
 		return nil
 	}
@@ -58,6 +49,7 @@ func (ec2explorer *EC2VolumeEstimator) collectMetrics(ctx context.Context, regio
 	})
 
 	for paginator.HasMorePages() {
+		ec2explorer.apiCallsCounter.Add(1)
 		output, err := paginator.NextPage(ctx)
 		if err != nil {
 			return &cloudcarbonexporter.ExplorerErr{Err: fmt.Errorf("failed to list region ec2 volumes: %w", err), Operation: "service/ec2:DescribeVolumes"}
@@ -65,11 +57,11 @@ func (ec2explorer *EC2VolumeEstimator) collectMetrics(ctx context.Context, regio
 
 		for _, volume := range output.Volumes {
 			watts := 0.0
-			if isVolumeHDD(volume.VolumeType) {
-				watts = cloud.EstimateHDDBlockStorage(float64(*volume.Size))
+			if isVolumeHDD(string(volume.VolumeType)) {
+				watts = cloud.EstimateHDDBlockStorageWatts(float64(*volume.Size))
 			}
-			if isVolumeSSD(volume.VolumeType) {
-				watts = cloud.EstimateSSDBlockStorage(float64(*volume.Size))
+			if isVolumeSSD(string(volume.VolumeType)) {
+				watts = cloud.EstimateSSDBlockStorageWatts(float64(*volume.Size))
 			}
 
 			metrics <- &cloudcarbonexporter.Metric{
@@ -92,21 +84,21 @@ func (ec2explorer *EC2VolumeEstimator) collectMetrics(ctx context.Context, regio
 	return nil
 }
 
-func (rc *EC2VolumeEstimator) load(ctx context.Context) error { return nil }
+func (rc *EC2VolumeExplorer) load(ctx context.Context) error { return nil }
 
-func isVolumeHDD(volumeType types.VolumeType) bool {
+func isVolumeHDD(volumeType string) bool {
 	switch volumeType {
-	case types.VolumeTypeStandard:
+	case "standard":
 		return true
-	case types.VolumeTypeSc1:
+	case "sc1":
 		return true
-	case types.VolumeTypeSt1:
+	case "st1":
 		return true
 	default:
 		return false
 	}
 }
 
-func isVolumeSSD(volumeType types.VolumeType) bool {
+func isVolumeSSD(volumeType string) bool {
 	return !isVolumeHDD(volumeType)
 }
