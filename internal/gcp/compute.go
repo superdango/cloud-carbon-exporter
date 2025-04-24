@@ -113,8 +113,8 @@ func (instanceExplorer *InstancesExplorer) collectMetrics(ctx context.Context, z
 			return err
 		}
 
-		watts := processor.EstimatePowerUsageWithTDP(machineType.VCPU, cpuUsage)
-		watts += primitives.EstimateMemoryPowerUsage(machineType.Memory)
+		watts := processor.EstimateCPUWatts(machineType.VCPU, cpuUsage)
+		watts += primitives.EstimateMemoryWatts(machineType.Memory)
 		for _, disk := range instance.Disks {
 			// Physical disks (SCRATCH) are directly attached to the instance
 			if *disk.Type == "SCRATCH" {
@@ -216,9 +216,9 @@ func (disksExplorer *DisksExplorer) collectMetrics(ctx context.Context, zone str
 		watts := 0.0
 		switch lastURLPathFragment(disk.GetType()) {
 		case "pd-standard":
-			watts = cloud.EstimateHDDBlockStorage(float64(*disk.SizeGb))
+			watts = cloud.EstimateHDDBlockStorageWatts(float64(*disk.SizeGb))
 		default:
-			watts = cloud.EstimateSSDBlockStorage(float64(*disk.SizeGb))
+			watts = cloud.EstimateSSDBlockStorageWatts(float64(*disk.SizeGb))
 		}
 		replicas := 1
 		if len(disk.ReplicaZones) > 0 {
@@ -289,9 +289,9 @@ func (regionDisksExplorer *RegionDisksExplorer) collectMetrics(ctx context.Conte
 		watts := 0.0
 		switch lastURLPathFragment(disk.GetType()) {
 		case "pd-standard":
-			watts = cloud.EstimateHDDBlockStorage(float64(*disk.SizeGb))
+			watts = cloud.EstimateHDDBlockStorageWatts(float64(*disk.SizeGb))
 		default:
-			watts = cloud.EstimateSSDBlockStorage(float64(*disk.SizeGb))
+			watts = cloud.EstimateSSDBlockStorageWatts(float64(*disk.SizeGb))
 		}
 
 		replicas := 2

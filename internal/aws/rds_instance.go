@@ -82,9 +82,9 @@ func (rdsExplorer *RDSInstanceExplorer) collectMetrics(ctx context.Context, regi
 				watts += classicInstanceWatt
 			}
 
-			storageWatts := cloud.EstimateSSDBlockStorage(float64(*instance.AllocatedStorage))
+			storageWatts := cloud.EstimateSSDBlockStorageWatts(float64(*instance.AllocatedStorage))
 			if isVolumeHDD(*instance.StorageType) {
-				storageWatts = cloud.EstimateHDDBlockStorage(float64(*instance.AllocatedStorage))
+				storageWatts = cloud.EstimateHDDBlockStorageWatts(float64(*instance.AllocatedStorage))
 			}
 			watts += storageWatts
 
@@ -92,10 +92,10 @@ func (rdsExplorer *RDSInstanceExplorer) collectMetrics(ctx context.Context, regi
 				Name: "estimated_watts",
 				Labels: cloudcarbonexporter.MergeLabels(
 					map[string]string{
-						"kind":     "rds/db_instance",
-						"location": rdsExplorer.Region(*instance.AvailabilityZone),
-						"az":       *instance.AvailabilityZone,
-						"db_name":  *instance.DBInstanceIdentifier,
+						"kind":        "rds/db_instance",
+						"location":    rdsExplorer.Region(*instance.AvailabilityZone),
+						"az":          *instance.AvailabilityZone,
+						"instance_id": *instance.DBInstanceIdentifier,
 					},
 					parseRDSTagList(instance.TagList),
 				),
@@ -118,10 +118,10 @@ func (rdsExplorer *RDSInstanceExplorer) classicInstanceToWatts(ctx context.Conte
 	if err != nil {
 		return 0.0, fmt.Errorf("failed to get rds instance cpu average: %w", err)
 	}
-	watts := primitives.EstimateMemoryPowerUsage(instanceInfos.Memory)
+	watts := primitives.EstimateMemoryWatts(instanceInfos.Memory)
 	watts += primitives.
 		LookupProcessorByName(instanceInfos.PhysicalProcessor).
-		EstimatePowerUsageWithTDP(instanceInfos.VCPU, cpuAverage)
+		EstimateCPUWatts(instanceInfos.VCPU, cpuAverage)
 
 	return watts, err
 }
@@ -143,8 +143,8 @@ func (rdsExplorer *RDSInstanceExplorer) serverlessInstanceToWatts(ctx context.Co
 	memoryByACU := 2.0
 	threads := acuAverage * cpuThreadsByACU
 
-	watts += primitives.EstimateMemoryPowerUsage(acuAverage * memoryByACU)
-	watts += primitives.LookupProcessorByName("Graviton4").EstimatePowerUsageWithTDP(threads, 60)
+	watts += primitives.EstimateMemoryWatts(acuAverage * memoryByACU)
+	watts += primitives.LookupProcessorByName("Graviton4").EstimateCPUWatts(threads, 60)
 
 	return watts, err
 }

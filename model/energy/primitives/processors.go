@@ -63,7 +63,7 @@ func tdpToPower(tdp float64, cpuUsage float64) (watts float64) {
 	return tdp * (tdpDivider.Predict(cpuUsage) / 100) * tdpToPowerRatio
 }
 
-func (p Processor) EstimatePowerUsageWithTDP(activeThreads float64, usage float64) (watts float64) {
+func (p Processor) EstimateCPUWatts(activeThreads float64, usage float64) (watts float64) {
 	return tdpToPower(p.Tdp, usage) / p.Threads
 }
 

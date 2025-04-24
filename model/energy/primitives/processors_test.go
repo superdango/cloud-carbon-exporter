@@ -72,19 +72,19 @@ func setupTests() {
 
 func TestCPUPowerUsage(t *testing.T) {
 	setupTests()
-	watt := LookupProcessorByName("AMD EPYC 7571").EstimatePowerUsageWithTDP(1, 100)
+	watt := LookupProcessorByName("AMD EPYC 7571").EstimateCPUWatts(1, 100)
 	assert.Equal(t, 10.2, watt)
 
-	watt = LookupProcessorByName("EPYC 70").EstimatePowerUsageWithTDP(1, 100)
+	watt = LookupProcessorByName("EPYC 70").EstimateCPUWatts(1, 100)
 	assert.Equal(t, 2.55, watt)
 
-	watt = LookupProcessorByName("Intel").EstimatePowerUsageWithTDP(1, 100)
+	watt = LookupProcessorByName("Intel").EstimateCPUWatts(1, 100)
 	assert.Equal(t, 1020.0, watt)
 
-	watt = LookupProcessorByName("Intel").EstimatePowerUsageWithTDP(1, 0)
+	watt = LookupProcessorByName("Intel").EstimateCPUWatts(1, 0)
 	assert.Equal(t, 120.0, watt)
 
-	watt = LookupProcessorByName("").EstimatePowerUsageWithTDP(1, 0)
+	watt = LookupProcessorByName("").EstimateCPUWatts(1, 0)
 	assert.Equal(t, 120.0, watt)
 
 	assert.Equal(t, "Intel Xeon E5-2690 V4", LookupProcessorByName("Broadwell").Name)

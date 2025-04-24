@@ -58,10 +58,10 @@ func (ec2explorer *EC2VolumeExplorer) collectMetrics(ctx context.Context, region
 		for _, volume := range output.Volumes {
 			watts := 0.0
 			if isVolumeHDD(string(volume.VolumeType)) {
-				watts = cloud.EstimateHDDBlockStorage(float64(*volume.Size))
+				watts = cloud.EstimateHDDBlockStorageWatts(float64(*volume.Size))
 			}
 			if isVolumeSSD(string(volume.VolumeType)) {
-				watts = cloud.EstimateSSDBlockStorage(float64(*volume.Size))
+				watts = cloud.EstimateSSDBlockStorageWatts(float64(*volume.Size))
 			}
 
 			metrics <- &cloudcarbonexporter.Metric{

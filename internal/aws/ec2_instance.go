@@ -117,8 +117,8 @@ func (ec2explorer *EC2InstanceExplorer) collectMetrics(ctx context.Context, regi
 				}
 
 				processor := primitives.LookupProcessorByName(instanceType.PhysicalProcessor)
-				watts := processor.EstimatePowerUsageWithTDP(instanceType.VCPU, intanceAverageCPU)
-				watts += primitives.EstimateMemoryPowerUsage(instanceType.Memory)
+				watts := processor.EstimateCPUWatts(instanceType.VCPU, intanceAverageCPU)
+				watts += primitives.EstimateMemoryWatts(instanceType.Memory)
 
 				metrics <- &cloudcarbonexporter.Metric{
 					Name: "estimated_watts",
