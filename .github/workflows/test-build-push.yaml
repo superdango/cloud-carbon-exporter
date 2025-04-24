@@ -10,6 +10,10 @@ on:
 env:
   IMAGE_NAME: cloud-carbon-exporter
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   go-fmt:
     runs-on: ubuntu-latest
