@@ -96,6 +96,6 @@ func TestCPUPowerUsage(t *testing.T) {
 
 func TestSubMatches(t *testing.T) {
 	assert.Equal(t, []string{"foo"}, submatches("foo"))
-	assert.Equal(t, []string{"foo", "foo bar"}, submatches("foo bar"))
-	assert.Equal(t, []string{"foo", "foo bar", "foo bar baz"}, submatches("foo bar baz"))
+	assert.Equal(t, []string{"foo", "foo bar", "bar"}, submatches("foo bar"))
+	assert.Equal(t, []string{"foo", "foo bar", "foo bar baz", "bar", "baz"}, submatches("foo bar baz"))
 }
