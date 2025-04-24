@@ -42,7 +42,7 @@ type Explorer struct {
 	roleArn            string
 	accountAZs         []AvailabilityZone
 	activeServices     map[string][]string // serviceName: [region1, region2, ...]
-	subExplorers   map[string][]energyCollector
+	subExplorers       map[string][]energyCollector
 	carbonIntensityMap carbon.IntensityMap
 	instanceTypeInfos  map[string]instanceTypeInfos
 	apiCallsCounter    *atomic.Int64
