@@ -285,14 +285,13 @@ func (ec2explorer *RDSInstanceExplorer) ListInstanceACUAverage(ctx context.Conte
 
 	}
 
-	must.PrintDebugJSON(instanceList)
 	return instanceList, nil
 }
 
 func parseRDSTagList(list []types.Tag) map[string]string {
 	labels := make(map[string]string)
 	for _, t := range list {
-		labels[*t.Key] = *t.Value
+		labels[*t.Key] = "tag_" + *t.Value
 	}
 	return labels
 }
