@@ -27,6 +27,7 @@ cat <<EOF | duckdb -json | tee machine_types.json
 		memoryGB as "memory",
 		acceleratorCount as "gpu",
 		acceleratorType as "gpu_type",
+		cpuPlatform as "cpu_platform",
 	FROM read_csv('https://gcloud-compute.com/machine-types-regions.csv')
 	ORDER BY name
 EOF
