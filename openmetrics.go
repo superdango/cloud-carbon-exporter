@@ -127,6 +127,8 @@ func writeMetrics(ctx context.Context, w io.Writer, metrics chan *Metric) error 
 }
 
 func writeMetric(w io.Writer, metric *Metric) error {
+	metric = metric.SanitizeLabels()
+
 	// sort labels in lexicographical order
 	labels := make([]string, 0, len(metric.Labels))
 	for labelName, labelValue := range metric.Labels {
@@ -170,7 +172,7 @@ func (m *Metric) SetLabel(key, value string) *Metric {
 	return m
 }
 
-func (m Metric) SanitizeLabels() Metric {
+func (m *Metric) SanitizeLabels() *Metric {
 	newLabels := make(map[string]string)
 	invalidChars := []string{".", "/", "-", ":", ";"}
 	for label, value := range m.Labels {
