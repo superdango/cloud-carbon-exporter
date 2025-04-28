@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	_scw "github.com/scaleway/scaleway-sdk-go/scw"
 	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
@@ -42,6 +43,7 @@ func main() {
 	flagListen := ""
 	flagLogLevel := ""
 	flagLogFormat := ""
+	flagPrintSupportedServices := ""
 
 	flag.StringVar(&flagCloudProvider, "cloud.provider", "", "cloud provider type (gcp, aws, scw)")
 	flag.StringVar(&flagCloudGCPProjectID, "cloud.gcp.projectid", "", "gcp project to explore resources from")
@@ -50,6 +52,7 @@ func main() {
 	flag.StringVar(&flagListen, "listen", "0.0.0.0:2922", "addr to listen to")
 	flag.StringVar(&flagLogLevel, "log.level", "info", "log severity (debug, info, warn, error)")
 	flag.StringVar(&flagLogFormat, "log.format", "text", "log format (text, json)")
+	flag.StringVar(&flagPrintSupportedServices, "print-supported-services", "", "print on stdout the supported services list (markdown)")
 
 	flag.Parse()
 
@@ -66,6 +69,11 @@ func main() {
 		"aws": aws.NewExplorer(),
 		"gcp": gcp.NewExplorer(),
 		"scw": scw.NewExplorer(),
+	}
+
+	if flagPrintSupportedServices == "markdown" {
+		printMarkdownSupportedServices(explorers)
+		os.Exit(0)
 	}
 
 	explorer, found := explorers[configmap["cloud.provider"]]
@@ -178,4 +186,21 @@ func slogLevel(level string) slog.Level {
 	}
 
 	return slog.LevelInfo
+}
+
+func printMarkdownSupportedServices(explorers map[string]cloudcarbonexporter.Explorer) {
+	str := "# Supported services\n\n"
+	for explorerName, explorer := range explorers {
+		str += "## " + strings.ToUpper(explorerName) + "\n\n"
+		for _, service := range explorer.SupportedServices() {
+			str += "* " + service + "\n"
+		}
+		if len(explorer.SupportedServices()) == 0 {
+			str += "* none \n"
+		}
+		str += "\n"
+	}
+	str += fmt.Sprintf("_automatically generated on %s_", time.Now().UTC().Format(time.RFC850))
+
+	fmt.Println(str)
 }

@@ -1,0 +1,54 @@
+---
+name: wiki generate / push
+
+on:
+  push:
+    branches:
+      - main
+      - services-support
+
+concurrency:
+  group: wiki
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  wiki:
+    name: Publish to GitHub Wiki
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          repository: ${{github.repository}}
+          path: ${{github.repository}}
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.22
+
+      - name: Checkout Wiki
+        uses: actions/checkout@v4
+        with:
+          repository: ${{github.repository}}.wiki
+          path: ${{github.repository}}.wiki
+
+      - name: Generate wiki api documentation
+        run: |
+          set -e
+          cd $GITHUB_WORKSPACE/${{github.repository}}
+          go build -o exporter github.com/superdango/cloud-carbon-exporter/cmd \
+          && ./exporter -print-supported-services=markdown > $GITHUB_WORKSPACE/${{github.repository}}.wiki/'Supported Services.md'
+
+
+      - name: Push to wiki
+        run: |
+          set -e
+          cd $GITHUB_WORKSPACE/${{github.repository}}.wiki
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .
+          git diff-index --quiet HEAD || git commit -m "action: wiki sync" && git push

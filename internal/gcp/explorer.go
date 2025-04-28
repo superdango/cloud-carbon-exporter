@@ -78,9 +78,9 @@ func (explorer *Explorer) Init(ctx context.Context) (err error) {
 	}
 
 	explorer.cache = cache.NewMemory(ctx, 5*time.Minute)
-	errg, errgctx := errgroup.WithContext(ctx)
+	errg := new(errgroup.Group)
 	errg.Go(func() error {
-		assets, err := asset.NewClient(errgctx)
+		assets, err := asset.NewClient(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to create asset inventory client: %w", err)
 		}
@@ -89,7 +89,7 @@ func (explorer *Explorer) Init(ctx context.Context) (err error) {
 	})
 
 	errg.Go(func() error {
-		err := explorer.loadZones(errgctx)
+		err := explorer.loadZones(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to load zones: %w", err)
 		}
@@ -97,7 +97,7 @@ func (explorer *Explorer) Init(ctx context.Context) (err error) {
 	})
 
 	errg.Go(func() error {
-		explorer.monitoringClient, err = monitoring.NewService(errgctx)
+		explorer.monitoringClient, err = monitoring.NewService(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to initialize gcp monitoring client: %w", err)
 		}
@@ -107,7 +107,7 @@ func (explorer *Explorer) Init(ctx context.Context) (err error) {
 
 	for service, subExplorer := range explorer.subExplorers {
 		errg.Go(func() error {
-			err := subExplorer.init(errgctx, explorer)
+			err := subExplorer.init(ctx, explorer)
 			if err != nil {
 				return fmt.Errorf("failed to initialize subexplorer (%s): %w", service, err)
 			}
@@ -223,6 +223,7 @@ func (explorer *Explorer) collectMetrics(ctx context.Context, energyMetrics chan
 		errs <- fmt.Errorf("failed to get cached discovery map: %w", err)
 		return
 	}
+
 	wg := new(sync.WaitGroup)
 	for _, assetName := range discoveryMap["types"] {
 		subExplorer, found := explorer.subExplorers[Asset(assetName)]
@@ -299,14 +300,6 @@ func distinct(sl []string) []string {
 	}
 
 	return nsl
-}
-
-func async(wg *sync.WaitGroup, fn func()) {
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		fn()
-	}()
 }
 
 func (explorer *Explorer) Close() error {
