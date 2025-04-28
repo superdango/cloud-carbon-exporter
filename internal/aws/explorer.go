@@ -29,9 +29,10 @@ import (
 
 const DAY = 24 * time.Hour
 
-type energyCollector interface {
+type subExplorer interface {
 	collectMetrics(ctx context.Context, region string, metrics chan *cloudcarbonexporter.Metric) error
 	load(ctx context.Context) error
+	support() string
 }
 
 type Explorer struct {
@@ -42,7 +43,7 @@ type Explorer struct {
 	roleArn            string
 	accountAZs         []AvailabilityZone
 	activeServices     map[string][]string // serviceName: [region1, region2, ...]
-	subExplorers       map[string][]energyCollector
+	subExplorers       map[string][]subExplorer
 	carbonIntensityMap carbon.IntensityMap
 	instanceTypeInfos  map[string]instanceTypeInfos
 	apiCallsCounter    *atomic.Int64
@@ -68,11 +69,9 @@ func WithRoleArn(role string) ExplorerOption {
 	}
 }
 
-// NewExplorer initialize and returns a new AWS Explorer.
-func NewExplorer(ctx context.Context, opts ...ExplorerOption) (explorer *Explorer, err error) {
-	explorer = &Explorer{
+func NewExplorer() *Explorer {
+	explorer := &Explorer{
 		mu:                 new(sync.Mutex),
-		cache:              cache.NewMemory(ctx, 5*time.Minute),
 		defaultRegion:      "us-east-1",
 		accountAZs:         make([]AvailabilityZone, 0),
 		carbonIntensityMap: carbon.NewAWSCloudCarbonFootprintIntensityMap(),
@@ -80,11 +79,44 @@ func NewExplorer(ctx context.Context, opts ...ExplorerOption) (explorer *Explore
 		apiCallsCounter:    new(atomic.Int64),
 	}
 
+	explorer.subExplorers = map[string][]subExplorer{
+		"Amazon Elastic Compute Cloud - Compute": {
+			NewEC2InstanceExplorer(explorer),
+			NewEC2VolumeExplorer(explorer),
+		},
+		"Amazon Relational Database Service": {
+			NewRDSInstanceExplorer(explorer),
+		},
+	}
+
+	return explorer
+}
+
+func (explorer *Explorer) SupportedServices() []string {
+	supportedServices := make([]string, 0)
+
+	for _, subexplorers := range explorer.subExplorers {
+		for _, subexplorer := range subexplorers {
+			supportedServices = append(supportedServices, subexplorer.support())
+		}
+	}
+
+	return supportedServices
+}
+
+func (explorer *Explorer) Configure(opts ...ExplorerOption) *Explorer {
 	for _, opt := range opts {
 		if opt != nil {
 			opt(explorer)
 		}
 	}
+
+	return explorer
+}
+
+// NewExplorer initialize and returns a new AWS Explorer.
+func (explorer *Explorer) Init(ctx context.Context) (err error) {
+	explorer.cache = cache.NewMemory(ctx, 5*time.Minute)
 
 	if explorer.roleArn != "" {
 		explorer.awscfg.Credentials = aws.NewCredentialsCache(
@@ -106,17 +138,17 @@ func NewExplorer(ctx context.Context, opts ...ExplorerOption) (explorer *Explore
 		return explorer.discoverActiveServicesAndRegions(errgctx)
 	})
 
-	return explorer, errg.Wait()
+	return errg.Wait()
 }
 
 func (explorer *Explorer) loadSubExplorers(ctx context.Context) error {
-	explorer.subExplorers = map[string][]energyCollector{
+	explorer.subExplorers = map[string][]subExplorer{
 		"Amazon Elastic Compute Cloud - Compute": {
-			NewEC2InstanceExplorer(ctx, explorer),
-			NewEC2VolumeExplorer(ctx, explorer),
+			NewEC2InstanceExplorer(explorer),
+			NewEC2VolumeExplorer(explorer),
 		},
 		"Amazon Relational Database Service": {
-			NewRDSInstanceEstimator(ctx, explorer),
+			NewRDSInstanceExplorer(explorer),
 		},
 	}
 

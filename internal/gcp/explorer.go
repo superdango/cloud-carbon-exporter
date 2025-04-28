@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/url"
+	"reflect"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -17,7 +18,6 @@ import (
 	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
 	"github.com/superdango/cloud-carbon-exporter/internal/cache"
 	machinetypes "github.com/superdango/cloud-carbon-exporter/internal/gcp/data/machine_types"
-	"github.com/superdango/cloud-carbon-exporter/internal/must"
 	"github.com/superdango/cloud-carbon-exporter/model/carbon"
 	"github.com/superdango/cloud-carbon-exporter/model/energy/primitives"
 	"golang.org/x/sync/errgroup"
@@ -26,63 +26,70 @@ import (
 	"google.golang.org/api/monitoring/v1"
 )
 
-type Option func(e *Explorer)
+type Asset string
+
+type AssetsDiscoveryMap map[Asset][]string
+
+type SubExplorer interface {
+	collectMetrics(ctx context.Context, metrics chan *cloudcarbonexporter.Metric) error
+	init(ctx context.Context, explorer *Explorer) error
+}
 
 type Explorer struct {
-	assets             *asset.Client
 	monitoringClient   *monitoring.Service
-	projectID          string
+	ProjectID          string
 	cache              *cache.Memory
 	gcpZones           Zones
 	carbonIntensityMap carbon.IntensityMap
 
 	machineTypes machinetypes.MachineTypes
 
-	instances   *InstancesExplorer
-	disks       *DisksExplorer
-	regionDisks *RegionDisksExplorer
-	buckets     *BucketsExplorer
-	sql         *CloudSQLExplorer
+	subExplorers map[Asset]SubExplorer
 
 	apiCallsCounter *atomic.Int64
 }
 
-func WithProjectID(projectID string) Option {
-	return func(e *Explorer) {
-		e.projectID = projectID
+func NewExplorer() *Explorer {
+	return &Explorer{
+		apiCallsCounter:    new(atomic.Int64),
+		carbonIntensityMap: carbon.NewGCPCarbonIntensityMap(),
+		machineTypes:       machinetypes.MustLoad(),
+		subExplorers: map[Asset]SubExplorer{
+			"compute.googleapis.com/Instance":   new(InstancesExplorer),
+			"compute.googleapis.com/Disk":       new(DisksExplorer),
+			"compute.googleapis.com/RegionDisk": new(RegionDisksExplorer),
+			"storage.googleapis.com/Bucket":     new(BucketsExplorer),
+			"sqladmin.googleapis.com/Instance":  new(CloudSQLExplorer),
+		},
 	}
 }
 
-func NewExplorer(ctx context.Context, opts ...Option) (*Explorer, error) {
-	var err error
-	explorer := new(Explorer)
+func (explorer *Explorer) SupportedServices() []string {
+	services := make([]string, 0)
+	for asset := range explorer.subExplorers {
+		services = append(services, string(asset))
+	}
+	return services
+}
+
+func (explorer *Explorer) Init(ctx context.Context) (err error) {
+	if explorer.ProjectID == "" {
+		return fmt.Errorf("project id is not set")
+	}
+
 	explorer.cache = cache.NewMemory(ctx, 5*time.Minute)
-	explorer.carbonIntensityMap = carbon.NewGCPCarbonIntensityMap()
-	explorer.apiCallsCounter = new(atomic.Int64)
-
-	for _, c := range opts {
-		c(explorer)
-	}
-
-	if explorer.projectID == "" {
-		return nil, fmt.Errorf("project id is not set")
-	}
-
-	// Load Machine Types in explorer memory
-	explorer.machineTypes = machinetypes.MustLoad()
-
 	errg, errgctx := errgroup.WithContext(ctx)
 	errg.Go(func() error {
-		explorer.assets, err = asset.NewClient(errgctx)
+		assets, err := asset.NewClient(errgctx)
 		if err != nil {
 			return fmt.Errorf("failed to create asset inventory client: %w", err)
 		}
 
-		return explorer.cache.SetDynamic(ctx, "assets_zones_regions", explorer.discoverServicesZonesRegions())
+		return explorer.cache.SetDynamic(ctx, "discovery_map", explorer.discoveryMapCacheValue(assets))
 	})
 
 	errg.Go(func() error {
-		err = explorer.loadZones(ctx)
+		err := explorer.loadZones(errgctx)
 		if err != nil {
 			return fmt.Errorf("failed to load zones: %w", err)
 		}
@@ -90,54 +97,26 @@ func NewExplorer(ctx context.Context, opts ...Option) (*Explorer, error) {
 	})
 
 	errg.Go(func() error {
-		explorer.monitoringClient, err = monitoring.NewService(ctx)
+		explorer.monitoringClient, err = monitoring.NewService(errgctx)
 		if err != nil {
 			return fmt.Errorf("failed to initialize gcp monitoring client: %w", err)
 		}
+		slog.Debug("monitoring client initialized")
 		return nil
 	})
 
-	errg.Go(func() error {
-		explorer.instances, err = NewInstancesExplorer(ctx, explorer)
-		if err != nil {
-			return fmt.Errorf("failed to initialize instances explorer: %w", err)
-		}
-		return nil
-	})
+	for service, subExplorer := range explorer.subExplorers {
+		errg.Go(func() error {
+			err := subExplorer.init(errgctx, explorer)
+			if err != nil {
+				return fmt.Errorf("failed to initialize subexplorer (%s): %w", service, err)
+			}
+			slog.Debug("service initialized", "service", service)
+			return nil
+		})
+	}
 
-	errg.Go(func() error {
-		explorer.disks, err = NewDisksExplorer(ctx, explorer)
-		if err != nil {
-			return fmt.Errorf("failed to initialize disks explorer: %w", err)
-		}
-		return nil
-	})
-
-	errg.Go(func() error {
-		explorer.regionDisks, err = NewRegionDisksExplorer(ctx, explorer)
-		if err != nil {
-			return fmt.Errorf("failed to initialize region disks explorer: %w", err)
-		}
-		return nil
-	})
-
-	errg.Go(func() error {
-		explorer.buckets, err = NewBucketsExplorer(ctx, explorer)
-		if err != nil {
-			return fmt.Errorf("failed to initialize buckets explorer: %w", err)
-		}
-		return nil
-	})
-
-	errg.Go(func() error {
-		explorer.sql, err = NewCloudSQLExplorer(ctx, explorer)
-		if err != nil {
-			return fmt.Errorf("failed to initialize cloudsql explorer: %w", err)
-		}
-		return nil
-	})
-
-	return explorer, errg.Wait()
+	return errg.Wait()
 }
 
 func (explorer *Explorer) loadZones(ctx context.Context) error {
@@ -146,7 +125,7 @@ func (explorer *Explorer) loadZones(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to initialize zone rest client: %w", err)
 	}
-	it := zonesClient.List(ctx, &computepb.ListZonesRequest{Project: explorer.projectID})
+	it := zonesClient.List(ctx, &computepb.ListZonesRequest{Project: explorer.ProjectID})
 	for {
 		zone, err := it.Next()
 		if err == iterator.Done {
@@ -191,6 +170,20 @@ func fragmentURLPath(source string) []string {
 	return strings.Split(path, "/")
 }
 
+func (explorer *Explorer) GetCachedDiscoveryMap(ctx context.Context) (AssetsDiscoveryMap, error) {
+	v, err := explorer.cache.Get(ctx, "discovery_map")
+	if err != nil {
+		return nil, err
+	}
+
+	assets, ok := v.(AssetsDiscoveryMap)
+	if !ok {
+		return nil, fmt.Errorf("wrong cache entry type: %s, expected AssetsDiscoveryMap", reflect.TypeOf(v))
+	}
+
+	return assets, nil
+}
+
 func (explorer *Explorer) CollectMetrics(ctx context.Context, metrics chan *cloudcarbonexporter.Metric, errs chan error) {
 	explorer.apiCallsCounter.Store(0) // reset api calls counter
 	energyMetrics := make(chan *cloudcarbonexporter.Metric)
@@ -225,49 +218,34 @@ func (explorer *Explorer) CollectMetrics(ctx context.Context, metrics chan *clou
 }
 
 func (explorer *Explorer) collectMetrics(ctx context.Context, energyMetrics chan *cloudcarbonexporter.Metric, errs chan error) {
-	v, err := explorer.cache.Get(ctx, "assets_zones_regions")
+	discoveryMap, err := explorer.GetCachedDiscoveryMap(ctx)
 	if err != nil {
-		errs <- err
+		errs <- fmt.Errorf("failed to get cached discovery map: %w", err)
 		return
 	}
-
-	assets, ok := v.(map[string][]string)
-	must.Assert(ok, "wrong cache entry type")
-
 	wg := new(sync.WaitGroup)
-	for _, assetType := range assets["types"] {
-		switch assetType {
-		case "compute.googleapis.com/Instance":
-			for _, zone := range assets["zones"] {
-				async(wg, func() { errs <- explorer.instances.collectMetrics(ctx, zone, energyMetrics) })
-			}
-		case "compute.googleapis.com/Disk":
-			for _, zone := range assets["zones"] {
-				async(wg, func() { errs <- explorer.disks.collectMetrics(ctx, zone, energyMetrics) })
-			}
-		case "compute.googleapis.com/RegionDisk":
-			for _, region := range assets["regions"] {
-				async(wg, func() { errs <- explorer.regionDisks.collectMetrics(ctx, region, energyMetrics) })
-			}
-		case "storage.googleapis.com/Bucket":
-			async(wg, func() { errs <- explorer.buckets.collectMetrics(ctx, energyMetrics) })
-
-		case "sqladmin.googleapis.com/Instance":
-			async(wg, func() { errs <- explorer.sql.collectMetrics(ctx, energyMetrics) })
-
-		default:
-			slog.Debug("asset type is not supported", "asset", assetType)
+	for _, assetName := range discoveryMap["types"] {
+		subExplorer, found := explorer.subExplorers[Asset(assetName)]
+		if !found {
+			slog.Debug("asset is not supported", "asset", assetName)
+			continue
 		}
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			errs <- subExplorer.collectMetrics(ctx, energyMetrics)
+		}()
+
 	}
 
 	wg.Wait()
 }
 
-func (explorer *Explorer) discoverServicesZonesRegions() cache.DynamicValueFunc {
+func (explorer *Explorer) discoveryMapCacheValue(client *asset.Client) cache.DynamicValueFunc {
 	return cache.DynamicValueFunc(func(ctx context.Context) (any, error) {
 		start := time.Now()
 		req := &assetpb.ListAssetsRequest{
-			Parent:      fmt.Sprintf("projects/%s", explorer.projectID),
+			Parent:      fmt.Sprintf("projects/%s", explorer.ProjectID),
 			ContentType: assetpb.ContentType_RESOURCE,
 		}
 
@@ -275,7 +253,7 @@ func (explorer *Explorer) discoverServicesZonesRegions() cache.DynamicValueFunc 
 		activeZones := make([]string, 0)
 		activeRegions := make([]string, 0)
 
-		it := explorer.assets.ListAssets(ctx, req)
+		it := client.ListAssets(ctx, req)
 		for {
 			asset, err := it.Next()
 			if err == iterator.Done {
@@ -299,9 +277,9 @@ func (explorer *Explorer) discoverServicesZonesRegions() cache.DynamicValueFunc 
 		activeZones = distinct(activeZones)
 		activeRegions = distinct(activeRegions)
 
-		slog.Debug("assets listed", "projectID", explorer.projectID, "duration_ms", time.Since(start))
+		slog.Debug("assets listed", "projectID", explorer.ProjectID, "duration_ms", time.Since(start))
 
-		return map[string][]string{
+		return AssetsDiscoveryMap{
 			"types":   assetTypes,
 			"zones":   activeZones,
 			"regions": activeRegions,
@@ -332,9 +310,9 @@ func async(wg *sync.WaitGroup, fn func()) {
 }
 
 func (explorer *Explorer) Close() error {
-	return explorer.assets.Close()
+	return nil
 }
 
 func (explorer *Explorer) IsReady() bool {
-	return explorer.assets != nil
+	return true
 }

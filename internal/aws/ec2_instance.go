@@ -53,10 +53,14 @@ type EC2InstanceExplorer struct {
 	*Explorer
 }
 
-func NewEC2InstanceExplorer(ctx context.Context, explorer *Explorer) *EC2InstanceExplorer {
+func NewEC2InstanceExplorer(explorer *Explorer) *EC2InstanceExplorer {
 	return &EC2InstanceExplorer{
 		Explorer: explorer,
 	}
+}
+
+func (ec2explorer *EC2InstanceExplorer) support() string {
+	return "ec2/instance"
 }
 
 func (ec2explorer *EC2InstanceExplorer) load(ctx context.Context) error {

@@ -20,26 +20,24 @@ type BucketsExplorer struct {
 	mu     *sync.Mutex
 }
 
-func NewBucketsExplorer(ctx context.Context, explorer *Explorer) (bucketsExplorer *BucketsExplorer, err error) {
-	bucketsExplorer = &BucketsExplorer{
-		Explorer: explorer,
-		mu:       new(sync.Mutex),
-	}
+func (bucketsExplorer *BucketsExplorer) init(ctx context.Context, explorer *Explorer) (err error) {
+	bucketsExplorer.Explorer = explorer
+	bucketsExplorer.mu = new(sync.Mutex)
 
 	bucketsExplorer.client, err = storage.NewClient(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create buckets client: %w", err)
+		return fmt.Errorf("failed to create buckets client: %w", err)
 	}
 
 	explorer.cache.SetDynamic(ctx, "buckets_size", func(ctx context.Context) (any, error) {
 		return bucketsExplorer.ListBucketSize(ctx)
 	}, 6*time.Hour)
 
-	return bucketsExplorer, nil
+	return nil
 }
 
 func (bucketsExplorer *BucketsExplorer) collectMetrics(ctx context.Context, metrics chan *cloudcarbonexporter.Metric) error {
-	bucketsIter := bucketsExplorer.client.Buckets(ctx, bucketsExplorer.projectID)
+	bucketsIter := bucketsExplorer.client.Buckets(ctx, bucketsExplorer.ProjectID)
 
 	for {
 		bucket, err := bucketsIter.Next()

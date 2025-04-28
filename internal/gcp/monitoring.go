@@ -16,7 +16,7 @@ import (
 
 // query the monitoring api and returns standardized cloud carbon metric
 func (explorer *Explorer) query(ctx context.Context, promql string, resourceName string, resolution time.Duration) (map[string]float64, error) {
-	body, err := explorer.monitoringClient.Projects.Location.Prometheus.Api.V1.QueryRange("projects/"+explorer.projectID, "global", &monitoring.QueryRangeRequest{
+	body, err := explorer.monitoringClient.Projects.Location.Prometheus.Api.V1.QueryRange("projects/"+explorer.ProjectID, "global", &monitoring.QueryRangeRequest{
 		Start: time.Now().Add(-resolution).Format(time.RFC3339),
 		End:   time.Now().Format(time.RFC3339),
 		Step:  resolution.String(),
