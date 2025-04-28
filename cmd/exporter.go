@@ -189,14 +189,14 @@ func slogLevel(level string) slog.Level {
 }
 
 func printMarkdownSupportedServices(explorers map[string]cloudcarbonexporter.Explorer) {
-	str := "# Supported services\n\n"
+	str := ""
 	for explorerName, explorer := range explorers {
 		str += "## " + strings.ToUpper(explorerName) + "\n\n"
 		for _, service := range explorer.SupportedServices() {
-			str += "* " + service + "\n"
+			str += "* `" + service + "`\n"
 		}
 		if len(explorer.SupportedServices()) == 0 {
-			str += "* none \n"
+			str += "* `none` \n"
 		}
 		str += "\n"
 	}
