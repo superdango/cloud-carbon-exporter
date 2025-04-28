@@ -20,27 +20,25 @@ type CloudSQLExplorer struct {
 	mu     *sync.Mutex
 }
 
-func NewCloudSQLExplorer(ctx context.Context, explorer *Explorer) (sqlExplorer *CloudSQLExplorer, err error) {
-	sqlExplorer = &CloudSQLExplorer{
-		Explorer: explorer,
-		mu:       new(sync.Mutex),
-	}
+func (sqlExplorer *CloudSQLExplorer) init(ctx context.Context, explorer *Explorer) (err error) {
+	sqlExplorer.Explorer = explorer
+	sqlExplorer.mu = new(sync.Mutex)
 
 	sqlExplorer.client, err = cloudsql.NewService(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create cloudsql service: %w", err)
+		return fmt.Errorf("failed to create cloudsql service: %w", err)
 	}
 
 	sqlExplorer.cache.SetDynamic(ctx, "sql_instances_average_cpu", func(ctx context.Context) (any, error) {
 		return sqlExplorer.ListSQLInstanceCPUAverage(ctx)
 	}, 5*time.Minute)
 
-	return sqlExplorer, nil
+	return nil
 }
 
 func (sqlExplorer *CloudSQLExplorer) collectMetrics(ctx context.Context, metrics chan *cloudcarbonexporter.Metric) error {
 	sqlExplorer.apiCallsCounter.Add(1)
-	return sqlExplorer.client.Instances.List(sqlExplorer.projectID).Context(ctx).Pages(ctx, func(instancesList *cloudsql.InstancesListResponse) error {
+	return sqlExplorer.client.Instances.List(sqlExplorer.ProjectID).Context(ctx).Pages(ctx, func(instancesList *cloudsql.InstancesListResponse) error {
 		for _, instance := range instancesList.Items {
 			watts := 0.0
 

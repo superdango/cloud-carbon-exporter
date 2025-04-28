@@ -13,6 +13,7 @@ import (
 	"github.com/superdango/cloud-carbon-exporter/internal/must"
 	"github.com/superdango/cloud-carbon-exporter/model/energy/cloud"
 	"github.com/superdango/cloud-carbon-exporter/model/energy/primitives"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/api/iterator"
 )
 
@@ -22,27 +23,41 @@ type InstancesExplorer struct {
 	mu     *sync.Mutex
 }
 
-func NewInstancesExplorer(ctx context.Context, explorer *Explorer) (instanceExplorer *InstancesExplorer, err error) {
-	instanceExplorer = &InstancesExplorer{
-		Explorer: explorer,
-		mu:       new(sync.Mutex),
-	}
+func (instanceExplorer *InstancesExplorer) init(ctx context.Context, explorer *Explorer) (err error) {
+	instanceExplorer.Explorer = explorer
+	instanceExplorer.mu = new(sync.Mutex)
 
 	instanceExplorer.client, err = compute.NewInstancesRESTClient(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create compute instances rest client: %w", err)
+		return fmt.Errorf("failed to create compute instances rest client: %w", err)
 	}
 
 	explorer.cache.SetDynamic(ctx, "instances_average_cpu", func(ctx context.Context) (any, error) {
 		return instanceExplorer.ListInstanceCPUAverage(ctx)
 	}, 5*time.Minute)
 
-	return instanceExplorer, nil
+	return nil
 }
 
-func (instanceExplorer *InstancesExplorer) collectMetrics(ctx context.Context, zone string, metrics chan *cloudcarbonexporter.Metric) error {
+func (instanceExplorer *InstancesExplorer) collectMetrics(ctx context.Context, metrics chan *cloudcarbonexporter.Metric) error {
+	discoveryMap, err := instanceExplorer.GetCachedDiscoveryMap(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get cached discovery map: %w", err)
+	}
+
+	errg := new(errgroup.Group)
+
+	for _, zone := range discoveryMap["zones"] {
+		errg.Go(func() error {
+			return instanceExplorer.collectZoneMetrics(ctx, zone, metrics)
+		})
+	}
+	return errg.Wait()
+}
+
+func (instanceExplorer *InstancesExplorer) collectZoneMetrics(ctx context.Context, zone string, metrics chan *cloudcarbonexporter.Metric) error {
 	instancesIter := instanceExplorer.client.List(ctx, &computepb.ListInstancesRequest{
-		Project: instanceExplorer.projectID,
+		Project: instanceExplorer.ProjectID,
 		Zone:    zone,
 	})
 
@@ -139,22 +154,35 @@ type DisksExplorer struct {
 	client *compute.DisksClient
 }
 
-func NewDisksExplorer(ctx context.Context, explorer *Explorer) (disksExplorer *DisksExplorer, err error) {
-	disksExplorer = &DisksExplorer{
-		Explorer: explorer,
-	}
-
+func (disksExplorer *DisksExplorer) init(ctx context.Context, explorer *Explorer) (err error) {
+	disksExplorer.Explorer = explorer
 	disksExplorer.client, err = compute.NewDisksRESTClient(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create disks rest client: %w", err)
+		return fmt.Errorf("failed to create disks rest client: %w", err)
 	}
 
-	return disksExplorer, nil
+	return nil
 }
 
-func (disksExplorer *DisksExplorer) collectMetrics(ctx context.Context, zone string, metrics chan *cloudcarbonexporter.Metric) error {
+func (disksExplorer *DisksExplorer) collectMetrics(ctx context.Context, metrics chan *cloudcarbonexporter.Metric) error {
+	discoveryMap, err := disksExplorer.GetCachedDiscoveryMap(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get cached discovery map: %w", err)
+	}
+
+	errg := new(errgroup.Group)
+
+	for _, zone := range discoveryMap["zones"] {
+		errg.Go(func() error {
+			return disksExplorer.collectZoneMetrics(ctx, zone, metrics)
+		})
+	}
+	return errg.Wait()
+}
+
+func (disksExplorer *DisksExplorer) collectZoneMetrics(ctx context.Context, zone string, metrics chan *cloudcarbonexporter.Metric) error {
 	disksIter := disksExplorer.client.List(ctx, &computepb.ListDisksRequest{
-		Project: disksExplorer.projectID,
+		Project: disksExplorer.ProjectID,
 		Zone:    zone,
 	})
 
@@ -165,7 +193,7 @@ func (disksExplorer *DisksExplorer) collectMetrics(ctx context.Context, zone str
 			break
 		}
 		if err != nil {
-			return fmt.Errorf("failed to iterate on next disk: %w", err)
+			return fmt.Errorf("failed to iterate on next disk (zone: %s): %w", zone, err)
 		}
 
 		diskName := disk.GetName()
@@ -207,26 +235,38 @@ type RegionDisksExplorer struct {
 	client *compute.RegionDisksClient
 }
 
-func NewRegionDisksExplorer(ctx context.Context, explorer *Explorer) (disksExplorer *RegionDisksExplorer, err error) {
-	disksExplorer = &RegionDisksExplorer{
-		Explorer: explorer,
-	}
-
-	disksExplorer.client, err = compute.NewRegionDisksRESTClient(ctx)
+func (regionDisksExplorer *RegionDisksExplorer) init(ctx context.Context, explorer *Explorer) (err error) {
+	regionDisksExplorer.Explorer = explorer
+	regionDisksExplorer.client, err = compute.NewRegionDisksRESTClient(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create region disks rest client: %w", err)
+		return fmt.Errorf("failed to create region disk rest client: %w", err)
 	}
-
-	return disksExplorer, nil
+	return nil
 }
 
-func (regionDisksExplorer *RegionDisksExplorer) collectMetrics(ctx context.Context, region string, metrics chan *cloudcarbonexporter.Metric) error {
+func (regionDisksExplorer *RegionDisksExplorer) collectMetrics(ctx context.Context, metrics chan *cloudcarbonexporter.Metric) (err error) {
+	discoveryMap, err := regionDisksExplorer.GetCachedDiscoveryMap(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get cached discovery map: %w", err)
+	}
+
+	errg := new(errgroup.Group)
+
+	for _, region := range discoveryMap["regions"] {
+		errg.Go(func() error {
+			return regionDisksExplorer.collectRegionMetrics(ctx, region, metrics)
+		})
+	}
+	return errg.Wait()
+}
+
+func (regionDisksExplorer *RegionDisksExplorer) collectRegionMetrics(ctx context.Context, region string, metrics chan *cloudcarbonexporter.Metric) error {
 	if region == "global" {
 		return nil
 	}
 
 	regionDisksIter := regionDisksExplorer.client.List(ctx, &computepb.ListRegionDisksRequest{
-		Project: regionDisksExplorer.projectID,
+		Project: regionDisksExplorer.ProjectID,
 		Region:  region,
 	})
 

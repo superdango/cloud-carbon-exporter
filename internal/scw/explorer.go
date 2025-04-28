@@ -39,21 +39,30 @@ type Explorer struct {
 	carbonIntensityMap carbon.IntensityMap
 }
 
-func NewExplorer(opts ...ExplorerOption) (*Explorer, error) {
-	e := &Explorer{
+func NewExplorer() *Explorer {
+	return &Explorer{
 		regions:            scw.AllRegions,
 		carbonIntensityMap: carbon.NewScalewayCloudCarbonFootprintIntensityMap(),
 	}
+}
 
+func (explorer *Explorer) Configure(opts ...ExplorerOption) *Explorer {
 	for _, opt := range opts {
-		opt(e)
+		opt(explorer)
+	}
+	return explorer
+}
+
+func (explorer *Explorer) Init(ctx context.Context) (err error) {
+	if explorer.client == nil {
+		return fmt.Errorf("scaleway client is required")
 	}
 
-	if e.client == nil {
-		return nil, fmt.Errorf("scaleway client is required")
-	}
+	return nil
+}
 
-	return e, nil
+func (explorer *Explorer) SupportedServices() []string {
+	return []string{}
 }
 
 func (explorer *Explorer) CollectMetrics(ctx context.Context, metrics chan *cloudcarbonexporter.Metric, errs chan error) {

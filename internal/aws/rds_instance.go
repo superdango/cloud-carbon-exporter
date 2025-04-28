@@ -36,10 +36,14 @@ type RDSInstanceExplorer struct {
 	*Explorer
 }
 
-func NewRDSInstanceEstimator(ctx context.Context, explorer *Explorer) *RDSInstanceExplorer {
+func NewRDSInstanceExplorer(explorer *Explorer) *RDSInstanceExplorer {
 	return &RDSInstanceExplorer{
 		Explorer: explorer,
 	}
+}
+
+func (rdsExplorer *RDSInstanceExplorer) support() string {
+	return "rds/instance"
 }
 
 func (rdsExplorer *RDSInstanceExplorer) collectMetrics(ctx context.Context, region string, metrics chan *cloudcarbonexporter.Metric) error {

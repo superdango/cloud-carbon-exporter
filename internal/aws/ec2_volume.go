@@ -29,10 +29,14 @@ type EC2VolumeExplorer struct {
 	*Explorer
 }
 
-func NewEC2VolumeExplorer(ctx context.Context, explorer *Explorer) *EC2VolumeExplorer {
+func NewEC2VolumeExplorer(explorer *Explorer) *EC2VolumeExplorer {
 	return &EC2VolumeExplorer{
 		Explorer: explorer,
 	}
+}
+
+func (ec2explorer *EC2VolumeExplorer) support() string {
+	return "ec2/volume"
 }
 
 func (ec2explorer *EC2VolumeExplorer) collectMetrics(ctx context.Context, region string, metrics chan *cloudcarbonexporter.Metric) error {
