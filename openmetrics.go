@@ -169,3 +169,16 @@ func (m *Metric) SetLabel(key, value string) *Metric {
 	)
 	return m
 }
+
+func (m Metric) SanitizeLabels() Metric {
+	newLabels := make(map[string]string)
+	invalidChars := []string{".", "/", "-", ":", ";"}
+	for label, value := range m.Labels {
+		for _, char := range invalidChars {
+			label = strings.ReplaceAll(label, char, "_")
+		}
+		newLabels[label] = value
+	}
+	m.Labels = newLabels
+	return m
+}
