@@ -29,7 +29,7 @@ func (bucketsExplorer *BucketsExplorer) init(ctx context.Context, explorer *Expl
 		return fmt.Errorf("failed to create buckets client: %w", err)
 	}
 
-	explorer.cache.SetDynamic(ctx, "buckets_size", func(ctx context.Context) (any, error) {
+	explorer.cache.SetDynamicIfNotExists(ctx, "buckets_size", func(ctx context.Context) (any, error) {
 		return bucketsExplorer.ListBucketSize(ctx)
 	}, 6*time.Hour)
 

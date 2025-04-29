@@ -2,6 +2,7 @@ package cache
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"sync"
 	"time"
@@ -12,6 +13,7 @@ import (
 type DynamicValueFunc func(ctx context.Context) (any, error)
 
 type entry struct {
+	mu            *sync.Mutex
 	expiresAt     time.Time
 	v             any
 	dynamicFunc   DynamicValueFunc
@@ -61,6 +63,7 @@ func (m *Memory) Set(ctx context.Context, k string, v any, ttl ...time.Duration)
 	if fn, ok := v.(DynamicValueFunc); ok {
 		// store dynamic value as expired to force refresh on the first Get
 		m.m.Store(k, &entry{
+			mu:            new(sync.Mutex),
 			expiresAt:     time.Now(),
 			v:             v,
 			cacheDuration: defaultTTL,
@@ -73,6 +76,7 @@ func (m *Memory) Set(ctx context.Context, k string, v any, ttl ...time.Duration)
 	}
 
 	m.m.Store(k, &entry{
+		mu:            new(sync.Mutex),
 		expiresAt:     time.Now().Add(defaultTTL),
 		v:             v,
 		cacheDuration: defaultTTL,
@@ -90,6 +94,7 @@ func (m *Memory) SetDynamic(ctx context.Context, k string, fn DynamicValueFunc, 
 	}
 
 	m.m.Store(k, &entry{
+		mu:            new(sync.Mutex),
 		expiresAt:     time.Now(),
 		cacheDuration: defaultTTL,
 		dynamicFunc:   fn,
@@ -98,6 +103,20 @@ func (m *Memory) SetDynamic(ctx context.Context, k string, fn DynamicValueFunc, 
 	slog.Debug("new dynamic cache entry", "key", k)
 
 	return nil
+}
+
+// SetDynamic creates cache entry with dynamic value.
+func (m *Memory) SetDynamicIfNotExists(ctx context.Context, k string, fn DynamicValueFunc, ttl ...time.Duration) error {
+	exists, err := m.Exists(ctx, k)
+	if err != nil {
+		return fmt.Errorf("failed to check key existence: %w", err)
+	}
+
+	if exists {
+		return nil
+	}
+
+	return m.SetDynamic(ctx, k, fn, ttl...)
 }
 
 func (m *Memory) Get(ctx context.Context, k string) (v any, err error) {
@@ -115,11 +134,15 @@ func (m *Memory) Get(ctx context.Context, k string) (v any, err error) {
 		return nil, ErrNotFound
 	}
 
+	// avoid concurrent refreshes on the same entry
+	entry.mu.Lock()
+	defer entry.mu.Unlock()
+	start := time.Now()
 	if entry.isExpired() && entry.isDynamic() {
 		if err := entry.refresh(ctx); err != nil {
 			return nil, err
 		}
-		slog.Debug("dynamic entry refreshed", "key", k)
+		slog.Debug("dynamic entry refreshed", "key", k, "duration_ms", time.Since(start))
 	}
 
 	return entry.v, nil

@@ -85,7 +85,7 @@ func (explorer *Explorer) Init(ctx context.Context) (err error) {
 			return fmt.Errorf("failed to create asset inventory client: %w", err)
 		}
 
-		return explorer.cache.SetDynamic(ctx, "discovery_map", explorer.discoveryMapCacheValue(assets))
+		return explorer.cache.SetDynamicIfNotExists(ctx, "discovery_map", explorer.discoveryMapCacheValue(assets))
 	})
 
 	errg.Go(func() error {
