@@ -158,12 +158,9 @@ func (rc *RDSInstanceExplorer) load(ctx context.Context) error { return nil }
 func (rdsExplorer *RDSInstanceExplorer) GetInstanceCPUAverage(ctx context.Context, region string, instanceID string) (float64, error) {
 	key := fmt.Sprintf("%s/rds_instances_average_cpu", region)
 
-	// add dynamic cache entry if key does not exist yet
-	if exists, err := rdsExplorer.cache.Exists(ctx, key); !exists || err != nil {
-		rdsExplorer.cache.SetDynamic(ctx, key, func(ctx context.Context) (any, error) {
-			return rdsExplorer.ListInstanceCPUAverage(ctx, region)
-		}, 5*time.Minute)
-	}
+	rdsExplorer.cache.SetDynamicIfNotExists(ctx, key, func(ctx context.Context) (any, error) {
+		return rdsExplorer.ListInstanceCPUAverage(ctx, region)
+	}, 5*time.Minute)
 
 	entry, err := rdsExplorer.cache.Get(ctx, key)
 	if err != nil {
@@ -226,12 +223,9 @@ func (ec2explorer *RDSInstanceExplorer) ListInstanceCPUAverage(ctx context.Conte
 func (rdsExplorer *RDSInstanceExplorer) GetInstanceACUAverage(ctx context.Context, region string, instanceID string) (float64, error) {
 	key := fmt.Sprintf("%s/rds_serverless_instances_average_acu", region)
 
-	// add dynamic cache entry if key does not exist yet
-	if exists, err := rdsExplorer.cache.Exists(ctx, key); !exists || err != nil {
-		rdsExplorer.cache.SetDynamic(ctx, key, func(ctx context.Context) (any, error) {
-			return rdsExplorer.ListInstanceACUAverage(ctx, region)
-		}, 5*time.Minute)
-	}
+	rdsExplorer.cache.SetDynamicIfNotExists(ctx, key, func(ctx context.Context) (any, error) {
+		return rdsExplorer.ListInstanceACUAverage(ctx, region)
+	}, 5*time.Minute)
 
 	entry, err := rdsExplorer.cache.Get(ctx, key)
 	if err != nil {

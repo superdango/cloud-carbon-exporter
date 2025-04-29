@@ -29,7 +29,7 @@ func (sqlExplorer *CloudSQLExplorer) init(ctx context.Context, explorer *Explore
 		return fmt.Errorf("failed to create cloudsql service: %w", err)
 	}
 
-	sqlExplorer.cache.SetDynamic(ctx, "sql_instances_average_cpu", func(ctx context.Context) (any, error) {
+	sqlExplorer.cache.SetDynamicIfNotExists(ctx, "sql_instances_average_cpu", func(ctx context.Context) (any, error) {
 		return sqlExplorer.ListSQLInstanceCPUAverage(ctx)
 	}, 5*time.Minute)
 

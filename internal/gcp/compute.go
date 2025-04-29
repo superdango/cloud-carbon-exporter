@@ -32,7 +32,7 @@ func (instanceExplorer *InstancesExplorer) init(ctx context.Context, explorer *E
 		return fmt.Errorf("failed to create compute instances rest client: %w", err)
 	}
 
-	explorer.cache.SetDynamic(ctx, "instances_average_cpu", func(ctx context.Context) (any, error) {
+	explorer.cache.SetDynamicIfNotExists(ctx, "instances_average_cpu", func(ctx context.Context) (any, error) {
 		return instanceExplorer.ListInstanceCPUAverage(ctx)
 	}, 5*time.Minute)
 

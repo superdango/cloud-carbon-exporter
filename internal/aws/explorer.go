@@ -87,6 +87,9 @@ func NewExplorer() *Explorer {
 		"Amazon Relational Database Service": {
 			NewRDSInstanceExplorer(explorer),
 		},
+		"Amazon Simple Storage Service": {
+			NewS3BucketsExplorer(explorer),
+		},
 	}
 
 	return explorer
@@ -142,16 +145,6 @@ func (explorer *Explorer) Init(ctx context.Context) (err error) {
 }
 
 func (explorer *Explorer) loadSubExplorers(ctx context.Context) error {
-	explorer.subExplorers = map[string][]subExplorer{
-		"Amazon Elastic Compute Cloud - Compute": {
-			NewEC2InstanceExplorer(explorer),
-			NewEC2VolumeExplorer(explorer),
-		},
-		"Amazon Relational Database Service": {
-			NewRDSInstanceExplorer(explorer),
-		},
-	}
-
 	errg, errgctx := errgroup.WithContext(ctx)
 	for _, energyEstimators := range explorer.subExplorers {
 		for _, energyEstimator := range energyEstimators {
@@ -271,10 +264,6 @@ func (e *Explorer) Region(location string) (region string) {
 // getAWSAccountID returns the account id targeted by the awscfg
 func (explorer *Explorer) getAWSAccountID(ctx context.Context, awscfg aws.Config) (accountID string, err error) {
 	start := time.Now()
-	defer func() {
-		slog.Info("got aws account id from caller identity ", "duration_ms", time.Since(start).Milliseconds())
-	}()
-
 	stsapi := sts.NewFromConfig(awscfg, func(o *sts.Options) {
 		o.Region = explorer.defaultRegion
 	})
@@ -284,6 +273,8 @@ func (explorer *Explorer) getAWSAccountID(ctx context.Context, awscfg aws.Config
 	if err != nil {
 		return "", fmt.Errorf("failed to get caller identity: %w", err)
 	}
+
+	slog.Info("got aws account id from caller identity", "duration_ms", time.Since(start).Milliseconds(), "account", *output.Account, "identity", *output.UserId)
 
 	return *output.Account, nil
 }
