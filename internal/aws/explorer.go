@@ -16,7 +16,7 @@ import (
 	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
 	"github.com/superdango/cloud-carbon-exporter/internal/cache"
 	"github.com/superdango/cloud-carbon-exporter/model/carbon"
-	"github.com/superdango/cloud-carbon-exporter/model/energy/primitives"
+	"github.com/superdango/cloud-carbon-exporter/model/primitives"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -163,24 +163,26 @@ func (explorer *Explorer) loadSubExplorers(ctx context.Context) error {
 // CollectMetrics resources on the configured AWS Account and sends them in the resources chan
 func (explorer *Explorer) CollectMetrics(ctx context.Context, metrics chan *cloudcarbonexporter.Metric, errs chan error) {
 	explorer.apiCallsCounter.Store(0) // reset api calls counter
-	energyMetrics := make(chan *cloudcarbonexporter.Metric)
+	subMetrics := make(chan *cloudcarbonexporter.Metric)
 
 	wg := new(sync.WaitGroup)
 	wg.Add(1)
 
 	go func() {
 		defer wg.Done()
-		for energyMetric := range energyMetrics {
-			energyMetric.SetLabel("cloud_provider", "aws")
-			energyMetric.Value *= primitives.GoodPUE
-			metrics <- energyMetric
-			metrics <- explorer.carbonIntensityMap.ComputeCO2eq(energyMetric)
+		for submetric := range subMetrics {
+			submetric.AddLabel("cloud_provider", "aws")
+			if submetric.Name == "estimated_watts" {
+				submetric.Value *= primitives.GoodPUE
+				metrics <- explorer.carbonIntensityMap.ComputeCO2eq(submetric)
+			}
+			metrics <- submetric
 		}
 	}()
 
 	go func() {
-		defer close(energyMetrics)
-		explorer.collectMetrics(ctx, energyMetrics, errs)
+		defer close(subMetrics)
+		explorer.collectMetrics(ctx, subMetrics, errs)
 	}()
 
 	wg.Wait()

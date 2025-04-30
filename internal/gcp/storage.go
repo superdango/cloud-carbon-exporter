@@ -10,7 +10,7 @@ import (
 	"cloud.google.com/go/storage"
 	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
 	"github.com/superdango/cloud-carbon-exporter/internal/must"
-	"github.com/superdango/cloud-carbon-exporter/model/energy/cloud"
+	"github.com/superdango/cloud-carbon-exporter/model/cloud"
 	"google.golang.org/api/iterator"
 )
 
@@ -56,7 +56,7 @@ func (bucketsExplorer *BucketsExplorer) collectMetrics(ctx context.Context, metr
 			return err
 		}
 
-		watts := cloud.EstimateObjectStorage(bytesToGigabytes(bucketSize))
+		watts := cloud.EstimateObjectStorageWatts(bytesToGigabytes(bucketSize))
 
 		metrics <- &cloudcarbonexporter.Metric{
 			Name: "estimated_watts",

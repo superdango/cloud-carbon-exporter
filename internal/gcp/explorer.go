@@ -19,7 +19,7 @@ import (
 	"github.com/superdango/cloud-carbon-exporter/internal/cache"
 	machinetypes "github.com/superdango/cloud-carbon-exporter/internal/gcp/data/machine_types"
 	"github.com/superdango/cloud-carbon-exporter/model/carbon"
-	"github.com/superdango/cloud-carbon-exporter/model/energy/primitives"
+	"github.com/superdango/cloud-carbon-exporter/model/primitives"
 	"golang.org/x/sync/errgroup"
 
 	"google.golang.org/api/iterator"
@@ -194,7 +194,7 @@ func (explorer *Explorer) CollectMetrics(ctx context.Context, metrics chan *clou
 	go func() {
 		defer wg.Done()
 		for energyMetric := range energyMetrics {
-			energyMetric.SetLabel("cloud_provider", "gcp")
+			energyMetric.AddLabel("cloud_provider", "gcp")
 			energyMetric.Value *= primitives.GoodPUE
 			metrics <- energyMetric
 			metrics <- explorer.carbonIntensityMap.ComputeCO2eq(energyMetric)

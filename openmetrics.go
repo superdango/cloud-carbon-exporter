@@ -136,7 +136,7 @@ func writeMetric(w io.Writer, metric *Metric) error {
 	}
 	slices.SortFunc(labels, strings.Compare)
 
-	_, err := fmt.Fprintf(w, "%s{%s} %f\n", metric.Name, strings.Join(labels, ","), metric.Value)
+	_, err := fmt.Fprintf(w, "%s{%s} %0.10f\n", metric.Name, strings.Join(labels, ","), metric.Value)
 	if err != nil {
 		return fmt.Errorf("writing metric %s failed: %w", metric.Name, err)
 	}
@@ -162,13 +162,23 @@ func (m Metric) Clone() Metric {
 	}
 }
 
-func (m *Metric) SetLabel(key, value string) *Metric {
+func (m *Metric) AddLabel(key, value string) *Metric {
 	m.Labels = MergeLabels(
 		m.Labels,
 		map[string]string{
 			key: value,
 		},
 	)
+	return m
+}
+
+func (m *Metric) SetLabels(l map[string]string) *Metric {
+	m.Labels = l
+	return m
+}
+
+func (m *Metric) SetValue(v float64) *Metric {
+	m.Value = v
 	return m
 }
 
@@ -183,4 +193,18 @@ func (m *Metric) SanitizeLabels() *Metric {
 	}
 	m.Labels = newLabels
 	return m
+}
+
+func NewEmbodiedEmissions(value float64) *Metric {
+	return &Metric{
+		Name:  "estimated_embodied_emissions_kgCO2eq_second",
+		Value: value,
+	}
+}
+
+func NewEstimatedWatts(value float64) *Metric {
+	return &Metric{
+		Name:  "estimated_watts",
+		Value: value,
+	}
 }

@@ -9,8 +9,8 @@ import (
 
 	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
 	"github.com/superdango/cloud-carbon-exporter/internal/must"
-	"github.com/superdango/cloud-carbon-exporter/model/energy/cloud"
-	"github.com/superdango/cloud-carbon-exporter/model/energy/primitives"
+	"github.com/superdango/cloud-carbon-exporter/model/cloud"
+	"github.com/superdango/cloud-carbon-exporter/model/primitives"
 	cloudsql "google.golang.org/api/sqladmin/v1"
 )
 

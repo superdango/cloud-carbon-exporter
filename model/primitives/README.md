@@ -29,3 +29,12 @@ The model accounts 0.38 W/GB as explained in the following analysis: [Estimating
 ### Disk
 
 [The Cruseship article](https://cruiseship.cloud/how-much-power-does-a-hard-drive-use/) estimates that SSDs consume between 1 and 5 watts, while HDDs range from 7 to 12 watts. Based on this, the model assumes an average power consumption of 3W for an SSD and 7.5W for an HDD.
+
+## Estimating Carbon Embodied emissions
+
+### Disk
+
+* SSDs, the model estimates `0.16 kgCO2eq per GB`. Source: https://hotcarbon.org/assets/2022/pdf/hotcarbon22-tannu.pdf
+* HDDs, the model estimates `53.7 kgCO2eq per drive`. Source: https://www.seagate.com/files/www-content/global-citizenship/en-us/docs/seagate-makara-enterprise-hdd-lca-summary-2016-07-29.pdf
+
+For embodied `kgCO2eq/second` value, the model assumes 5 years of exploitation.

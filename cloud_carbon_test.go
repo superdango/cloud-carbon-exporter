@@ -9,13 +9,13 @@ import (
 func TestSetMetricLabel(t *testing.T) {
 	m := new(Metric)
 
-	m.SetLabel("foo", "bar")
+	m.AddLabel("foo", "bar")
 	assert.Equal(t, "bar", m.Labels["foo"])
 
-	m.SetLabel("foo", "baz")
+	m.AddLabel("foo", "baz")
 	assert.Equal(t, "baz", m.Labels["foo"])
 
-	m.SetLabel("zoo", "zaz")
+	m.AddLabel("zoo", "zaz")
 	assert.Equal(t, "baz", m.Labels["foo"])
 	assert.Equal(t, "zaz", m.Labels["zoo"])
 

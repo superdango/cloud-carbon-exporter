@@ -11,8 +11,8 @@ import (
 	"cloud.google.com/go/compute/apiv1/computepb"
 	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
 	"github.com/superdango/cloud-carbon-exporter/internal/must"
-	"github.com/superdango/cloud-carbon-exporter/model/energy/cloud"
-	"github.com/superdango/cloud-carbon-exporter/model/energy/primitives"
+	"github.com/superdango/cloud-carbon-exporter/model/cloud"
+	"github.com/superdango/cloud-carbon-exporter/model/primitives"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/api/iterator"
 )

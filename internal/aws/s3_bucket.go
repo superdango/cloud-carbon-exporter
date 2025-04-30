@@ -31,7 +31,7 @@ import (
 	"github.com/aws/smithy-go"
 	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
 	"github.com/superdango/cloud-carbon-exporter/internal/must"
-	"github.com/superdango/cloud-carbon-exporter/model/energy/cloud"
+	"github.com/superdango/cloud-carbon-exporter/model/cloud"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -104,18 +104,22 @@ func (s3explorer *S3BucketsExplorer) collectMetrics(ctx context.Context, region 
 
 				slog.Debug("bucket size", "bucket", *bucket.Name, "size_gb", sizeGB)
 
-				metrics <- &cloudcarbonexporter.Metric{
-					Name: "estimated_watts",
-					Labels: cloudcarbonexporter.MergeLabels(
-						map[string]string{
-							"kind":        "s3/bucket",
-							"location":    s3explorer.Region(*bucket.BucketRegion),
-							"bucket_name": *bucket.Name,
-						},
-						parseS3TagList(tagsOutput.TagSet),
-					),
-					Value: cloud.EstimateObjectStorage(sizeGB),
-				}
+				labels := cloudcarbonexporter.MergeLabels(
+					map[string]string{
+						"kind":        "s3/bucket",
+						"location":    s3explorer.Region(*bucket.BucketRegion),
+						"bucket_name": *bucket.Name,
+					},
+					parseS3TagList(tagsOutput.TagSet),
+				)
+
+				metrics <- cloudcarbonexporter.NewEstimatedWatts(
+					cloud.EstimateObjectStorageWatts(sizeGB),
+				).SetLabels(labels)
+
+				metrics <- cloudcarbonexporter.NewEmbodiedEmissions(
+					cloud.EstimateObjectStorageEmbodiedEmissionsKgCO2eq_second(sizeGB),
+				).SetLabels(labels)
 
 				return nil
 			})

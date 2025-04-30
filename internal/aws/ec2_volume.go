@@ -22,7 +22,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
-	"github.com/superdango/cloud-carbon-exporter/model/energy/cloud"
+	"github.com/superdango/cloud-carbon-exporter/model/cloud"
 )
 
 type EC2VolumeExplorer struct {

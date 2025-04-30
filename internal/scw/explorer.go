@@ -10,7 +10,7 @@ import (
 	"github.com/scaleway/scaleway-sdk-go/scw"
 	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
 	"github.com/superdango/cloud-carbon-exporter/model/carbon"
-	"github.com/superdango/cloud-carbon-exporter/model/energy/primitives"
+	"github.com/superdango/cloud-carbon-exporter/model/primitives"
 )
 
 type ExplorerOption func(*Explorer)
