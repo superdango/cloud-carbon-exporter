@@ -7,10 +7,11 @@ import (
 )
 
 type Explorer interface {
-	CollectMetrics(ctx context.Context, metrics chan *Metric, errors chan error)
+	CollectImpacts(ctx Context, impacts chan *Impact, errors chan error)
 	Init(ctx context.Context) error
 	IsReady() bool
 	SupportedServices() []string
+	Tags() map[string]string
 	io.Closer
 }
 

@@ -3,6 +3,7 @@ package scw
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 	"sync"
 
@@ -65,16 +66,31 @@ func (explorer *Explorer) SupportedServices() []string {
 	return []string{}
 }
 
-func (explorer *Explorer) CollectMetrics(ctx context.Context, metrics chan *cloudcarbonexporter.Metric, errs chan error) {
+func (explorer *Explorer) Tags() map[string]string {
+	return map[string]string{
+		"cloud_provider": "scw",
+	}
+}
+
+func (explorer *Explorer) CollectImpacts(ctx cloudcarbonexporter.Context, impacts chan *cloudcarbonexporter.Impact, errs chan error) {
 	wg := new(sync.WaitGroup)
 
-	energyMetrics := make(chan *cloudcarbonexporter.Metric)
-	defer close(energyMetrics)
+	rawImpacts := make(chan *cloudcarbonexporter.Impact)
+	defer close(rawImpacts)
 
 	go func() {
-		for energyMetric := range energyMetrics {
-			metrics <- energyMetric
-			metrics <- explorer.carbonIntensityMap.ComputeCO2eq(energyMetric)
+		for rawImpact := range rawImpacts {
+			location, found := rawImpact.Labels["location"]
+			if !found {
+				slog.Warn("impact location not found, skipping impact. please consider raising a bug.", "labels", rawImpact.Labels)
+				continue
+			}
+			rawImpact.Labels = cloudcarbonexporter.MergeLabels(rawImpact.Labels, map[string]string{
+				"cloud_provider": "scw",
+			})
+			rawImpact.Watts = rawImpact.Watts * primitives.GoodPUE
+			rawImpact.EnergyEmissions = explorer.carbonIntensityMap.ComputeCO2eq(rawImpact.Watts, location)
+			impacts <- rawImpact
 		}
 	}()
 
@@ -83,7 +99,7 @@ func (explorer *Explorer) CollectMetrics(ctx context.Context, metrics chan *clou
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			errs <- explorer.findRegionalInstances(ctx, region, energyMetrics)
+			errs <- explorer.findRegionalInstances(ctx, region, rawImpacts)
 		}()
 	}
 	wg.Wait()
@@ -94,7 +110,7 @@ func (explorer *Explorer) IsReady() bool { return true }
 
 func (explorer *Explorer) Close() error { return nil }
 
-func (explorer *Explorer) findRegionalInstances(ctx context.Context, region scw.Region, metrics chan *cloudcarbonexporter.Metric) error {
+func (explorer *Explorer) findRegionalInstances(ctx context.Context, region scw.Region, impacts chan *cloudcarbonexporter.Impact) error {
 	api := instance.NewAPI(explorer.client)
 
 	resp, err := api.ListServers(&instance.ListServersRequest{Zone: scw.ZonePlWaw1}, scw.WithContext(ctx), scw.WithAllPages(), scw.WithZones(region.GetZones()...))
@@ -107,8 +123,8 @@ func (explorer *Explorer) findRegionalInstances(ctx context.Context, region scw.
 		watts := processor.EstimateCPUWatts(1, 0)
 		watts += primitives.EstimateMemoryWatts(4)
 
-		metrics <- &cloudcarbonexporter.Metric{
-			Name: "estimated_watts",
+		impacts <- &cloudcarbonexporter.Impact{
+			Watts: watts,
 			Labels: map[string]string{
 				"name":          server.Name,
 				"region":        string(region),
@@ -116,7 +132,6 @@ func (explorer *Explorer) findRegionalInstances(ctx context.Context, region scw.
 				"instance_name": server.Name,
 				"tags":          strings.Join(server.Tags, ","),
 			},
-			Value: watts,
 		}
 	}
 

@@ -30,14 +30,14 @@ func (sqlExplorer *CloudSQLExplorer) init(ctx context.Context, explorer *Explore
 	}
 
 	sqlExplorer.cache.SetDynamicIfNotExists(ctx, "sql_instances_average_cpu", func(ctx context.Context) (any, error) {
-		return sqlExplorer.ListSQLInstanceCPUAverage(ctx)
+		return sqlExplorer.ListSQLInstanceCPUAverage(cloudcarbonexporter.WrapCtx(ctx))
 	}, 5*time.Minute)
 
 	return nil
 }
 
-func (sqlExplorer *CloudSQLExplorer) collectMetrics(ctx context.Context, metrics chan *cloudcarbonexporter.Metric) error {
-	sqlExplorer.apiCallsCounter.Add(1)
+func (sqlExplorer *CloudSQLExplorer) collectImpacts(ctx cloudcarbonexporter.Context, impacts chan *cloudcarbonexporter.Impact) error {
+	ctx.IncrCalls()
 	return sqlExplorer.client.Instances.List(sqlExplorer.ProjectID).Context(ctx).Pages(ctx, func(instancesList *cloudsql.InstancesListResponse) error {
 		for _, instance := range instancesList.Items {
 			watts := 0.0
@@ -61,8 +61,8 @@ func (sqlExplorer *CloudSQLExplorer) collectMetrics(ctx context.Context, metrics
 			}
 			watts += diskWatts
 
-			metrics <- &cloudcarbonexporter.Metric{
-				Name: "estimated_watts",
+			impacts <- &cloudcarbonexporter.Impact{
+				Watts: watts,
 				Labels: cloudcarbonexporter.MergeLabels(
 					map[string]string{
 						"kind":          "sql/Instance",
@@ -73,7 +73,6 @@ func (sqlExplorer *CloudSQLExplorer) collectMetrics(ctx context.Context, metrics
 					},
 					instance.Settings.UserLabels,
 				),
-				Value: watts,
 			}
 		}
 		return nil
@@ -102,7 +101,7 @@ func (sqlExplorer *CloudSQLExplorer) GetCloudSQLInstanceAverageCPUUsage(ctx cont
 }
 
 // ListSQLInstanceCPUAverage returns the 10 minutes average cpu for all sql instances in the region
-func (sqlExplorer *CloudSQLExplorer) ListSQLInstanceCPUAverage(ctx context.Context) (map[string]float64, error) {
+func (sqlExplorer *CloudSQLExplorer) ListSQLInstanceCPUAverage(ctx cloudcarbonexporter.Context) (map[string]float64, error) {
 	promqlExpression := `avg by (database_id)(avg_over_time(cloudsql_googleapis_com:database_cpu_utilization{monitored_resource="cloudsql_database"}[5m]))`
 	period := 10 * time.Minute
 
@@ -111,7 +110,7 @@ func (sqlExplorer *CloudSQLExplorer) ListSQLInstanceCPUAverage(ctx context.Conte
 		return nil, fmt.Errorf("failed to query for cloudsql instance monitoring data: %w", err)
 	}
 
-	sqlExplorer.apiCallsCounter.Add(1)
+	ctx.IncrCalls()
 
 	return instanceList, nil
 }

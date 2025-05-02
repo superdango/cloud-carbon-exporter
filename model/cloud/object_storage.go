@@ -11,8 +11,8 @@ func EstimateObjectStorageWatts(bucketSizeGB float64) (watts float64) {
 	return bucketSizeGB * erasureCodingRatio / jbodDiskSize * primitives.EstimateLocalHDDPowerUsage(1) * jbodOverhead
 }
 
-func EstimateObjectStorageEmbodiedEmissionsKgCO2eq_second(bucketSizeGB float64) (kgCO2eq_second float64) {
+func EstimateObjectStorageEmbodiedEmissions(bucketSizeGB float64) *primitives.EmbodiedEmissions {
 	const jbodDiskSize = 20_000.0 // GB
 	const erasureCodingRatio = 1.8
-	return primitives.EstimateEmbodiedHDDEmissions(bucketSizeGB/jbodDiskSize).KgCO2eq_second() * erasureCodingRatio
+	return primitives.EstimateEmbodiedHDDEmissions(erasureCodingRatio * (bucketSizeGB / jbodDiskSize))
 }

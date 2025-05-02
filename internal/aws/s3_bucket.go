@@ -51,7 +51,7 @@ func (s3explorer *S3BucketsExplorer) support() string {
 	return "s3/bucket"
 }
 
-func (s3explorer *S3BucketsExplorer) collectMetrics(ctx context.Context, region string, metrics chan *cloudcarbonexporter.Metric) error {
+func (s3explorer *S3BucketsExplorer) collectImpacts(ctx cloudcarbonexporter.Context, region string, impacts chan *cloudcarbonexporter.Impact) error {
 	if region != "global" {
 		slog.Warn("region shoud be 'global' when collecting metric on s3")
 		return nil
@@ -69,7 +69,7 @@ func (s3explorer *S3BucketsExplorer) collectMetrics(ctx context.Context, region 
 
 	for paginator.HasMorePages() {
 
-		s3explorer.apiCallsCounter.Add(1)
+		ctx.IncrCalls()
 		output, err := paginator.NextPage(ctx)
 		if err != nil {
 			return &cloudcarbonexporter.ExplorerErr{Err: fmt.Errorf("failed to list buckets: %w", err), Operation: "service/s3:ListBucket"}
@@ -79,7 +79,7 @@ func (s3explorer *S3BucketsExplorer) collectMetrics(ctx context.Context, region 
 			bucket := bucket
 			errg.Go(func() error {
 				var apiErr smithy.APIError
-				s3explorer.apiCallsCounter.Add(1)
+				ctx.IncrCalls()
 				s3api := s3.NewFromConfig(s3explorer.awscfg, func(o *s3.Options) {
 					o.Region = *bucket.BucketRegion
 				})
@@ -104,22 +104,18 @@ func (s3explorer *S3BucketsExplorer) collectMetrics(ctx context.Context, region 
 
 				slog.Debug("bucket size", "bucket", *bucket.Name, "size_gb", sizeGB)
 
-				labels := cloudcarbonexporter.MergeLabels(
-					map[string]string{
-						"kind":        "s3/bucket",
-						"location":    s3explorer.Region(*bucket.BucketRegion),
-						"bucket_name": *bucket.Name,
-					},
-					parseS3TagList(tagsOutput.TagSet),
-				)
-
-				metrics <- cloudcarbonexporter.NewEstimatedWatts(
-					cloud.EstimateObjectStorageWatts(sizeGB),
-				).SetLabels(labels)
-
-				metrics <- cloudcarbonexporter.NewEmbodiedEmissions(
-					cloud.EstimateObjectStorageEmbodiedEmissionsKgCO2eq_second(sizeGB),
-				).SetLabels(labels)
+				impacts <- &cloudcarbonexporter.Impact{
+					Watts:             cloud.EstimateObjectStorageWatts(sizeGB),
+					EmbodiedEmissions: cloud.EstimateObjectStorageEmbodiedEmissions(sizeGB),
+					Labels: cloudcarbonexporter.MergeLabels(
+						map[string]string{
+							"kind":        "s3/bucket",
+							"location":    s3explorer.Region(*bucket.BucketRegion),
+							"bucket_name": *bucket.Name,
+						},
+						parseS3TagList(tagsOutput.TagSet),
+					),
+				}
 
 				return nil
 			})
@@ -131,11 +127,11 @@ func (s3explorer *S3BucketsExplorer) collectMetrics(ctx context.Context, region 
 
 func (s3explorer *S3BucketsExplorer) load(ctx context.Context) error { return nil }
 
-func (s3explorer *S3BucketsExplorer) GetBucketSizeBytes(ctx context.Context, region string, bucketName string) (float64, error) {
+func (s3explorer *S3BucketsExplorer) GetBucketSizeBytes(ctx cloudcarbonexporter.Context, region string, bucketName string) (float64, error) {
 	key := fmt.Sprintf("%s/s3_bucket_%s_size", region, bucketName)
 
 	s3explorer.cache.SetDynamicIfNotExists(ctx, key, func(ctx context.Context) (any, error) {
-		return s3explorer.bucketSizeBytes(ctx, bucketName, region)
+		return s3explorer.bucketSizeBytes(cloudcarbonexporter.WrapCtx(ctx), bucketName, region)
 	}, 12*60*time.Minute) // 12 hours
 
 	entry, err := s3explorer.cache.Get(ctx, key)
@@ -150,7 +146,7 @@ func (s3explorer *S3BucketsExplorer) GetBucketSizeBytes(ctx context.Context, reg
 }
 
 // bucketSizeBytes returns the 10 minutes average cpu for all instances in the region
-func (s3explorer *S3BucketsExplorer) bucketSizeBytes(ctx context.Context, bucketName string, region string) (float64, error) {
+func (s3explorer *S3BucketsExplorer) bucketSizeBytes(ctx cloudcarbonexporter.Context, bucketName string, region string) (float64, error) {
 	metricName := "bucket_size_by_bucket_name"
 
 	cwapi := cloudwatch.NewFromConfig(s3explorer.awscfg, func(o *cloudwatch.Options) {
@@ -190,7 +186,7 @@ func (s3explorer *S3BucketsExplorer) bucketSizeBytes(ctx context.Context, bucket
 
 	lastValue := 0.0
 	for paginator.HasMorePages() {
-		s3explorer.apiCallsCounter.Add(1)
+		ctx.IncrCalls()
 		page, err := paginator.NextPage(ctx)
 		if err != nil {
 			return 0.0, &cloudcarbonexporter.ExplorerErr{

@@ -33,13 +33,13 @@ func (instanceExplorer *InstancesExplorer) init(ctx context.Context, explorer *E
 	}
 
 	explorer.cache.SetDynamicIfNotExists(ctx, "instances_average_cpu", func(ctx context.Context) (any, error) {
-		return instanceExplorer.ListInstanceCPUAverage(ctx)
+		return instanceExplorer.ListInstanceCPUAverage(cloudcarbonexporter.WrapCtx(ctx))
 	}, 5*time.Minute)
 
 	return nil
 }
 
-func (instanceExplorer *InstancesExplorer) collectMetrics(ctx context.Context, metrics chan *cloudcarbonexporter.Metric) error {
+func (instanceExplorer *InstancesExplorer) collectImpacts(ctx cloudcarbonexporter.Context, impacts chan *cloudcarbonexporter.Impact) error {
 	discoveryMap, err := instanceExplorer.GetCachedDiscoveryMap(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get cached discovery map: %w", err)
@@ -49,13 +49,13 @@ func (instanceExplorer *InstancesExplorer) collectMetrics(ctx context.Context, m
 
 	for _, zone := range discoveryMap["zones"] {
 		errg.Go(func() error {
-			return instanceExplorer.collectZoneMetrics(ctx, zone, metrics)
+			return instanceExplorer.collectZoneImpacts(ctx, zone, impacts)
 		})
 	}
 	return errg.Wait()
 }
 
-func (instanceExplorer *InstancesExplorer) collectZoneMetrics(ctx context.Context, zone string, metrics chan *cloudcarbonexporter.Metric) error {
+func (instanceExplorer *InstancesExplorer) collectZoneImpacts(ctx cloudcarbonexporter.Context, zone string, impacts chan *cloudcarbonexporter.Impact) error {
 	instancesIter := instanceExplorer.client.List(ctx, &computepb.ListInstancesRequest{
 		Project: instanceExplorer.ProjectID,
 		Zone:    zone,
@@ -64,7 +64,7 @@ func (instanceExplorer *InstancesExplorer) collectZoneMetrics(ctx context.Contex
 	for {
 		instance, err := instancesIter.Next()
 		if err == iterator.Done {
-			instanceExplorer.apiCallsCounter.Add(1)
+			ctx.IncrCalls()
 			break
 		}
 		if err != nil {
@@ -94,8 +94,8 @@ func (instanceExplorer *InstancesExplorer) collectZoneMetrics(ctx context.Contex
 			}
 		}
 
-		metrics <- &cloudcarbonexporter.Metric{
-			Name: "estimated_watts",
+		impacts <- &cloudcarbonexporter.Impact{
+			Watts: watts,
 			Labels: cloudcarbonexporter.MergeLabels(
 				map[string]string{
 					"kind":          "compute/Instance",
@@ -106,7 +106,6 @@ func (instanceExplorer *InstancesExplorer) collectZoneMetrics(ctx context.Contex
 				},
 				instance.Labels,
 			),
-			Value: watts,
 		}
 	}
 
@@ -135,7 +134,7 @@ func (instanceExplorer *InstancesExplorer) GetInstanceAverageCPULoad(ctx context
 }
 
 // ListInstanceCPUAverage returns the 10 minutes average cpu for all instances in the region
-func (explorer *InstancesExplorer) ListInstanceCPUAverage(ctx context.Context) (map[string]float64, error) {
+func (explorer *InstancesExplorer) ListInstanceCPUAverage(ctx cloudcarbonexporter.Context) (map[string]float64, error) {
 	promqlExpression := `avg by (instance_name)(rate(compute_googleapis_com:instance_cpu_usage_time{monitored_resource="gce_instance"}[5m]))`
 	period := 10 * time.Minute
 
@@ -144,7 +143,7 @@ func (explorer *InstancesExplorer) ListInstanceCPUAverage(ctx context.Context) (
 		return nil, fmt.Errorf("failed to query for instance monitoring data: %w", err)
 	}
 
-	explorer.apiCallsCounter.Add(1)
+	ctx.IncrCalls()
 
 	return instanceList, nil
 }
@@ -164,7 +163,7 @@ func (disksExplorer *DisksExplorer) init(ctx context.Context, explorer *Explorer
 	return nil
 }
 
-func (disksExplorer *DisksExplorer) collectMetrics(ctx context.Context, metrics chan *cloudcarbonexporter.Metric) error {
+func (disksExplorer *DisksExplorer) collectImpacts(ctx cloudcarbonexporter.Context, impacts chan *cloudcarbonexporter.Impact) error {
 	discoveryMap, err := disksExplorer.GetCachedDiscoveryMap(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get cached discovery map: %w", err)
@@ -174,13 +173,13 @@ func (disksExplorer *DisksExplorer) collectMetrics(ctx context.Context, metrics 
 
 	for _, zone := range discoveryMap["zones"] {
 		errg.Go(func() error {
-			return disksExplorer.collectZoneMetrics(ctx, zone, metrics)
+			return disksExplorer.collectZoneImpacts(ctx, zone, impacts)
 		})
 	}
 	return errg.Wait()
 }
 
-func (disksExplorer *DisksExplorer) collectZoneMetrics(ctx context.Context, zone string, metrics chan *cloudcarbonexporter.Metric) error {
+func (disksExplorer *DisksExplorer) collectZoneImpacts(ctx cloudcarbonexporter.Context, zone string, impacts chan *cloudcarbonexporter.Impact) error {
 	disksIter := disksExplorer.client.List(ctx, &computepb.ListDisksRequest{
 		Project: disksExplorer.ProjectID,
 		Zone:    zone,
@@ -189,7 +188,7 @@ func (disksExplorer *DisksExplorer) collectZoneMetrics(ctx context.Context, zone
 	for {
 		disk, err := disksIter.Next()
 		if err == iterator.Done {
-			disksExplorer.apiCallsCounter.Add(1)
+			ctx.IncrCalls()
 			break
 		}
 		if err != nil {
@@ -212,8 +211,8 @@ func (disksExplorer *DisksExplorer) collectZoneMetrics(ctx context.Context, zone
 
 		watts = watts * float64(replicas)
 
-		metrics <- &cloudcarbonexporter.Metric{
-			Name: "estimated_watts",
+		impacts <- &cloudcarbonexporter.Impact{
+			Watts: watts,
 			Labels: cloudcarbonexporter.MergeLabels(
 				map[string]string{
 					"kind":      "compute/Disk",
@@ -223,7 +222,6 @@ func (disksExplorer *DisksExplorer) collectZoneMetrics(ctx context.Context, zone
 				},
 				disk.Labels,
 			),
-			Value: watts,
 		}
 	}
 
@@ -244,7 +242,7 @@ func (regionDisksExplorer *RegionDisksExplorer) init(ctx context.Context, explor
 	return nil
 }
 
-func (regionDisksExplorer *RegionDisksExplorer) collectMetrics(ctx context.Context, metrics chan *cloudcarbonexporter.Metric) (err error) {
+func (regionDisksExplorer *RegionDisksExplorer) collectImpacts(ctx cloudcarbonexporter.Context, impacts chan *cloudcarbonexporter.Impact) (err error) {
 	discoveryMap, err := regionDisksExplorer.GetCachedDiscoveryMap(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get cached discovery map: %w", err)
@@ -254,13 +252,13 @@ func (regionDisksExplorer *RegionDisksExplorer) collectMetrics(ctx context.Conte
 
 	for _, region := range discoveryMap["regions"] {
 		errg.Go(func() error {
-			return regionDisksExplorer.collectRegionMetrics(ctx, region, metrics)
+			return regionDisksExplorer.collectRegionImpacts(ctx, region, impacts)
 		})
 	}
 	return errg.Wait()
 }
 
-func (regionDisksExplorer *RegionDisksExplorer) collectRegionMetrics(ctx context.Context, region string, metrics chan *cloudcarbonexporter.Metric) error {
+func (regionDisksExplorer *RegionDisksExplorer) collectRegionImpacts(ctx cloudcarbonexporter.Context, region string, impacts chan *cloudcarbonexporter.Impact) error {
 	if region == "global" {
 		return nil
 	}
@@ -273,7 +271,7 @@ func (regionDisksExplorer *RegionDisksExplorer) collectRegionMetrics(ctx context
 	for {
 		disk, err := regionDisksIter.Next()
 		if err == iterator.Done {
-			regionDisksExplorer.apiCallsCounter.Add(1)
+			ctx.IncrCalls()
 			break
 		}
 		if err != nil {
@@ -295,8 +293,8 @@ func (regionDisksExplorer *RegionDisksExplorer) collectRegionMetrics(ctx context
 
 		watts = watts * float64(replicas)
 
-		metrics <- &cloudcarbonexporter.Metric{
-			Name: "estimated_watts",
+		impacts <- &cloudcarbonexporter.Impact{
+			Watts: watts,
 			Labels: cloudcarbonexporter.MergeLabels(
 				map[string]string{
 					"kind":      "compute/RegionDisk",
@@ -305,7 +303,6 @@ func (regionDisksExplorer *RegionDisksExplorer) collectRegionMetrics(ctx context
 				},
 				disk.Labels,
 			),
-			Value: watts,
 		}
 	}
 

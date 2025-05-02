@@ -10,10 +10,43 @@ import (
 	"net/http"
 	"slices"
 	"strings"
+	"sync/atomic"
 	"time"
 
+	"github.com/superdango/cloud-carbon-exporter/model/primitives"
 	"golang.org/x/sync/errgroup"
 )
+
+type Ctx struct {
+	context.Context
+	calls *atomic.Int64
+}
+
+type Context interface {
+	context.Context
+	IncrCalls()
+	Calls() int
+}
+
+func WrapCtx(ctx context.Context) Context {
+	c, ok := ctx.(*Ctx)
+	if ok {
+		return c
+	}
+
+	return &Ctx{
+		Context: ctx,
+		calls:   new(atomic.Int64),
+	}
+}
+
+func (c *Ctx) IncrCalls() {
+	c.calls.Add(1)
+}
+
+func (c *Ctx) Calls() int {
+	return int(c.calls.Load())
+}
 
 // OpenMetricsHandler implements the http.Handler interface
 type OpenMetricsHandler struct {
@@ -33,6 +66,7 @@ func NewOpenMetricsHandler(explorer Explorer) *OpenMetricsHandler {
 // collector and return them, formatted in the http response.
 func (rh *OpenMetricsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
+	impacts := make(chan *Impact)
 	metrics := make(chan *Metric)
 	errs := make(chan error)
 	errCount := 0
@@ -47,9 +81,11 @@ func (rh *OpenMetricsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	defer cancel()
 
 	errg.Go(func() error {
-		defer close(metrics)
+		defer close(impacts)
 		defer close(errs)
-		rh.explorer.CollectMetrics(errgctx, metrics, errs)
+
+		ctx := WrapCtx(errgctx)
+		rh.explorer.CollectImpacts(ctx, impacts, errs)
 
 		metrics <- &Metric{
 			Name: "collect_duration_ms",
@@ -65,6 +101,31 @@ func (rh *OpenMetricsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 				"action": "collect",
 			},
 			Value: float64(errCount),
+		}
+
+		metrics <- &Metric{
+			Name:   "api_calls",
+			Labels: rh.explorer.Tags(),
+			Value:  float64(ctx.Calls()),
+		}
+
+		return nil
+	})
+
+	errg.Go(func() error {
+		defer close(metrics)
+		for impact := range impacts {
+			if impact.EmbodiedEmissions != nil {
+				metrics <- NewEmbodiedEmissions(impact.EmbodiedEmissions.KgCO2eq_day()).SetLabels(MergeLabels(
+					impact.Labels,
+					rh.explorer.Tags(),
+				))
+			}
+
+			metrics <- NewEstimatedWatts(impact.Watts).SetLabels(MergeLabels(
+				impact.Labels,
+				rh.explorer.Tags(),
+			))
 		}
 
 		return nil
@@ -151,6 +212,13 @@ type Metric struct {
 	Value  float64
 }
 
+type Impact struct {
+	Labels            map[string]string
+	Watts             float64
+	EnergyEmissions   float64
+	EmbodiedEmissions *primitives.EmbodiedEmissions
+}
+
 // Clone return a deep copy of a metric.
 func (m Metric) Clone() Metric {
 	copiedLabel := make(map[string]string, len(m.Labels))
@@ -197,7 +265,7 @@ func (m *Metric) SanitizeLabels() *Metric {
 
 func NewEmbodiedEmissions(value float64) *Metric {
 	return &Metric{
-		Name:  "estimated_embodied_emissions_kgCO2eq_second",
+		Name:  "estimated_embodied_emissions_kgCO2eq_day",
 		Value: value,
 	}
 }

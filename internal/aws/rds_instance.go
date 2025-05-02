@@ -46,7 +46,7 @@ func (rdsExplorer *RDSInstanceExplorer) support() string {
 	return "rds/instance"
 }
 
-func (rdsExplorer *RDSInstanceExplorer) collectMetrics(ctx context.Context, region string, metrics chan *cloudcarbonexporter.Metric) error {
+func (rdsExplorer *RDSInstanceExplorer) collectImpacts(ctx cloudcarbonexporter.Context, region string, impacts chan *cloudcarbonexporter.Impact) error {
 	if region == "global" {
 		return nil
 	}
@@ -60,6 +60,7 @@ func (rdsExplorer *RDSInstanceExplorer) collectMetrics(ctx context.Context, regi
 	})
 
 	for paginator.HasMorePages() {
+		ctx.IncrCalls()
 		output, err := paginator.NextPage(ctx)
 		if err != nil {
 			return &cloudcarbonexporter.ExplorerErr{Err: fmt.Errorf("failed to list region rds instance: %w", err), Operation: "service/rds:DescribeDBInstances"}
@@ -92,8 +93,8 @@ func (rdsExplorer *RDSInstanceExplorer) collectMetrics(ctx context.Context, regi
 			}
 			watts += storageWatts
 
-			metrics <- &cloudcarbonexporter.Metric{
-				Name: "estimated_watts",
+			impacts <- &cloudcarbonexporter.Impact{
+				Watts: watts,
 				Labels: cloudcarbonexporter.MergeLabels(
 					map[string]string{
 						"kind":        "rds/db_instance",
@@ -103,7 +104,6 @@ func (rdsExplorer *RDSInstanceExplorer) collectMetrics(ctx context.Context, regi
 					},
 					parseRDSTagList(instance.TagList),
 				),
-				Value: watts,
 			}
 		}
 	}
@@ -112,7 +112,7 @@ func (rdsExplorer *RDSInstanceExplorer) collectMetrics(ctx context.Context, regi
 }
 
 // classicInstanceToWatts estimates watts for classic instance using machine type and CPU usage
-func (rdsExplorer *RDSInstanceExplorer) classicInstanceToWatts(ctx context.Context, region string, instance types.DBInstance, instanceType string) (float64, error) {
+func (rdsExplorer *RDSInstanceExplorer) classicInstanceToWatts(ctx cloudcarbonexporter.Context, region string, instance types.DBInstance, instanceType string) (float64, error) {
 
 	instanceInfos, found := rdsExplorer.instanceTypeInfos[instanceType]
 	if !found {
@@ -131,7 +131,7 @@ func (rdsExplorer *RDSInstanceExplorer) classicInstanceToWatts(ctx context.Conte
 }
 
 // serverlessInstanceToWatts estimates watts for serverless instance using ACUs
-func (rdsExplorer *RDSInstanceExplorer) serverlessInstanceToWatts(ctx context.Context, region string, instance types.DBInstance) (float64, error) {
+func (rdsExplorer *RDSInstanceExplorer) serverlessInstanceToWatts(ctx cloudcarbonexporter.Context, region string, instance types.DBInstance) (float64, error) {
 	watts := 0.0
 	acuAverage, err := rdsExplorer.GetInstanceACUAverage(ctx, region, *instance.DBInstanceIdentifier)
 	if err != nil {
@@ -155,11 +155,11 @@ func (rdsExplorer *RDSInstanceExplorer) serverlessInstanceToWatts(ctx context.Co
 
 func (rc *RDSInstanceExplorer) load(ctx context.Context) error { return nil }
 
-func (rdsExplorer *RDSInstanceExplorer) GetInstanceCPUAverage(ctx context.Context, region string, instanceID string) (float64, error) {
+func (rdsExplorer *RDSInstanceExplorer) GetInstanceCPUAverage(ctx cloudcarbonexporter.Context, region string, instanceID string) (float64, error) {
 	key := fmt.Sprintf("%s/rds_instances_average_cpu", region)
 
 	rdsExplorer.cache.SetDynamicIfNotExists(ctx, key, func(ctx context.Context) (any, error) {
-		return rdsExplorer.ListInstanceCPUAverage(ctx, region)
+		return rdsExplorer.ListInstanceCPUAverage(cloudcarbonexporter.WrapCtx(ctx), region)
 	}, 5*time.Minute)
 
 	entry, err := rdsExplorer.cache.Get(ctx, key)
@@ -179,7 +179,7 @@ func (rdsExplorer *RDSInstanceExplorer) GetInstanceCPUAverage(ctx context.Contex
 }
 
 // ListInstanceCPUAverage returns the 10 minutes average cpu for all instances in the region
-func (ec2explorer *RDSInstanceExplorer) ListInstanceCPUAverage(ctx context.Context, region string) (map[string]float64, error) {
+func (ec2explorer *RDSInstanceExplorer) ListInstanceCPUAverage(ctx cloudcarbonexporter.Context, region string) (map[string]float64, error) {
 	metricName := "cpu_utilization_by_instance_id"
 	cloudwatchExpression := `SELECT AVG(CPUUtilization) FROM "AWS/RDS" GROUP BY DBInstanceIdentifier`
 	period := 10 * time.Minute
@@ -203,6 +203,7 @@ func (ec2explorer *RDSInstanceExplorer) ListInstanceCPUAverage(ctx context.Conte
 	})
 
 	for paginator.HasMorePages() {
+		ctx.IncrCalls()
 		page, err := paginator.NextPage(ctx)
 		if err != nil {
 			return nil, &cloudcarbonexporter.ExplorerErr{
@@ -220,11 +221,11 @@ func (ec2explorer *RDSInstanceExplorer) ListInstanceCPUAverage(ctx context.Conte
 	return instanceList, nil
 }
 
-func (rdsExplorer *RDSInstanceExplorer) GetInstanceACUAverage(ctx context.Context, region string, instanceID string) (float64, error) {
+func (rdsExplorer *RDSInstanceExplorer) GetInstanceACUAverage(ctx cloudcarbonexporter.Context, region string, instanceID string) (float64, error) {
 	key := fmt.Sprintf("%s/rds_serverless_instances_average_acu", region)
 
 	rdsExplorer.cache.SetDynamicIfNotExists(ctx, key, func(ctx context.Context) (any, error) {
-		return rdsExplorer.ListInstanceACUAverage(ctx, region)
+		return rdsExplorer.ListInstanceACUAverage(cloudcarbonexporter.WrapCtx(ctx), region)
 	}, 5*time.Minute)
 
 	entry, err := rdsExplorer.cache.Get(ctx, key)
@@ -244,7 +245,7 @@ func (rdsExplorer *RDSInstanceExplorer) GetInstanceACUAverage(ctx context.Contex
 }
 
 // ListInstanceCPUAverage returns the 10 minutes average ACU for all serverless instances in the region
-func (ec2explorer *RDSInstanceExplorer) ListInstanceACUAverage(ctx context.Context, region string) (map[string]float64, error) {
+func (ec2explorer *RDSInstanceExplorer) ListInstanceACUAverage(ctx cloudcarbonexporter.Context, region string) (map[string]float64, error) {
 	metricName := "acu_utilization_by_instance_id"
 	cloudwatchExpression := `SELECT AVG(ACUUtilization) FROM "AWS/RDS" GROUP BY DBInstanceIdentifier`
 	period := 10 * time.Minute
@@ -268,6 +269,7 @@ func (ec2explorer *RDSInstanceExplorer) ListInstanceACUAverage(ctx context.Conte
 	})
 
 	for paginator.HasMorePages() {
+		ctx.IncrCalls()
 		page, err := paginator.NextPage(ctx)
 		if err != nil {
 			return nil, &cloudcarbonexporter.ExplorerErr{

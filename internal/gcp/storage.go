@@ -30,19 +30,19 @@ func (bucketsExplorer *BucketsExplorer) init(ctx context.Context, explorer *Expl
 	}
 
 	explorer.cache.SetDynamicIfNotExists(ctx, "buckets_size", func(ctx context.Context) (any, error) {
-		return bucketsExplorer.ListBucketSize(ctx)
+		return bucketsExplorer.ListBucketSize(cloudcarbonexporter.WrapCtx(ctx))
 	}, 6*time.Hour)
 
 	return nil
 }
 
-func (bucketsExplorer *BucketsExplorer) collectMetrics(ctx context.Context, metrics chan *cloudcarbonexporter.Metric) error {
+func (bucketsExplorer *BucketsExplorer) collectImpacts(ctx cloudcarbonexporter.Context, impacts chan *cloudcarbonexporter.Impact) error {
 	bucketsIter := bucketsExplorer.client.Buckets(ctx, bucketsExplorer.ProjectID)
 
 	for {
 		bucket, err := bucketsIter.Next()
 		if err == iterator.Done {
-			bucketsExplorer.apiCallsCounter.Add(1)
+			ctx.IncrCalls()
 			break
 		}
 
@@ -58,8 +58,8 @@ func (bucketsExplorer *BucketsExplorer) collectMetrics(ctx context.Context, metr
 
 		watts := cloud.EstimateObjectStorageWatts(bytesToGigabytes(bucketSize))
 
-		metrics <- &cloudcarbonexporter.Metric{
-			Name: "estimated_watts",
+		impacts <- &cloudcarbonexporter.Impact{
+			Watts: watts,
 			Labels: cloudcarbonexporter.MergeLabels(
 				map[string]string{
 					"kind":        "storage/Bucket",
@@ -68,7 +68,6 @@ func (bucketsExplorer *BucketsExplorer) collectMetrics(ctx context.Context, metr
 				},
 				bucket.Labels,
 			),
-			Value: watts,
 		}
 	}
 
@@ -101,7 +100,7 @@ func (explorer *BucketsExplorer) GetBucketSize(ctx context.Context, bucketName s
 	return bucketSize, nil
 }
 
-func (explorer *BucketsExplorer) ListBucketSize(ctx context.Context) (map[string]float64, error) {
+func (explorer *BucketsExplorer) ListBucketSize(ctx cloudcarbonexporter.Context) (map[string]float64, error) {
 	promqlExpression := `sum by (bucket_name)(avg_over_time(storage_googleapis_com:storage_v2_total_bytes{monitored_resource="gcs_bucket"}[5m]))`
 	resolution := 10 * time.Minute
 
@@ -110,7 +109,6 @@ func (explorer *BucketsExplorer) ListBucketSize(ctx context.Context) (map[string
 		return nil, fmt.Errorf("failed to query for bucket monitoring data: %w", err)
 	}
 
-	explorer.apiCallsCounter.Add(1)
-
+	ctx.IncrCalls()
 	return bucketList, nil
 }

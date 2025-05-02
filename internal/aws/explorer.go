@@ -10,7 +10,6 @@ import (
 	"log/slog"
 	"slices"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
@@ -30,7 +29,7 @@ import (
 const DAY = 24 * time.Hour
 
 type subExplorer interface {
-	collectMetrics(ctx context.Context, region string, metrics chan *cloudcarbonexporter.Metric) error
+	collectImpacts(ctx cloudcarbonexporter.Context, region string, impacts chan *cloudcarbonexporter.Impact) error
 	load(ctx context.Context) error
 	support() string
 }
@@ -46,7 +45,6 @@ type Explorer struct {
 	subExplorers       map[string][]subExplorer
 	carbonIntensityMap carbon.IntensityMap
 	instanceTypeInfos  map[string]instanceTypeInfos
-	apiCallsCounter    *atomic.Int64
 }
 
 type ExplorerOption func(*Explorer)
@@ -76,7 +74,6 @@ func NewExplorer() *Explorer {
 		accountAZs:         make([]AvailabilityZone, 0),
 		carbonIntensityMap: carbon.NewAWSCloudCarbonFootprintIntensityMap(),
 		instanceTypeInfos:  make(map[string]instanceTypeInfos),
-		apiCallsCounter:    new(atomic.Int64),
 	}
 
 	explorer.subExplorers = map[string][]subExplorer{
@@ -107,6 +104,12 @@ func (explorer *Explorer) SupportedServices() []string {
 	return supportedServices
 }
 
+func (explorer *Explorer) Tags() map[string]string {
+	return map[string]string{
+		"cloud_provider": "aws",
+	}
+}
+
 func (explorer *Explorer) Configure(opts ...ExplorerOption) *Explorer {
 	for _, opt := range opts {
 		if opt != nil {
@@ -132,14 +135,17 @@ func (explorer *Explorer) Init(ctx context.Context) (err error) {
 	}
 
 	errg, errgctx := errgroup.WithContext(ctx)
+	cctx := cloudcarbonexporter.WrapCtx(errgctx)
 
 	errg.Go(func() error {
-		return explorer.loadSubExplorers(errgctx)
+		return explorer.loadSubExplorers(cctx)
 	})
 
 	errg.Go(func() error {
-		return explorer.discoverActiveServicesAndRegions(errgctx)
+		return explorer.discoverActiveServicesAndRegions(cctx)
 	})
+
+	slog.Info("aws explorer initialized", "calls", cctx.Calls())
 
 	return errg.Wait()
 }
@@ -160,43 +166,36 @@ func (explorer *Explorer) loadSubExplorers(ctx context.Context) error {
 	return errg.Wait()
 }
 
-// CollectMetrics resources on the configured AWS Account and sends them in the resources chan
-func (explorer *Explorer) CollectMetrics(ctx context.Context, metrics chan *cloudcarbonexporter.Metric, errs chan error) {
-	explorer.apiCallsCounter.Store(0) // reset api calls counter
-	subMetrics := make(chan *cloudcarbonexporter.Metric)
+// CollectImpacts discover resources
+func (explorer *Explorer) CollectImpacts(ctx cloudcarbonexporter.Context, impacts chan *cloudcarbonexporter.Impact, errs chan error) {
+	rawImpacts := make(chan *cloudcarbonexporter.Impact)
 
 	wg := new(sync.WaitGroup)
 	wg.Add(1)
 
 	go func() {
 		defer wg.Done()
-		for submetric := range subMetrics {
-			submetric.AddLabel("cloud_provider", "aws")
-			if submetric.Name == "estimated_watts" {
-				submetric.Value *= primitives.GoodPUE
-				metrics <- explorer.carbonIntensityMap.ComputeCO2eq(submetric)
+		for rawImpact := range rawImpacts {
+			location, found := rawImpact.Labels["location"]
+			if !found {
+				slog.Warn("impact location not found, skipping impact. please consider raising a bug.", "labels", rawImpact.Labels)
+				continue
 			}
-			metrics <- submetric
+			rawImpact.Watts = rawImpact.Watts * primitives.GoodPUE
+			rawImpact.EnergyEmissions = explorer.carbonIntensityMap.ComputeCO2eq(rawImpact.Watts, location)
+			impacts <- rawImpact
 		}
 	}()
 
 	go func() {
-		defer close(subMetrics)
-		explorer.collectMetrics(ctx, subMetrics, errs)
+		defer close(rawImpacts)
+		explorer.collectImpacts(ctx, rawImpacts, errs)
 	}()
 
 	wg.Wait()
-
-	metrics <- &cloudcarbonexporter.Metric{
-		Name: "api_calls",
-		Labels: map[string]string{
-			"provider": "aws",
-		},
-		Value: float64(explorer.apiCallsCounter.Load()),
-	}
 }
 
-func (explorer *Explorer) collectMetrics(ctx context.Context, metrics chan *cloudcarbonexporter.Metric, errs chan error) {
+func (explorer *Explorer) collectImpacts(ctx cloudcarbonexporter.Context, impacts chan *cloudcarbonexporter.Impact, errs chan error) {
 	wg := new(sync.WaitGroup)
 	for service, regions := range explorer.activeServices {
 		for _, region := range regions {
@@ -206,7 +205,7 @@ func (explorer *Explorer) collectMetrics(ctx context.Context, metrics chan *clou
 				wg.Add(1)
 				go func() {
 					defer wg.Done()
-					errs <- collector.collectMetrics(ctx, region, metrics)
+					errs <- collector.collectImpacts(ctx, region, impacts)
 				}()
 			}
 		}
@@ -264,13 +263,13 @@ func (e *Explorer) Region(location string) (region string) {
 }
 
 // getAWSAccountID returns the account id targeted by the awscfg
-func (explorer *Explorer) getAWSAccountID(ctx context.Context, awscfg aws.Config) (accountID string, err error) {
+func (explorer *Explorer) getAWSAccountID(ctx cloudcarbonexporter.Context, awscfg aws.Config) (accountID string, err error) {
 	start := time.Now()
 	stsapi := sts.NewFromConfig(awscfg, func(o *sts.Options) {
 		o.Region = explorer.defaultRegion
 	})
 
-	explorer.apiCallsCounter.Add(1)
+	ctx.IncrCalls()
 	output, err := stsapi.GetCallerIdentity(ctx, &sts.GetCallerIdentityInput{})
 	if err != nil {
 		return "", fmt.Errorf("failed to get caller identity: %w", err)
@@ -284,7 +283,7 @@ func (explorer *Explorer) getAWSAccountID(ctx context.Context, awscfg aws.Config
 // discoverActiveServicesAndRegions first looks for the targeted account id and initialize
 // all AWS AZs / Regions. Then, it discovers active services and regions via cost explorer
 // apis.
-func (explorer *Explorer) discoverActiveServicesAndRegions(ctx context.Context) error {
+func (explorer *Explorer) discoverActiveServicesAndRegions(ctx cloudcarbonexporter.Context) error {
 	start := time.Now()
 	defer func() {
 		slog.Info("aws account services refreshed", "duration_ms", time.Since(start).Milliseconds())
@@ -304,7 +303,7 @@ func (explorer *Explorer) discoverActiveServicesAndRegions(ctx context.Context) 
 		o.Region = explorer.defaultRegion
 	})
 
-	explorer.apiCallsCounter.Add(1)
+	ctx.IncrCalls()
 	output, err := costs.GetCostAndUsage(ctx, &costexplorer.GetCostAndUsageInput{
 		TimePeriod: &cetypes.DateInterval{
 			Start: aws.String(time.Now().Add(-7 * DAY).Format(time.DateOnly)),
@@ -358,7 +357,7 @@ func (explorer *Explorer) discoverActiveServicesAndRegions(ctx context.Context) 
 	return nil
 }
 
-func (explorer *Explorer) refreshAccountAvailibilityZones(ctx context.Context) error {
+func (explorer *Explorer) refreshAccountAvailibilityZones(ctx cloudcarbonexporter.Context) error {
 	start := time.Now()
 	defer func() {
 		slog.Info("aws account availibility zones refreshed", "duration_ms", time.Since(start).Milliseconds())
@@ -368,7 +367,7 @@ func (explorer *Explorer) refreshAccountAvailibilityZones(ctx context.Context) e
 		o.Region = explorer.defaultRegion
 	})
 
-	explorer.apiCallsCounter.Add(1)
+	ctx.IncrCalls()
 	regions, err := ec2api.DescribeRegions(ctx, &ec2.DescribeRegionsInput{})
 	if err != nil {
 		return &cloudcarbonexporter.ExplorerErr{Err: fmt.Errorf("failed to describe account regions: %w", err), Operation: "service/ec2:DescribeRegions"}
@@ -387,7 +386,7 @@ func (explorer *Explorer) refreshAccountAvailibilityZones(ctx context.Context) e
 				o.Region = region
 			})
 
-			explorer.apiCallsCounter.Add(1)
+			ctx.IncrCalls()
 			zones, err := ec2api.DescribeAvailabilityZones(errgctx, &ec2.DescribeAvailabilityZonesInput{})
 			if err != nil {
 				return fmt.Errorf("failed to describe account availability zones: %w", err)

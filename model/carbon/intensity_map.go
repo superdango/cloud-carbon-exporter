@@ -4,7 +4,6 @@ import (
 	"log/slog"
 	"strings"
 
-	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
 	"github.com/superdango/cloud-carbon-exporter/internal/must"
 )
 
@@ -63,14 +62,8 @@ func (intensity IntensityMap) Get(location string) float64 {
 
 // ComputeCO2eq takes an energy metric as input and return its carbon emission equivalent using
 // the source location label.
-func (intensityMap IntensityMap) ComputeCO2eq(wattMetric *cloudcarbonexporter.Metric) *cloudcarbonexporter.Metric {
-	if _, found := wattMetric.Labels["location"]; !found {
-		slog.Warn("watt metric does not contains a location, cannot estimate co2 emission", "metric_labels", wattMetric.Labels)
-		return nil
-	}
-	emissionMetric := wattMetric.Clone()
-	emissionMetric.Name = "estimated_g_co2eq_second"
-	gramPerKWh := intensityMap.Get(wattMetric.Labels["location"]) / 1000 / 60 / 60
-	emissionMetric.Value = wattMetric.Value * gramPerKWh
-	return &emissionMetric
+func (intensityMap IntensityMap) ComputeCO2eq(watts float64, location string) (emissionsPerSecond float64) {
+	kWatts := watts / 1000
+	gramPerKWh := intensityMap.Get(location) / 60 / 60
+	return kWatts * gramPerKWh
 }

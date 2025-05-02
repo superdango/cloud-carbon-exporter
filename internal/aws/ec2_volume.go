@@ -39,7 +39,7 @@ func (ec2explorer *EC2VolumeExplorer) support() string {
 	return "ec2/volume"
 }
 
-func (ec2explorer *EC2VolumeExplorer) collectMetrics(ctx context.Context, region string, metrics chan *cloudcarbonexporter.Metric) error {
+func (ec2explorer *EC2VolumeExplorer) collectImpacts(ctx cloudcarbonexporter.Context, region string, impacts chan *cloudcarbonexporter.Impact) error {
 	if region == "global" {
 		return nil
 	}
@@ -53,7 +53,7 @@ func (ec2explorer *EC2VolumeExplorer) collectMetrics(ctx context.Context, region
 	})
 
 	for paginator.HasMorePages() {
-		ec2explorer.apiCallsCounter.Add(1)
+		ctx.IncrCalls()
 		output, err := paginator.NextPage(ctx)
 		if err != nil {
 			return &cloudcarbonexporter.ExplorerErr{Err: fmt.Errorf("failed to list region ec2 volumes: %w", err), Operation: "service/ec2:DescribeVolumes"}
@@ -68,8 +68,8 @@ func (ec2explorer *EC2VolumeExplorer) collectMetrics(ctx context.Context, region
 				watts = cloud.EstimateSSDBlockStorageWatts(float64(*volume.Size))
 			}
 
-			metrics <- &cloudcarbonexporter.Metric{
-				Name: "estimated_watts",
+			impacts <- &cloudcarbonexporter.Impact{
+				Watts: watts,
 				Labels: cloudcarbonexporter.MergeLabels(
 					map[string]string{
 						"location":    region,
@@ -80,7 +80,6 @@ func (ec2explorer *EC2VolumeExplorer) collectMetrics(ctx context.Context, region
 					},
 					parseEC2Tags(volume.Tags),
 				),
-				Value: watts,
 			}
 		}
 	}

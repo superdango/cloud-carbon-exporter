@@ -25,7 +25,10 @@ func (k EmbodiedEmissions) KgCO2eq_second() float64 {
 	return float64(k.manufacturingEmissions) / k.lifetime.Seconds()
 }
 
-func (k EmbodiedEmissions) KgCO2eq_year() float64 {
-	return k.KgCO2eq_second() * 60 * 60 * 24 * 365
+func (k EmbodiedEmissions) KgCO2eq_day() float64 {
+	return k.KgCO2eq_second() * 60 * 60 * 24
 }
 
+func (k EmbodiedEmissions) KgCO2eq_year() float64 {
+	return k.KgCO2eq_day() * 365
+}

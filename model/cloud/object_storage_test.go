@@ -8,5 +8,5 @@ import (
 
 func TestObjectStoragePower(t *testing.T) {
 	assert.Equal(t, 0.01197, EstimateObjectStorageWatts(10))
-	assert.Equal(t, 96, int(EstimateObjectStorageEmbodiedEmissionsKgCO2eq_second(20_000)*60*60*24*365*5))
+	assert.Equal(t, 96, int(EstimateObjectStorageEmbodiedEmissions(20_000).KgCO2eq_year()*5))
 }
