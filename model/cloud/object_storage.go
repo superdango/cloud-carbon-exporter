@@ -5,14 +5,14 @@ import (
 	"github.com/superdango/cloud-carbon-exporter/model/primitives"
 )
 
-func EstimateObjectStorageWatts(bucketSizeGB float64) (watts cloudcarbonexporter.Energy) {
+func EstimateObjectStorageEnergy(bucketSizeGB float64) (energy cloudcarbonexporter.Energy) {
 	const jbodDiskSize = 20_000.0 // GB
 	const jbodOverhead = 1.4
 	const erasureCodingRatio = 1.8
-	return cloudcarbonexporter.Energy(bucketSizeGB * erasureCodingRatio / jbodDiskSize * primitives.EstimateLocalHDDPowerUsage(1) * jbodOverhead)
+	return cloudcarbonexporter.Energy(bucketSizeGB*erasureCodingRatio/jbodDiskSize*jbodOverhead) * primitives.EstimateLocalHDDEnergy(1)
 }
 
-func EstimateObjectStorageEmbodiedEmissions(bucketSizeGB float64) *primitives.EmbodiedEmissions {
+func EstimateObjectStorageEmbodiedEmissions(bucketSizeGB float64) cloudcarbonexporter.EmissionsOverTime {
 	const jbodDiskSize = 20_000.0 // GB
 	const erasureCodingRatio = 1.8
 	return primitives.EstimateEmbodiedHDDEmissions(erasureCodingRatio * (bucketSizeGB / jbodDiskSize))

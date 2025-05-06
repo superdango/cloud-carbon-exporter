@@ -117,11 +117,11 @@ func (explorer *Explorer) findRegionalInstances(ctx context.Context, region scw.
 
 	for _, server := range resp.Servers {
 		processor := primitives.LookupProcessorByName("TODO")
-		watts := processor.EstimateCPUWatts(1, 0)
-		watts += primitives.EstimateMemoryWatts(4)
+		energy := processor.EstimateCPUEnergy(1, 0)
+		energy += primitives.EstimateMemoryEnergy(4)
 
 		impacts <- &cloudcarbonexporter.Impact{
-			Energy: cloudcarbonexporter.Energy(watts),
+			Energy: energy,
 			Labels: map[string]string{
 				"name":          server.Name,
 				"region":        string(region),

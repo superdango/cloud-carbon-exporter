@@ -6,10 +6,12 @@ import (
 	"encoding/csv"
 	"io"
 	"log/slog"
+	"math"
 	"sort"
 	"strings"
 
 	"github.com/lithammer/fuzzysearch/fuzzy"
+	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
 	"github.com/superdango/cloud-carbon-exporter/internal/must"
 	"gonum.org/v1/gonum/interp"
 )
@@ -52,7 +54,7 @@ func init() {
 	}
 }
 
-func tdpToPower(tdp float64, cpuUsage float64) (watts float64) {
+func tdpToWatt(tdp float64, cpuUsage float64) (watts float64) {
 	// Extracted from Boavista API. TDP divider relative to CPU load
 	var tdpDivider interp.FritschButland
 	tdpDivider.Fit(
@@ -63,8 +65,17 @@ func tdpToPower(tdp float64, cpuUsage float64) (watts float64) {
 	return tdp * (tdpDivider.Predict(cpuUsage) / 100) * tdpToPowerRatio
 }
 
-func (p Processor) EstimateCPUWatts(activeThreads float64, usage float64) (watts float64) {
-	return tdpToPower(p.Tdp, usage) / p.Threads
+func (p Processor) EstimateCPUEnergy(activeThreads float64, usage float64) (energy cloudcarbonexporter.Energy) {
+	return cloudcarbonexporter.Energy(tdpToWatt(p.Tdp, usage) / p.Threads)
+}
+
+func (p Processor) EstimateCPUEmbodiedEmissions(threads float64) (emissions cloudcarbonexporter.EmissionsOverTime) {
+	cores := threads * 2
+	manufacturingEmissions := cloudcarbonexporter.Emissions(90 * math.Pow(cores/16, 0.85))
+	return cloudcarbonexporter.EmissionsOverTime{
+		During:    4 * YEAR,
+		Emissions: manufacturingEmissions,
+	}
 }
 
 // LookupProcessorByName fuzzy find the best suitable processor in the internal database

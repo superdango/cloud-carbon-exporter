@@ -67,34 +67,34 @@ func (rdsExplorer *RDSInstanceExplorer) collectImpacts(ctx cloudcarbonexporter.C
 		}
 
 		for _, instance := range output.DBInstances {
-			watts := 0.0
+			energy := cloudcarbonexporter.Energy(0)
 
 			instanceID := *instance.DBInstanceIdentifier
 			instanceType := strings.TrimPrefix(*instance.DBInstanceClass, "db.")
 
 			switch instanceType {
 			case "serverless":
-				serverlessWatts, err := rdsExplorer.serverlessInstanceToWatts(ctx, region, instance)
+				serverlessEnergy, err := rdsExplorer.serverlessInstanceToEnergy(ctx, region, instance)
 				if err != nil {
-					return fmt.Errorf("failed to get watt for serverless rds instance '%s': %w", instanceID, err)
+					return fmt.Errorf("failed to get energy for serverless rds instance '%s': %w", instanceID, err)
 				}
-				watts += serverlessWatts
+				energy += serverlessEnergy
 			default:
-				classicInstanceWatt, err := rdsExplorer.classicInstanceToWatts(ctx, region, instance, instanceType)
+				classicInstanceEnergy, err := rdsExplorer.classicInstanceToEnergy(ctx, region, instance, instanceType)
 				if err != nil {
-					return fmt.Errorf("failed to get watt for classic rds instance '%s': %w", instanceID, err)
+					return fmt.Errorf("failed to get energy for classic rds instance '%s': %w", instanceID, err)
 				}
-				watts += classicInstanceWatt
+				energy += classicInstanceEnergy
 			}
 
-			storageWatts := cloud.EstimateSSDBlockStorageWatts(float64(*instance.AllocatedStorage))
+			storageEnergy := cloud.EstimateSSDBlockStorageEnergy(float64(*instance.AllocatedStorage))
 			if isVolumeHDD(*instance.StorageType) {
-				storageWatts = cloud.EstimateHDDBlockStorageWatts(float64(*instance.AllocatedStorage))
+				storageEnergy = cloud.EstimateHDDBlockStorageEnergy(float64(*instance.AllocatedStorage))
 			}
-			watts += storageWatts
+			energy += storageEnergy
 
 			impacts <- &cloudcarbonexporter.Impact{
-				Energy: cloudcarbonexporter.Energy(watts),
+				Energy: cloudcarbonexporter.Energy(energy),
 				Labels: cloudcarbonexporter.MergeLabels(
 					map[string]string{
 						"kind":        "rds/db_instance",
@@ -111,8 +111,8 @@ func (rdsExplorer *RDSInstanceExplorer) collectImpacts(ctx cloudcarbonexporter.C
 	return nil
 }
 
-// classicInstanceToWatts estimates watts for classic instance using machine type and CPU usage
-func (rdsExplorer *RDSInstanceExplorer) classicInstanceToWatts(ctx cloudcarbonexporter.Context, region string, instance types.DBInstance, instanceType string) (float64, error) {
+// classicInstanceToEnergy estimates energy for classic instance using machine type and CPU usage
+func (rdsExplorer *RDSInstanceExplorer) classicInstanceToEnergy(ctx cloudcarbonexporter.Context, region string, instance types.DBInstance, instanceType string) (cloudcarbonexporter.Energy, error) {
 
 	instanceInfos, found := rdsExplorer.instanceTypeInfos[instanceType]
 	if !found {
@@ -122,17 +122,17 @@ func (rdsExplorer *RDSInstanceExplorer) classicInstanceToWatts(ctx cloudcarbonex
 	if err != nil {
 		return 0.0, fmt.Errorf("failed to get rds instance cpu average: %w", err)
 	}
-	watts := primitives.EstimateMemoryWatts(instanceInfos.Memory)
-	watts += primitives.
+	energy := primitives.EstimateMemoryEnergy(instanceInfos.Memory)
+	energy += primitives.
 		LookupProcessorByName(instanceInfos.PhysicalProcessor).
-		EstimateCPUWatts(instanceInfos.VCPU, cpuAverage)
+		EstimateCPUEnergy(instanceInfos.VCPU, cpuAverage)
 
-	return watts, err
+	return energy, err
 }
 
-// serverlessInstanceToWatts estimates watts for serverless instance using ACUs
-func (rdsExplorer *RDSInstanceExplorer) serverlessInstanceToWatts(ctx cloudcarbonexporter.Context, region string, instance types.DBInstance) (float64, error) {
-	watts := 0.0
+// serverlessInstanceToEnergy estimates energy for serverless instance using ACUs
+func (rdsExplorer *RDSInstanceExplorer) serverlessInstanceToEnergy(ctx cloudcarbonexporter.Context, region string, instance types.DBInstance) (cloudcarbonexporter.Energy, error) {
+	energy := cloudcarbonexporter.Energy(0)
 	acuAverage, err := rdsExplorer.GetInstanceACUAverage(ctx, region, *instance.DBInstanceIdentifier)
 	if err != nil {
 		return 0.0, fmt.Errorf("failed to get rds instance cpu average: %w", err)
@@ -147,10 +147,10 @@ func (rdsExplorer *RDSInstanceExplorer) serverlessInstanceToWatts(ctx cloudcarbo
 	memoryByACU := 2.0
 	threads := acuAverage * cpuThreadsByACU
 
-	watts += primitives.EstimateMemoryWatts(acuAverage * memoryByACU)
-	watts += primitives.LookupProcessorByName("Graviton4").EstimateCPUWatts(threads, 60)
+	energy += primitives.EstimateMemoryEnergy(acuAverage * memoryByACU)
+	energy += primitives.LookupProcessorByName("Graviton4").EstimateCPUEnergy(threads, 60)
 
-	return watts, err
+	return energy, err
 }
 
 func (rc *RDSInstanceExplorer) load(ctx context.Context) error { return nil }

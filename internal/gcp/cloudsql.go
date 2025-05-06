@@ -40,7 +40,7 @@ func (sqlExplorer *CloudSQLExplorer) collectImpacts(ctx cloudcarbonexporter.Cont
 	ctx.IncrCalls()
 	return sqlExplorer.client.Instances.List(sqlExplorer.ProjectID).Context(ctx).Pages(ctx, func(instancesList *cloudsql.InstancesListResponse) error {
 		for _, instance := range instancesList.Items {
-			watts := 0.0
+			energy := cloudcarbonexporter.Energy(0.0)
 
 			machineTypeName := strings.TrimPrefix(instance.Settings.Tier, "db-")
 			machineType := sqlExplorer.machineTypes.Get(machineTypeName)
@@ -53,16 +53,16 @@ func (sqlExplorer *CloudSQLExplorer) collectImpacts(ctx cloudcarbonexporter.Cont
 				return fmt.Errorf("failed to get cloudsql intance cpu usage: %w", err)
 			}
 
-			watts += primitives.LookupProcessorByName(machineType.CPUPlatform).EstimateCPUWatts(machineType.VCPU, cpuUsage)
+			energy += primitives.LookupProcessorByName(machineType.CPUPlatform).EstimateCPUEnergy(machineType.VCPU, cpuUsage)
 
-			diskWatts := cloud.EstimateSSDBlockStorageWatts(float64(instance.Settings.DataDiskSizeGb))
+			diskEnergy := cloud.EstimateSSDBlockStorageEnergy(float64(instance.Settings.DataDiskSizeGb))
 			if instance.Settings.DataDiskType != "PD_SSD" {
-				diskWatts = cloud.EstimateHDDBlockStorageWatts(float64(instance.Settings.DataDiskSizeGb))
+				diskEnergy = cloud.EstimateHDDBlockStorageEnergy(float64(instance.Settings.DataDiskSizeGb))
 			}
-			watts += diskWatts
+			energy += diskEnergy
 
 			impacts <- &cloudcarbonexporter.Impact{
-				Energy: cloudcarbonexporter.Energy(watts),
+				Energy: cloudcarbonexporter.Energy(energy),
 				Labels: cloudcarbonexporter.MergeLabels(
 					map[string]string{
 						"kind":          "sql/Instance",

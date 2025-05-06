@@ -121,11 +121,11 @@ func (ec2explorer *EC2InstanceExplorer) collectImpacts(ctx cloudcarbonexporter.C
 				}
 
 				processor := primitives.LookupProcessorByName(instanceType.PhysicalProcessor)
-				watts := processor.EstimateCPUWatts(instanceType.VCPU, intanceAverageCPU)
-				watts += primitives.EstimateMemoryWatts(instanceType.Memory)
+				energy := processor.EstimateCPUEnergy(instanceType.VCPU, intanceAverageCPU)
+				energy += primitives.EstimateMemoryEnergy(instanceType.Memory)
 
 				impacts <- &cloudcarbonexporter.Impact{
-					Energy: cloudcarbonexporter.Energy(watts),
+					Energy: energy,
 					Labels: cloudcarbonexporter.MergeLabels(
 						parseEC2Tags(instance.Tags),
 						map[string]string{

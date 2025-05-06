@@ -13,7 +13,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/superdango/cloud-carbon-exporter/model/primitives"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -78,6 +77,10 @@ func (handler *OpenMetricsHandler) ServeHTTP(w http.ResponseWriter, r *http.Requ
 		traceAttr = slog.String("logging.googleapis.com/trace", traceID)
 	}
 
+	baseLabels := map[string]string{
+		"explorer": handler.explorerName,
+	}
+
 	errg, errgctx := errgroup.WithContext(r.Context())
 	errgctx, cancel := context.WithTimeout(errgctx, handler.defaultTimeout)
 	defer cancel()
@@ -89,25 +92,21 @@ func (handler *OpenMetricsHandler) ServeHTTP(w http.ResponseWriter, r *http.Requ
 		ctx := WrapCtx(errgctx)
 		handler.explorer.CollectImpacts(ctx, impacts, errs)
 
-		labels := map[string]string{
-			"explorer": handler.explorerName,
-		}
-
 		metrics <- &Metric{
 			Name:   "collect_duration_ms",
-			Labels: labels,
+			Labels: baseLabels,
 			Value:  float64(time.Since(start).Milliseconds()),
 		}
 
 		metrics <- &Metric{
 			Name:   "error_count",
-			Labels: labels,
+			Labels: baseLabels,
 			Value:  float64(errCount),
 		}
 
 		metrics <- &Metric{
 			Name:   "api_calls",
-			Labels: labels,
+			Labels: baseLabels,
 			Value:  float64(ctx.Calls()),
 		}
 
@@ -117,12 +116,10 @@ func (handler *OpenMetricsHandler) ServeHTTP(w http.ResponseWriter, r *http.Requ
 	errg.Go(func() error {
 		defer close(metrics)
 		for impact := range impacts {
-			impact.Labels = MergeLabels(impact.Labels, map[string]string{"explorer": handler.explorerName})
-			if impact.EmbodiedEmissions != nil {
-				metrics <- NewEmbodiedEmissionsMetric(impact.EmbodiedEmissions.KgCO2eq_day()).SetLabels(impact.Labels)
-			}
-			metrics <- NewEstimatedEnergyMetric(impact.Energy).SetLabels(impact.Labels)
-			metrics <- NewEnergyEmissionsMetric(impact.EnergyEmissions).SetLabels(impact.Labels)
+			impact.Labels = MergeLabels(impact.Labels, baseLabels)
+			metrics <- NewEnergyMetric(impact.Energy).SetLabels(impact.Labels)
+			metrics <- NewEmissionsMetric(impact.EnergyEmissions).SetLabels(impact.Labels)
+			metrics <- NewEmbodiedEmissionsMetric(impact.EmbodiedEmissions).SetLabels(impact.Labels)
 		}
 
 		return nil
@@ -215,9 +212,9 @@ type Impact struct {
 	// Energy in watts
 	Energy Energy
 	// EnergyEmissions are emissions related to energy in kgCO2eq/day
-	EnergyEmissions CO2eq
+	EnergyEmissions EmissionsOverTime
 	// EmbodiedEmissions are emissions related to the manufacturing
-	EmbodiedEmissions *primitives.EmbodiedEmissions
+	EmbodiedEmissions EmissionsOverTime
 }
 
 // Clone return a deep copy of a metric.
@@ -264,23 +261,23 @@ func (m *Metric) SanitizeLabels() *Metric {
 	return m
 }
 
-func NewEmbodiedEmissionsMetric(value float64) *Metric {
+func NewEmbodiedEmissionsMetric(value EmissionsOverTime) *Metric {
 	return &Metric{
 		Name:  "estimated_embodied_emissions_kgCO2eq_day",
-		Value: value,
+		Value: value.KgCO2eq_day(),
 	}
 }
 
-func NewEstimatedEnergyMetric(value Energy) *Metric {
+func NewEnergyMetric(value Energy) *Metric {
 	return &Metric{
 		Name:  "estimated_watts",
 		Value: float64(value),
 	}
 }
 
-func NewEnergyEmissionsMetric(value CO2eq) *Metric {
+func NewEmissionsMetric(value EmissionsOverTime) *Metric {
 	return &Metric{
-		Name:  "estimated_watts_emissions_kgCO2eq_day",
+		Name:  "estimated_emissions_kgCO2eq_day",
 		Value: value.KgCO2eq_day(),
 	}
 }

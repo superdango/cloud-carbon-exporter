@@ -85,17 +85,17 @@ func (instanceExplorer *InstancesExplorer) collectZoneImpacts(ctx cloudcarbonexp
 			return err
 		}
 
-		watts := processor.EstimateCPUWatts(machineType.VCPU, cpuUsage)
-		watts += primitives.EstimateMemoryWatts(machineType.Memory)
+		energy := processor.EstimateCPUEnergy(machineType.VCPU, cpuUsage)
+		energy += primitives.EstimateMemoryEnergy(machineType.Memory)
 		for _, disk := range instance.Disks {
 			// Physical disks (SCRATCH) are directly attached to the instance
 			if *disk.Type == "SCRATCH" {
-				watts += primitives.EstimateLocalSSDPowerUsage(1)
+				energy += primitives.EstimateLocalSSDEnergy(1)
 			}
 		}
 
 		impacts <- &cloudcarbonexporter.Impact{
-			Energy: cloudcarbonexporter.Energy(watts),
+			Energy: cloudcarbonexporter.Energy(energy),
 			Labels: cloudcarbonexporter.MergeLabels(
 				map[string]string{
 					"kind":          "compute/Instance",
@@ -197,22 +197,22 @@ func (disksExplorer *DisksExplorer) collectZoneImpacts(ctx cloudcarbonexporter.C
 
 		diskName := disk.GetName()
 
-		watts := 0.0
+		energy := cloudcarbonexporter.Energy(0)
 		switch lastURLPathFragment(disk.GetType()) {
 		case "pd-standard":
-			watts = cloud.EstimateHDDBlockStorageWatts(float64(*disk.SizeGb))
+			energy = cloud.EstimateHDDBlockStorageEnergy(float64(*disk.SizeGb))
 		default:
-			watts = cloud.EstimateSSDBlockStorageWatts(float64(*disk.SizeGb))
+			energy = cloud.EstimateSSDBlockStorageEnergy(float64(*disk.SizeGb))
 		}
 		replicas := 1
 		if len(disk.ReplicaZones) > 0 {
 			replicas += len(disk.ReplicaZones)
 		}
 
-		watts = watts * float64(replicas)
+		energy = energy * cloudcarbonexporter.Energy(replicas)
 
 		impacts <- &cloudcarbonexporter.Impact{
-			Energy: cloudcarbonexporter.Energy(watts),
+			Energy: cloudcarbonexporter.Energy(energy),
 			Labels: cloudcarbonexporter.MergeLabels(
 				map[string]string{
 					"kind":      "compute/Disk",
@@ -281,20 +281,20 @@ func (regionDisksExplorer *RegionDisksExplorer) collectRegionImpacts(ctx cloudca
 		diskName := disk.GetName()
 		fmt.Println("got region disk", diskName, region)
 
-		watts := 0.0
+		energy := cloudcarbonexporter.Energy(0)
 		switch lastURLPathFragment(disk.GetType()) {
 		case "pd-standard":
-			watts = cloud.EstimateHDDBlockStorageWatts(float64(*disk.SizeGb))
+			energy = cloud.EstimateHDDBlockStorageEnergy(float64(*disk.SizeGb))
 		default:
-			watts = cloud.EstimateSSDBlockStorageWatts(float64(*disk.SizeGb))
+			energy = cloud.EstimateSSDBlockStorageEnergy(float64(*disk.SizeGb))
 		}
 
 		replicas := 2
 
-		watts = watts * float64(replicas)
+		energy = energy * cloudcarbonexporter.Energy(replicas)
 
 		impacts <- &cloudcarbonexporter.Impact{
-			Energy: cloudcarbonexporter.Energy(watts),
+			Energy: cloudcarbonexporter.Energy(energy),
 			Labels: cloudcarbonexporter.MergeLabels(
 				map[string]string{
 					"kind":      "compute/RegionDisk",

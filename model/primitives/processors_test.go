@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
 )
 
 // override embed values for tests
@@ -72,20 +73,20 @@ func setupTests() {
 
 func TestCPUPowerUsage(t *testing.T) {
 	setupTests()
-	watt := LookupProcessorByName("AMD EPYC 7571").EstimateCPUWatts(1, 100)
-	assert.Equal(t, 10.2, watt)
+	energy := LookupProcessorByName("AMD EPYC 7571").EstimateCPUEnergy(1, 100)
+	assert.Equal(t, cloudcarbonexporter.Energy(10.2), energy)
 
-	watt = LookupProcessorByName("EPYC 70").EstimateCPUWatts(1, 100)
-	assert.Equal(t, 2.55, watt)
+	energy = LookupProcessorByName("EPYC 70").EstimateCPUEnergy(1, 100)
+	assert.Equal(t, cloudcarbonexporter.Energy(2.55), energy)
 
-	watt = LookupProcessorByName("Intel").EstimateCPUWatts(1, 100)
-	assert.Equal(t, 1020.0, watt)
+	energy = LookupProcessorByName("Intel").EstimateCPUEnergy(1, 100)
+	assert.Equal(t, cloudcarbonexporter.Energy(1020.0), energy)
 
-	watt = LookupProcessorByName("Intel").EstimateCPUWatts(1, 0)
-	assert.Equal(t, 120.0, watt)
+	energy = LookupProcessorByName("Intel").EstimateCPUEnergy(1, 0)
+	assert.Equal(t, cloudcarbonexporter.Energy(120.0), energy)
 
-	watt = LookupProcessorByName("").EstimateCPUWatts(1, 0)
-	assert.Equal(t, 120.0, watt)
+	energy = LookupProcessorByName("").EstimateCPUEnergy(1, 0)
+	assert.Equal(t, cloudcarbonexporter.Energy(120.0), energy)
 
 	assert.Equal(t, "Intel Xeon E5-2690 V4", LookupProcessorByName("Broadwell").Name)
 	assert.Equal(t, "Intel Xeon", LookupProcessorByName("Intel Xeon Family").Name)

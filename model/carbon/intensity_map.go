@@ -3,6 +3,7 @@ package carbon
 import (
 	"log/slog"
 	"strings"
+	"time"
 
 	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
 	"github.com/superdango/cloud-carbon-exporter/internal/must"
@@ -38,7 +39,7 @@ func hasOnePrefix(s string, prefixes ...string) bool {
 	return false
 }
 
-func (intensity IntensityMap) Get(location string) float64 {
+func (intensity IntensityMap) EmissionsPerKWh(location string) cloudcarbonexporter.Emissions {
 	location = strings.ToLower(location)
 	locationsize := 0
 	locationIntensity := 0.0
@@ -58,13 +59,15 @@ func (intensity IntensityMap) Get(location string) float64 {
 		must.Assert(found, "global coefficient not set")
 	}
 
-	return locationIntensity
+	return cloudcarbonexporter.Emissions(locationIntensity)
 }
 
 // EnergyEmissions takes an energy metric as input and return its carbon emission equivalent using
 // the source location label.
-func (intensityMap IntensityMap) EnergyEmissions(watts cloudcarbonexporter.Energy, location string) (emissions cloudcarbonexporter.CO2eq) {
-	kW := float64(watts / 1000)
-	gramPerKWh := intensityMap.Get(location) / 60 / 60
-	return cloudcarbonexporter.CO2eq(kW * gramPerKWh)
+func (intensityMap IntensityMap) EnergyEmissions(energy cloudcarbonexporter.Energy, location string) (emissions cloudcarbonexporter.EmissionsOverTime) {
+	kW := float64(energy / 1000)
+	return cloudcarbonexporter.EmissionsOverTime{
+		Emissions: cloudcarbonexporter.Emissions(kW) * intensityMap.EmissionsPerKWh(location),
+		During:    1 * time.Hour,
+	}
 }
