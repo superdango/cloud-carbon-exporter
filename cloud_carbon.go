@@ -11,7 +11,6 @@ type Explorer interface {
 	Init(ctx context.Context) error
 	IsReady() bool
 	SupportedServices() []string
-	Tags() map[string]string
 	io.Closer
 }
 

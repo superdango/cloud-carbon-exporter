@@ -62,7 +62,7 @@ func (sqlExplorer *CloudSQLExplorer) collectImpacts(ctx cloudcarbonexporter.Cont
 			watts += diskWatts
 
 			impacts <- &cloudcarbonexporter.Impact{
-				Watts: watts,
+				Energy: cloudcarbonexporter.Energy(watts),
 				Labels: cloudcarbonexporter.MergeLabels(
 					map[string]string{
 						"kind":          "sql/Instance",

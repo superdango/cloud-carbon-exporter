@@ -52,19 +52,21 @@ func (c *Ctx) Calls() int {
 type OpenMetricsHandler struct {
 	defaultTimeout time.Duration
 	explorer       Explorer
+	explorerName   string
 }
 
 // NewOpenMetricsHandler create a new OpenMetricsHandler
-func NewOpenMetricsHandler(explorer Explorer) *OpenMetricsHandler {
+func NewOpenMetricsHandler(explorerName string, explorer Explorer) *OpenMetricsHandler {
 	return &OpenMetricsHandler{
 		defaultTimeout: 10 * time.Second,
 		explorer:       explorer,
+		explorerName:   explorerName,
 	}
 }
 
 // ServeHTTP implements the http.Handler interface. It collects all metrics from the configured
 // collector and return them, formatted in the http response.
-func (rh *OpenMetricsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (handler *OpenMetricsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
 	impacts := make(chan *Impact)
 	metrics := make(chan *Metric)
@@ -77,7 +79,7 @@ func (rh *OpenMetricsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	}
 
 	errg, errgctx := errgroup.WithContext(r.Context())
-	errgctx, cancel := context.WithTimeout(errgctx, rh.defaultTimeout)
+	errgctx, cancel := context.WithTimeout(errgctx, handler.defaultTimeout)
 	defer cancel()
 
 	errg.Go(func() error {
@@ -85,27 +87,27 @@ func (rh *OpenMetricsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		defer close(errs)
 
 		ctx := WrapCtx(errgctx)
-		rh.explorer.CollectImpacts(ctx, impacts, errs)
+		handler.explorer.CollectImpacts(ctx, impacts, errs)
 
-		metrics <- &Metric{
-			Name: "collect_duration_ms",
-			Labels: map[string]string{
-				"action": "collect",
-			},
-			Value: float64(time.Since(start).Milliseconds()),
+		labels := map[string]string{
+			"explorer": handler.explorerName,
 		}
 
 		metrics <- &Metric{
-			Name: "error_count",
-			Labels: map[string]string{
-				"action": "collect",
-			},
-			Value: float64(errCount),
+			Name:   "collect_duration_ms",
+			Labels: labels,
+			Value:  float64(time.Since(start).Milliseconds()),
+		}
+
+		metrics <- &Metric{
+			Name:   "error_count",
+			Labels: labels,
+			Value:  float64(errCount),
 		}
 
 		metrics <- &Metric{
 			Name:   "api_calls",
-			Labels: rh.explorer.Tags(),
+			Labels: labels,
 			Value:  float64(ctx.Calls()),
 		}
 
@@ -115,17 +117,12 @@ func (rh *OpenMetricsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	errg.Go(func() error {
 		defer close(metrics)
 		for impact := range impacts {
+			impact.Labels = MergeLabels(impact.Labels, map[string]string{"explorer": handler.explorerName})
 			if impact.EmbodiedEmissions != nil {
-				metrics <- NewEmbodiedEmissions(impact.EmbodiedEmissions.KgCO2eq_day()).SetLabels(MergeLabels(
-					impact.Labels,
-					rh.explorer.Tags(),
-				))
+				metrics <- NewEmbodiedEmissionsMetric(impact.EmbodiedEmissions.KgCO2eq_day()).SetLabels(impact.Labels)
 			}
-
-			metrics <- NewEstimatedWatts(impact.Watts).SetLabels(MergeLabels(
-				impact.Labels,
-				rh.explorer.Tags(),
-			))
+			metrics <- NewEstimatedEnergyMetric(impact.Energy).SetLabels(impact.Labels)
+			metrics <- NewEnergyEmissionsMetric(impact.EnergyEmissions).SetLabels(impact.Labels)
 		}
 
 		return nil
@@ -213,9 +210,13 @@ type Metric struct {
 }
 
 type Impact struct {
-	Labels            map[string]string
-	Watts             float64
-	EnergyEmissions   float64
+	// Labels for impact
+	Labels map[string]string
+	// Energy in watts
+	Energy Energy
+	// EnergyEmissions are emissions related to energy in kgCO2eq/day
+	EnergyEmissions CO2eq
+	// EmbodiedEmissions are emissions related to the manufacturing
 	EmbodiedEmissions *primitives.EmbodiedEmissions
 }
 
@@ -263,16 +264,23 @@ func (m *Metric) SanitizeLabels() *Metric {
 	return m
 }
 
-func NewEmbodiedEmissions(value float64) *Metric {
+func NewEmbodiedEmissionsMetric(value float64) *Metric {
 	return &Metric{
 		Name:  "estimated_embodied_emissions_kgCO2eq_day",
 		Value: value,
 	}
 }
 
-func NewEstimatedWatts(value float64) *Metric {
+func NewEstimatedEnergyMetric(value Energy) *Metric {
 	return &Metric{
 		Name:  "estimated_watts",
-		Value: value,
+		Value: float64(value),
+	}
+}
+
+func NewEnergyEmissionsMetric(value CO2eq) *Metric {
+	return &Metric{
+		Name:  "estimated_watts_emissions_kgCO2eq_day",
+		Value: value.KgCO2eq_day(),
 	}
 }

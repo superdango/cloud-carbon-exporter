@@ -69,7 +69,7 @@ func (ec2explorer *EC2VolumeExplorer) collectImpacts(ctx cloudcarbonexporter.Con
 			}
 
 			impacts <- &cloudcarbonexporter.Impact{
-				Watts: watts,
+				Energy: cloudcarbonexporter.Energy(watts),
 				Labels: cloudcarbonexporter.MergeLabels(
 					map[string]string{
 						"location":    region,

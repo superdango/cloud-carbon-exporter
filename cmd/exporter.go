@@ -82,7 +82,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	err := initExplorer(ctx, explorer, configmap)
+	err, explorerName := initExplorer(ctx, explorer, configmap)
 	if err != nil {
 		slog.Error("failed to init explorer", "err", err.Error())
 		os.Exit(1)
@@ -93,9 +93,9 @@ func main() {
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "<a href=\"/metrics\">go to /metrics</a>")
 	})
-	mux.Handle("/metrics", cloudcarbonexporter.NewOpenMetricsHandler(explorer))
+	mux.Handle("/metrics", cloudcarbonexporter.NewOpenMetricsHandler(explorerName, explorer))
 
-	slog.Info("starting cloud carbon exporter", "listen", "http://"+flagListen)
+	slog.Info("starting cloud carbon exporter", "listen", "http://"+flagListen, "explorer", explorerName)
 	if err := http.ListenAndServe(flagListen, mux); err != nil {
 		slog.Error("failed to start cloud carbon exporter", "err", err)
 		os.Exit(1)
@@ -128,12 +128,12 @@ func initLogging(logLevel string, logFormat string) {
 	}
 }
 
-func initExplorer(ctx context.Context, explorer cloudcarbonexporter.Explorer, params map[string]string) error {
+func initExplorer(ctx context.Context, explorer cloudcarbonexporter.Explorer, params map[string]string) (err error, name string) {
 	switch params["cloud.provider"] {
 	case "gcp":
 		gcpExplorer := explorer.(*gcp.Explorer)
 		gcpExplorer.ProjectID = params["cloud.gcp.projectid"]
-		return gcpExplorer.Init(ctx)
+		return gcpExplorer.Init(ctx), "gcp"
 
 	case "aws":
 		awsExplorer := explorer.(*aws.Explorer)
@@ -150,7 +150,7 @@ func initExplorer(ctx context.Context, explorer cloudcarbonexporter.Explorer, pa
 			aws.WithDefaultRegion(params["cloud.aws.defaultregion"]),
 		}
 
-		return awsExplorer.Configure(awsopts...).Init(ctx)
+		return awsExplorer.Configure(awsopts...).Init(ctx), "aws"
 
 	case "scw":
 		scwExplorer := explorer.(*scw.Explorer)
@@ -160,16 +160,16 @@ func initExplorer(ctx context.Context, explorer cloudcarbonexporter.Explorer, pa
 
 		client, err := _scw.NewClient(_scw.WithAuth(accessKey, secretKey))
 		if err != nil {
-			return fmt.Errorf("failed to load scaleway client: %w", err)
+			return fmt.Errorf("failed to load scaleway client: %w", err), ""
 		}
 
-		return scwExplorer.Configure(scw.WithClient(client)).Init(ctx)
+		return scwExplorer.Configure(scw.WithClient(client)).Init(ctx), "scw"
 
 	case "":
-		return fmt.Errorf("cloud provider is not set")
+		return fmt.Errorf("cloud provider is not set"), ""
 
 	default:
-		return fmt.Errorf("cloud provider %s is not supported", params["cloud.provider"])
+		return fmt.Errorf("cloud provider %s is not supported", params["cloud.provider"]), ""
 	}
 }
 

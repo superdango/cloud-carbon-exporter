@@ -94,7 +94,7 @@ func (rdsExplorer *RDSInstanceExplorer) collectImpacts(ctx cloudcarbonexporter.C
 			watts += storageWatts
 
 			impacts <- &cloudcarbonexporter.Impact{
-				Watts: watts,
+				Energy: cloudcarbonexporter.Energy(watts),
 				Labels: cloudcarbonexporter.MergeLabels(
 					map[string]string{
 						"kind":        "rds/db_instance",

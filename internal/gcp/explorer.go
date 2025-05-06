@@ -199,11 +199,8 @@ func (explorer *Explorer) CollectImpacts(ctx cloudcarbonexporter.Context, impact
 				slog.Warn("impact location not found, skipping impact. please consider raising a bug.", "labels", rawImpact.Labels)
 				continue
 			}
-			rawImpact.Labels = cloudcarbonexporter.MergeLabels(rawImpact.Labels, map[string]string{
-				"cloud_provider": "gcp",
-			})
-			rawImpact.Watts = rawImpact.Watts * primitives.GoodPUE
-			rawImpact.EnergyEmissions = explorer.carbonIntensityMap.ComputeCO2eq(rawImpact.Watts, location)
+			rawImpact.Energy = rawImpact.Energy * primitives.GoodPUE
+			rawImpact.EnergyEmissions = explorer.carbonIntensityMap.EnergyEmissions(rawImpact.Energy, location)
 			impacts <- rawImpact
 		}
 	}()

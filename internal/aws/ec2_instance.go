@@ -125,7 +125,7 @@ func (ec2explorer *EC2InstanceExplorer) collectImpacts(ctx cloudcarbonexporter.C
 				watts += primitives.EstimateMemoryWatts(instanceType.Memory)
 
 				impacts <- &cloudcarbonexporter.Impact{
-					Watts: watts,
+					Energy: cloudcarbonexporter.Energy(watts),
 					Labels: cloudcarbonexporter.MergeLabels(
 						parseEC2Tags(instance.Tags),
 						map[string]string{

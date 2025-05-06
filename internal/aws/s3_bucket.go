@@ -105,7 +105,7 @@ func (s3explorer *S3BucketsExplorer) collectImpacts(ctx cloudcarbonexporter.Cont
 				slog.Debug("bucket size", "bucket", *bucket.Name, "size_gb", sizeGB)
 
 				impacts <- &cloudcarbonexporter.Impact{
-					Watts:             cloud.EstimateObjectStorageWatts(sizeGB),
+					Energy:            cloud.EstimateObjectStorageWatts(sizeGB),
 					EmbodiedEmissions: cloud.EstimateObjectStorageEmbodiedEmissions(sizeGB),
 					Labels: cloudcarbonexporter.MergeLabels(
 						map[string]string{

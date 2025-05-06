@@ -95,7 +95,7 @@ func (instanceExplorer *InstancesExplorer) collectZoneImpacts(ctx cloudcarbonexp
 		}
 
 		impacts <- &cloudcarbonexporter.Impact{
-			Watts: watts,
+			Energy: cloudcarbonexporter.Energy(watts),
 			Labels: cloudcarbonexporter.MergeLabels(
 				map[string]string{
 					"kind":          "compute/Instance",
@@ -212,7 +212,7 @@ func (disksExplorer *DisksExplorer) collectZoneImpacts(ctx cloudcarbonexporter.C
 		watts = watts * float64(replicas)
 
 		impacts <- &cloudcarbonexporter.Impact{
-			Watts: watts,
+			Energy: cloudcarbonexporter.Energy(watts),
 			Labels: cloudcarbonexporter.MergeLabels(
 				map[string]string{
 					"kind":      "compute/Disk",
@@ -294,7 +294,7 @@ func (regionDisksExplorer *RegionDisksExplorer) collectRegionImpacts(ctx cloudca
 		watts = watts * float64(replicas)
 
 		impacts <- &cloudcarbonexporter.Impact{
-			Watts: watts,
+			Energy: cloudcarbonexporter.Energy(watts),
 			Labels: cloudcarbonexporter.MergeLabels(
 				map[string]string{
 					"kind":      "compute/RegionDisk",

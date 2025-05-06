@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"strings"
 
+	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
 	"github.com/superdango/cloud-carbon-exporter/internal/must"
 )
 
@@ -60,10 +61,10 @@ func (intensity IntensityMap) Get(location string) float64 {
 	return locationIntensity
 }
 
-// ComputeCO2eq takes an energy metric as input and return its carbon emission equivalent using
+// EnergyEmissions takes an energy metric as input and return its carbon emission equivalent using
 // the source location label.
-func (intensityMap IntensityMap) ComputeCO2eq(watts float64, location string) (emissionsPerSecond float64) {
-	kWatts := watts / 1000
+func (intensityMap IntensityMap) EnergyEmissions(watts cloudcarbonexporter.Energy, location string) (emissions cloudcarbonexporter.CO2eq) {
+	kW := float64(watts / 1000)
 	gramPerKWh := intensityMap.Get(location) / 60 / 60
-	return kWatts * gramPerKWh
+	return cloudcarbonexporter.CO2eq(kW * gramPerKWh)
 }

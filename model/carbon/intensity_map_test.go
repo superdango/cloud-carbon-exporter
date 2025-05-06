@@ -22,3 +22,13 @@ func TestIntensityMap(t *testing.T) {
 	assert.Equal(t, 1.0, testMap.Average("europe-west1"))
 	assert.Equal(t, 1.0, testMap.Get("europe-west1"))
 }
+
+func TestCO2Compute(t *testing.T) {
+	testMap := IntensityMap{
+		"global": 1000, // 1 kgCO2eq / kWh
+	}
+
+	// if we consume 1000W during 24h we used 24kWh. 1kWh equals 1kgCO2eq therefore
+	// this scenario emits 24kgCO2eq
+	assert.Equal(t, 24, int(testMap.EnergyEmissions(1000, "global").KgCO2eq_day()))
+}
