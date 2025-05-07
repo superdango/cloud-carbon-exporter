@@ -82,7 +82,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	err, explorerName := initExplorer(ctx, explorer, configmap)
+	explorerName, err := initExplorer(ctx, explorer, configmap)
 	if err != nil {
 		slog.Error("failed to init explorer", "err", err.Error())
 		os.Exit(1)
@@ -128,12 +128,12 @@ func initLogging(logLevel string, logFormat string) {
 	}
 }
 
-func initExplorer(ctx context.Context, explorer cloudcarbonexporter.Explorer, params map[string]string) (err error, name string) {
+func initExplorer(ctx context.Context, explorer cloudcarbonexporter.Explorer, params map[string]string) (name string, err error) {
 	switch params["cloud.provider"] {
 	case "gcp":
 		gcpExplorer := explorer.(*gcp.Explorer)
 		gcpExplorer.ProjectID = params["cloud.gcp.projectid"]
-		return gcpExplorer.Init(ctx), "gcp"
+		return params["cloud.provider"], gcpExplorer.Init(ctx)
 
 	case "aws":
 		awsExplorer := explorer.(*aws.Explorer)
@@ -150,7 +150,7 @@ func initExplorer(ctx context.Context, explorer cloudcarbonexporter.Explorer, pa
 			aws.WithDefaultRegion(params["cloud.aws.defaultregion"]),
 		}
 
-		return awsExplorer.Configure(awsopts...).Init(ctx), "aws"
+		return params["cloud.provider"], awsExplorer.Configure(awsopts...).Init(ctx)
 
 	case "scw":
 		scwExplorer := explorer.(*scw.Explorer)
@@ -160,16 +160,16 @@ func initExplorer(ctx context.Context, explorer cloudcarbonexporter.Explorer, pa
 
 		client, err := _scw.NewClient(_scw.WithAuth(accessKey, secretKey))
 		if err != nil {
-			return fmt.Errorf("failed to load scaleway client: %w", err), ""
+			return "", fmt.Errorf("failed to load scaleway client: %w", err)
 		}
 
-		return scwExplorer.Configure(scw.WithClient(client)).Init(ctx), "scw"
+		return params["cloud.provider"], scwExplorer.Configure(scw.WithClient(client)).Init(ctx)
 
 	case "":
-		return fmt.Errorf("cloud provider is not set"), ""
+		return "", fmt.Errorf("cloud provider is not set")
 
 	default:
-		return fmt.Errorf("cloud provider %s is not supported", params["cloud.provider"]), ""
+		return "", fmt.Errorf("cloud provider %s is not supported", params["cloud.provider"])
 	}
 }
 
