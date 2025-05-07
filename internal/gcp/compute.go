@@ -209,11 +209,15 @@ func (disksExplorer *DisksExplorer) collectZoneImpacts(ctx cloudcarbonexporter.C
 		diskName := disk.GetName()
 
 		energy := cloudcarbonexporter.Energy(0)
+		var embodied cloudcarbonexporter.EmissionsOverTime
 		switch lastURLPathFragment(disk.GetType()) {
 		case "pd-standard":
 			energy = cloud.EstimateHDDBlockStorageEnergy(float64(*disk.SizeGb))
+			embodied = cloud.EstimateHDDBlockStorageEmbodiedEmissions(float64(*disk.SizeGb))
 		default:
 			energy = cloud.EstimateSSDBlockStorageEnergy(float64(*disk.SizeGb))
+			embodied = cloud.EstimateSSDBlockStorageEmbodiedEmissions(float64(*disk.SizeGb))
+
 		}
 		replicas := 1
 		if len(disk.ReplicaZones) > 0 {
@@ -221,9 +225,11 @@ func (disksExplorer *DisksExplorer) collectZoneImpacts(ctx cloudcarbonexporter.C
 		}
 
 		energy = energy * cloudcarbonexporter.Energy(replicas)
+		embodied.Emissions = embodied.Emissions * cloudcarbonexporter.Emissions(replicas)
 
 		impacts <- &cloudcarbonexporter.Impact{
-			Energy: cloudcarbonexporter.Energy(energy),
+			Energy:            cloudcarbonexporter.Energy(energy),
+			EmbodiedEmissions: embodied,
 			Labels: cloudcarbonexporter.MergeLabels(
 				map[string]string{
 					"kind":      "compute/Disk",
@@ -293,19 +299,25 @@ func (regionDisksExplorer *RegionDisksExplorer) collectRegionImpacts(ctx cloudca
 		fmt.Println("got region disk", diskName, region)
 
 		energy := cloudcarbonexporter.Energy(0)
+		var embodied cloudcarbonexporter.EmissionsOverTime
+
 		switch lastURLPathFragment(disk.GetType()) {
 		case "pd-standard":
 			energy = cloud.EstimateHDDBlockStorageEnergy(float64(*disk.SizeGb))
+			embodied = cloud.EstimateHDDBlockStorageEmbodiedEmissions(float64(*disk.SizeGb))
 		default:
 			energy = cloud.EstimateSSDBlockStorageEnergy(float64(*disk.SizeGb))
+			embodied = cloud.EstimateSSDBlockStorageEmbodiedEmissions(float64(*disk.SizeGb))
 		}
 
 		replicas := 2
 
 		energy = energy * cloudcarbonexporter.Energy(replicas)
+		embodied.Emissions = embodied.Emissions * cloudcarbonexporter.Emissions(replicas)
 
 		impacts <- &cloudcarbonexporter.Impact{
-			Energy: cloudcarbonexporter.Energy(energy),
+			Energy:            cloudcarbonexporter.Energy(energy),
+			EmbodiedEmissions: embodied,
 			Labels: cloudcarbonexporter.MergeLabels(
 				map[string]string{
 					"kind":      "compute/RegionDisk",
