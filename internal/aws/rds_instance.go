@@ -67,34 +67,36 @@ func (rdsExplorer *RDSInstanceExplorer) collectImpacts(ctx cloudcarbonexporter.C
 		}
 
 		for _, instance := range output.DBInstances {
-			energy := cloudcarbonexporter.Energy(0)
+			var energy cloudcarbonexporter.Energy
+			var embodiedEmission cloudcarbonexporter.EmissionsOverTime
 
 			instanceID := *instance.DBInstanceIdentifier
 			instanceType := strings.TrimPrefix(*instance.DBInstanceClass, "db.")
 
 			switch instanceType {
 			case "serverless":
-				serverlessEnergy, err := rdsExplorer.serverlessInstanceToEnergy(ctx, region, instance)
+				energy, embodiedEmission, err = rdsExplorer.serverlessInstanceImpacts(ctx, region, instance)
 				if err != nil {
 					return fmt.Errorf("failed to get energy for serverless rds instance '%s': %w", instanceID, err)
 				}
-				energy += serverlessEnergy
 			default:
-				classicInstanceEnergy, err := rdsExplorer.classicInstanceToEnergy(ctx, region, instance, instanceType)
+				energy, embodiedEmission, err = rdsExplorer.classicInstanceToEnergy(ctx, region, instance, instanceType)
 				if err != nil {
 					return fmt.Errorf("failed to get energy for classic rds instance '%s': %w", instanceID, err)
 				}
-				energy += classicInstanceEnergy
 			}
 
 			storageEnergy := cloud.EstimateSSDBlockStorageEnergy(float64(*instance.AllocatedStorage))
+			storageEmbodied := cloud.EstimateSSDBlockStorageEmbodiedEmissions(float64(*instance.AllocatedStorage))
 			if isVolumeHDD(*instance.StorageType) {
 				storageEnergy = cloud.EstimateHDDBlockStorageEnergy(float64(*instance.AllocatedStorage))
+				storageEmbodied = cloud.EstimateHDDBlockStorageEmbodiedEmissions(float64(*instance.AllocatedStorage))
 			}
 			energy += storageEnergy
 
 			impacts <- &cloudcarbonexporter.Impact{
-				Energy: cloudcarbonexporter.Energy(energy),
+				Energy:            cloudcarbonexporter.Energy(energy),
+				EmbodiedEmissions: cloudcarbonexporter.CombineEmissionsOverTime(embodiedEmission, storageEmbodied),
 				Labels: cloudcarbonexporter.MergeLabels(
 					map[string]string{
 						"kind":        "rds/db_instance",
@@ -112,35 +114,38 @@ func (rdsExplorer *RDSInstanceExplorer) collectImpacts(ctx cloudcarbonexporter.C
 }
 
 // classicInstanceToEnergy estimates energy for classic instance using machine type and CPU usage
-func (rdsExplorer *RDSInstanceExplorer) classicInstanceToEnergy(ctx cloudcarbonexporter.Context, region string, instance types.DBInstance, instanceType string) (cloudcarbonexporter.Energy, error) {
+func (rdsExplorer *RDSInstanceExplorer) classicInstanceToEnergy(ctx cloudcarbonexporter.Context, region string, instance types.DBInstance, instanceType string) (cloudcarbonexporter.Energy, cloudcarbonexporter.EmissionsOverTime, error) {
 
 	instanceInfos, found := rdsExplorer.instanceTypeInfos[instanceType]
 	if !found {
-		return 0.0, fmt.Errorf("rds instance infos not found for type: %s", instanceType)
+		return 0.0, cloudcarbonexporter.ZeroEmissions, fmt.Errorf("rds instance infos not found for type: %s", instanceType)
 	}
 	cpuAverage, err := rdsExplorer.GetInstanceCPUAverage(ctx, region, *instance.DBInstanceIdentifier)
 	if err != nil {
-		return 0.0, fmt.Errorf("failed to get rds instance cpu average: %w", err)
+		return 0.0, cloudcarbonexporter.ZeroEmissions, fmt.Errorf("failed to get rds instance cpu average: %w", err)
 	}
 	energy := primitives.EstimateMemoryEnergy(instanceInfos.Memory)
 	energy += primitives.
 		LookupProcessorByName(instanceInfos.PhysicalProcessor).
 		EstimateCPUEnergy(instanceInfos.VCPU, cpuAverage)
 
-	return energy, err
+	cpuEmbodied := primitives.EstimateCPUEmbodiedEmissions(instanceInfos.VCPU)
+	memoryEmbodied := primitives.EstimateMemoryEmbodiedEmissions(instanceInfos.Memory)
+
+	return energy, cloudcarbonexporter.CombineEmissionsOverTime(cpuEmbodied, memoryEmbodied), err
 }
 
-// serverlessInstanceToEnergy estimates energy for serverless instance using ACUs
-func (rdsExplorer *RDSInstanceExplorer) serverlessInstanceToEnergy(ctx cloudcarbonexporter.Context, region string, instance types.DBInstance) (cloudcarbonexporter.Energy, error) {
+// serverlessInstanceImpacts estimates energy and embodied emissions for serverless instance using ACUs
+func (rdsExplorer *RDSInstanceExplorer) serverlessInstanceImpacts(ctx cloudcarbonexporter.Context, region string, instance types.DBInstance) (cloudcarbonexporter.Energy, cloudcarbonexporter.EmissionsOverTime, error) {
 	energy := cloudcarbonexporter.Energy(0)
 	acuAverage, err := rdsExplorer.GetInstanceACUAverage(ctx, region, *instance.DBInstanceIdentifier)
 	if err != nil {
-		return 0.0, fmt.Errorf("failed to get rds instance cpu average: %w", err)
+		return 0.0, cloudcarbonexporter.ZeroEmissions, fmt.Errorf("failed to get rds instance cpu average: %w", err)
 	}
 
 	noACU := acuAverage == 0.0
 	if noACU {
-		return 0.0, nil
+		return 0.0, cloudcarbonexporter.ZeroEmissions, nil
 	}
 
 	cpuThreadsByACU := 0.5
@@ -150,7 +155,10 @@ func (rdsExplorer *RDSInstanceExplorer) serverlessInstanceToEnergy(ctx cloudcarb
 	energy += primitives.EstimateMemoryEnergy(acuAverage * memoryByACU)
 	energy += primitives.LookupProcessorByName("Graviton4").EstimateCPUEnergy(threads, 60)
 
-	return energy, err
+	cpuEmbodied := primitives.EstimateCPUEmbodiedEmissions(threads)
+	memoryEmbodied := primitives.EstimateMemoryEmbodiedEmissions(acuAverage * memoryByACU)
+
+	return energy, cloudcarbonexporter.CombineEmissionsOverTime(cpuEmbodied, memoryEmbodied), err
 }
 
 func (rc *RDSInstanceExplorer) load(ctx context.Context) error { return nil }

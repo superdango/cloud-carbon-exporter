@@ -277,7 +277,7 @@ func NewEnergyMetric(value Energy) *Metric {
 
 func NewEmissionsMetric(value EmissionsOverTime) *Metric {
 	return &Metric{
-		Name:  "estimated_emissions_kgCO2eq_day",
+		Name:  "estimated_usage_emissions_kgCO2eq_day",
 		Value: value.KgCO2eq_day(),
 	}
 }

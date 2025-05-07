@@ -40,7 +40,7 @@ func (sqlExplorer *CloudSQLExplorer) collectImpacts(ctx cloudcarbonexporter.Cont
 	ctx.IncrCalls()
 	return sqlExplorer.client.Instances.List(sqlExplorer.ProjectID).Context(ctx).Pages(ctx, func(instancesList *cloudsql.InstancesListResponse) error {
 		for _, instance := range instancesList.Items {
-			energy := cloudcarbonexporter.Energy(0.0)
+			var energy cloudcarbonexporter.Energy
 
 			machineTypeName := strings.TrimPrefix(instance.Settings.Tier, "db-")
 			machineType := sqlExplorer.machineTypes.Get(machineTypeName)
@@ -53,16 +53,26 @@ func (sqlExplorer *CloudSQLExplorer) collectImpacts(ctx cloudcarbonexporter.Cont
 				return fmt.Errorf("failed to get cloudsql intance cpu usage: %w", err)
 			}
 
+			// CPU
 			energy += primitives.LookupProcessorByName(machineType.CPUPlatform).EstimateCPUEnergy(machineType.VCPU, cpuUsage)
+			cpuEmbodied := primitives.EstimateCPUEmbodiedEmissions(machineType.VCPU)
 
+			// Memory
+			energy += primitives.EstimateMemoryEnergy(machineType.Memory)
+			memoryEmbodied := primitives.EstimateMemoryEmbodiedEmissions(machineType.Memory)
+
+			// Disk
 			diskEnergy := cloud.EstimateSSDBlockStorageEnergy(float64(instance.Settings.DataDiskSizeGb))
+			diskEmbodied := primitives.EstimateEmbodiedSSDEmissions(float64(instance.Settings.DataDiskSizeGb))
 			if instance.Settings.DataDiskType != "PD_SSD" {
 				diskEnergy = cloud.EstimateHDDBlockStorageEnergy(float64(instance.Settings.DataDiskSizeGb))
+				diskEmbodied = primitives.EstimateEmbodiedHDDEmissions(float64(instance.Settings.DataDiskSizeGb))
 			}
 			energy += diskEnergy
 
 			impacts <- &cloudcarbonexporter.Impact{
-				Energy: cloudcarbonexporter.Energy(energy),
+				Energy:            cloudcarbonexporter.Energy(energy),
+				EmbodiedEmissions: cloudcarbonexporter.CombineEmissionsOverTime(cpuEmbodied, memoryEmbodied, diskEmbodied),
 				Labels: cloudcarbonexporter.MergeLabels(
 					map[string]string{
 						"kind":          "sql/Instance",

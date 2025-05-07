@@ -19,7 +19,7 @@ set -o pipefail
 set -eu
 
 cat <<EOF | duckdb -csv | tee processors.csv
-	SELECT distinct(name) AS name, family, tdp, cores, threads
+	SELECT distinct(name) AS name, family, tdp, cores, threads, memory, embodied
 	FROM read_csv('*.csv')
 	WHERE tdp > 0 order by tdp;
 EOF

@@ -14,5 +14,5 @@ func TestEstimateMemoryEnergy(t *testing.T) {
 }
 
 func TestMemoryEmbodiedEmissions(t *testing.T) {
-	assert.Equal(t, 8.0/4.0, EstimateMemoryEmbodiedEmissions(10).KgCO2eq_year()) // 8kgCO2eq over 4 years
+	assert.InDelta(t, 8.35, EstimateMemoryEmbodiedEmissions(10).KgCO2eq_year(), 0.0000001)
 }

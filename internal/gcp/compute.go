@@ -85,17 +85,28 @@ func (instanceExplorer *InstancesExplorer) collectZoneImpacts(ctx cloudcarbonexp
 			return err
 		}
 
+		// CPU
 		energy := processor.EstimateCPUEnergy(machineType.VCPU, cpuUsage)
+		cpuEmbodied := primitives.EstimateCPUEmbodiedEmissions(machineType.VCPU)
+
+		// Memory
 		energy += primitives.EstimateMemoryEnergy(machineType.Memory)
+		memoryEmbodied := primitives.EstimateMemoryEmbodiedEmissions(machineType.Memory)
+
+		// Disk
+		diskEmbodied := cloudcarbonexporter.ZeroEmissions
 		for _, disk := range instance.Disks {
 			// Physical disks (SCRATCH) are directly attached to the instance
+			// https://cloud.google.com/compute/docs/disks/local-ssd
 			if *disk.Type == "SCRATCH" {
 				energy += primitives.EstimateLocalSSDEnergy(1)
+				diskEmbodied = cloudcarbonexporter.CombineEmissionsOverTime(diskEmbodied, primitives.EstimateEmbodiedSSDEmissions(375))
 			}
 		}
 
 		impacts <- &cloudcarbonexporter.Impact{
-			Energy: cloudcarbonexporter.Energy(energy),
+			Energy:            cloudcarbonexporter.Energy(energy),
+			EmbodiedEmissions: cloudcarbonexporter.CombineEmissionsOverTime(cpuEmbodied, memoryEmbodied, diskEmbodied),
 			Labels: cloudcarbonexporter.MergeLabels(
 				map[string]string{
 					"kind":          "compute/Instance",

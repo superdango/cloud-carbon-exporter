@@ -123,9 +123,20 @@ func (ec2explorer *EC2InstanceExplorer) collectImpacts(ctx cloudcarbonexporter.C
 				processor := primitives.LookupProcessorByName(instanceType.PhysicalProcessor)
 				energy := processor.EstimateCPUEnergy(instanceType.VCPU, intanceAverageCPU)
 				energy += primitives.EstimateMemoryEnergy(instanceType.Memory)
+				cpuEmbodied := primitives.EstimateCPUEmbodiedEmissions(instanceType.VCPU)
+				memoryEmbodied := primitives.EstimateMemoryEmbodiedEmissions(instanceType.Memory)
+
+				diskEmbodied := cloudcarbonexporter.ZeroEmissions
+				if instanceType.SSDCount > 0 {
+					diskEmbodied = cloudcarbonexporter.CombineEmissionsOverTime(diskEmbodied, primitives.EstimateEmbodiedSSDEmissions(instanceType.SSDSize))
+				}
+				if instanceType.HDDCount > 0 {
+					diskEmbodied = cloudcarbonexporter.CombineEmissionsOverTime(diskEmbodied, primitives.EstimateEmbodiedHDDEmissions(instanceType.HDDCount))
+				}
 
 				impacts <- &cloudcarbonexporter.Impact{
-					Energy: energy,
+					Energy:            energy,
+					EmbodiedEmissions: cloudcarbonexporter.CombineEmissionsOverTime(cpuEmbodied, memoryEmbodied, diskEmbodied),
 					Labels: cloudcarbonexporter.MergeLabels(
 						parseEC2Tags(instance.Tags),
 						map[string]string{

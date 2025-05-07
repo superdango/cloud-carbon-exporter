@@ -21,6 +21,6 @@ func EstimateMemoryEmbodiedEmissions(gigabytes float64) (watts cloudcarbonexport
 	must.Assert(gigabytes > 0, "memory must be greater than 0")
 	return cloudcarbonexporter.EmissionsOverTime{
 		During:    4 * YEAR,
-		Emissions: cloudcarbonexporter.Emissions(800 * gigabytes), // TODO: 800gCO2eq/GB is an undocumented hypothesis
+		Emissions: cloudcarbonexporter.Emissions(3340 * gigabytes),
 	}
 }

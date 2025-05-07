@@ -59,7 +59,8 @@ func (bucketsExplorer *BucketsExplorer) collectImpacts(ctx cloudcarbonexporter.C
 		energy := cloud.EstimateObjectStorageEnergy(bytesToGigabytes(bucketSize))
 
 		impacts <- &cloudcarbonexporter.Impact{
-			Energy: energy,
+			Energy:            energy,
+			EmbodiedEmissions: cloud.EstimateObjectStorageEmbodiedEmissions(bucketSize),
 			Labels: cloudcarbonexporter.MergeLabels(
 				map[string]string{
 					"kind":        "storage/Bucket",

@@ -60,16 +60,20 @@ func (ec2explorer *EC2VolumeExplorer) collectImpacts(ctx cloudcarbonexporter.Con
 		}
 
 		for _, volume := range output.Volumes {
-			energy := cloudcarbonexporter.Energy(0)
+			var energy cloudcarbonexporter.Energy
+			var embodiedEmission cloudcarbonexporter.EmissionsOverTime
 			if isVolumeHDD(string(volume.VolumeType)) {
 				energy = cloud.EstimateHDDBlockStorageEnergy(float64(*volume.Size))
+				embodiedEmission = cloud.EstimateHDDBlockStorageEmbodiedEmissions(float64(*volume.Size))
 			}
 			if isVolumeSSD(string(volume.VolumeType)) {
 				energy = cloud.EstimateSSDBlockStorageEnergy(float64(*volume.Size))
+				embodiedEmission = cloud.EstimateSSDBlockStorageEmbodiedEmissions(float64(*volume.Size))
 			}
 
 			impacts <- &cloudcarbonexporter.Impact{
-				Energy: energy,
+				Energy:            energy,
+				EmbodiedEmissions: embodiedEmission,
 				Labels: cloudcarbonexporter.MergeLabels(
 					map[string]string{
 						"location":    region,

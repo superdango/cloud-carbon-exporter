@@ -6,7 +6,6 @@ import (
 	"encoding/csv"
 	"io"
 	"log/slog"
-	"math"
 	"sort"
 	"strings"
 
@@ -69,12 +68,10 @@ func (p Processor) EstimateCPUEnergy(activeThreads float64, usage float64) (ener
 	return cloudcarbonexporter.Energy(tdpToWatt(p.Tdp, usage) / p.Threads)
 }
 
-func (p Processor) EstimateCPUEmbodiedEmissions(threads float64) (emissions cloudcarbonexporter.EmissionsOverTime) {
-	cores := threads * 2
-	manufacturingEmissions := cloudcarbonexporter.Emissions(90 * math.Pow(cores/16, 0.85))
+func EstimateCPUEmbodiedEmissions(vcpu float64) (emissions cloudcarbonexporter.EmissionsOverTime) {
 	return cloudcarbonexporter.EmissionsOverTime{
 		During:    4 * YEAR,
-		Emissions: manufacturingEmissions,
+		Emissions: cloudcarbonexporter.Emissions(6500 * vcpu),
 	}
 }
 

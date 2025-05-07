@@ -30,11 +30,34 @@ The model accounts 0.38 W/GB as explained in the following analysis: [Estimating
 
 [The Cruseship article](https://cruiseship.cloud/how-much-power-does-a-hard-drive-use/) estimates that SSDs consume between 1 and 5 watts, while HDDs range from 7 to 12 watts. Based on this, the model assumes an average power consumption of 3W for an SSD and 7.5W for an HDD.
 
-## Estimating Carbon Embodied emissions
+## Estimating Embodied carbon emissions
 
 ### Disk
 
-* SSDs, the model estimates `0.16 kgCO2eq per GB`. Source: https://hotcarbon.org/assets/2022/pdf/hotcarbon22-tannu.pdf
-* HDDs, the model estimates `53.7 kgCO2eq per drive`. Source: https://www.seagate.com/files/www-content/global-citizenship/en-us/docs/seagate-makara-enterprise-hdd-lca-summary-2016-07-29.pdf
+- SSDs, the model estimates `0.16 kgCO2eq per GB`. Source: https://hotcarbon.org/assets/2022/pdf/hotcarbon22-tannu.pdf
+- HDDs, the model estimates `53.7 kgCO2eq per drive`. Source: https://www.seagate.com/files/www-content/global-citizenship/en-us/docs/seagate-makara-enterprise-hdd-lca-summary-2016-07-29.pdf
 
 For embodied `kgCO2eq/second` value, the model assumes 4 years of exploitation.
+
+### CPU and Memory
+
+We analysed thousands of machine type on boavista api on all supported cloud platforms. We found a simple model based on vCPUs and Memory that work on average and median. By accouting `6.5 kgCO2eq per vCPU` and `3.34 kgCO2eq per GB` of RAM, we get the same results on average.
+
+```
+$ cd primitives/data/processors
+$ cat README.md
+$ # follow csv files generation
+$ duckdb
+> select avg(embodied) as embodied_avg, avg(vcpu*6.5+memory*3.34) as cal_avg, median(embodied) as embodied_median, median(vcpu*6.5+memory*3.34) as cal_median from read_csv('*_embodied.csv');
+┌────────────────────┬────────────────────┬─────────────────┬────────────┐
+│    embodied_avg    │      cal_avg       │ embodied_median │ cal_median │
+│       double       │       double       │     double      │   double   │
+├────────────────────┼────────────────────┼─────────────────┼────────────┤
+│ 1872.2938643702932 │ 1877.7335780409026 │           413.0 │     421.76 │
+└────────────────────┴────────────────────┴─────────────────┴────────────┘
+```
+
+- embodied_avg: the average embodied kgCO2eq per instance of all size without local disks
+- cal_avg: the average calculated by the simple formula
+- embodied_median: the median embodied kgCO2eq per instance of all size without local disks
+- cal_median: the median calculated by the simple formula

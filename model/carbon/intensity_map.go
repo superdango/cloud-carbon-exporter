@@ -62,7 +62,7 @@ func (intensity IntensityMap) EmissionsPerKWh(location string) cloudcarbonexport
 	return cloudcarbonexporter.Emissions(locationIntensity)
 }
 
-// EnergyEmissions takes an energy metric as input and return its carbon emission equivalent using
+// EnergyEmissions takes an energy value as input and return its carbon emission equivalent using
 // the source location label.
 func (intensityMap IntensityMap) EnergyEmissions(energy cloudcarbonexporter.Energy, location string) (emissions cloudcarbonexporter.EmissionsOverTime) {
 	kW := float64(energy / 1000)
