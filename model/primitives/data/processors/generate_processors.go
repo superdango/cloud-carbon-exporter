@@ -42,16 +42,27 @@ func extractProviderProcessorsTDP(ctx context.Context, apiBoavizta string, cloud
 		panic(err)
 	}
 
-	f, err := os.Create(cloudProvider + ".csv")
+	f1, err := os.Create(cloudProvider + ".csv")
 	if err != nil {
 		panic(err)
 	}
-	defer f.Close()
+	defer f1.Close()
 
-	w := csv.NewWriter(f)
-	defer w.Flush()
-	w.Comma = ';'
-	w.Write([]string{"name", "family", "tdp", "cores", "threads"})
+	f2, err := os.Create(cloudProvider + "_embodied.csv")
+	if err != nil {
+		panic(err)
+	}
+	defer f2.Close()
+
+	w1 := csv.NewWriter(f1)
+	defer w1.Flush()
+	w1.Comma = ';'
+	w1.Write([]string{"name", "family", "tdp", "cores", "threads", "memory", "embodied"})
+
+	w2 := csv.NewWriter(f2)
+	defer w2.Flush()
+	w2.Comma = ';'
+	w2.Write([]string{"name", "vcpu", "memory", "embodied"})
 
 	for _, t := range types {
 		impact, err := api.InstanceImpact(ctx, cloudProvider, t, 0)
@@ -60,18 +71,33 @@ func extractProviderProcessorsTDP(ctx context.Context, apiBoavizta string, cloud
 			continue
 		}
 
+		impact.ArchetypeName = t
+
 		if impact.Verbose.CPU_1.Name.Value == "" ||
 			impact.Verbose.CPU_1.Family.Value == "" ||
 			impact.Verbose.CPU_1.CoreUnits.Value == 0 {
 			continue
 		}
 
-		w.Write([]string{
+		w1.Write([]string{
 			impact.Verbose.CPU_1.Name.Value,
 			impact.Verbose.CPU_1.Family.Value,
 			fmt.Sprintf("%.0f", impact.Verbose.CPU_1.TDP.Value),
 			fmt.Sprintf("%d", impact.Verbose.CPU_1.CoreUnits.Value),
-			fmt.Sprintf("%.0f", impact.Verbose.CPU_1.Threads.Value)})
+			fmt.Sprintf("%.0f", impact.Verbose.CPU_1.Threads.Value),
+			fmt.Sprintf("%.1f", impact.Verbose.Memory.Value),
+			fmt.Sprintf("%.1f", impact.Impacts.GWP.Embodied.Max),
+		})
+
+		if impact.Verbose.SSD_1.Capacity.Value+impact.Verbose.HDD_1.Capacity.Value > 0 {
+			continue
+		}
+		w2.Write([]string{
+			impact.ArchetypeName,
+			fmt.Sprintf("%.1f", impact.Verbose.VCPU.Value),
+			fmt.Sprintf("%.1f", impact.Verbose.Memory.Value),
+			fmt.Sprintf("%.1f", impact.Impacts.GWP.Embodied.Max),
+		})
 	}
 }
 
@@ -107,7 +133,8 @@ func (pf JSONFloat) MarshalJSON() ([]byte, error) {
 }
 
 type InstanceImpactResult struct {
-	Impacts struct {
+	ArchetypeName string
+	Impacts       struct {
 		PE struct {
 			Use struct {
 				Max   float64 `json:"max"`
@@ -115,6 +142,11 @@ type InstanceImpactResult struct {
 				Value float64 `json:"value"`
 			} `json:"use"`
 		} `json:"pe"`
+		GWP struct {
+			Embodied struct {
+				Max float64 `json:"max"`
+			} `json:"embodied"`
+		} `json:"gwp"`
 	} `json:"impacts"`
 	Verbose struct {
 		VCPU struct {
@@ -123,6 +155,9 @@ type InstanceImpactResult struct {
 		AVGPower struct {
 			Value JSONFloat `json:"value"`
 		} `json:"avg_power"`
+		Memory struct {
+			Value float64 `json:"value"`
+		} `json:"memory"`
 		CPU_1 struct {
 			CoreUnits struct {
 				Value int `json:"value"`
@@ -140,6 +175,16 @@ type InstanceImpactResult struct {
 				Value float64 `json:"value"`
 			} `json:"threads"`
 		} `json:"CPU-1"`
+		SSD_1 struct {
+			Capacity struct {
+				Value float64 `json:"value"`
+			} `json:"capacity"`
+		} `json:"SSD-1"`
+		HDD_1 struct {
+			Capacity struct {
+				Value float64 `json:"value"`
+			} `json:"capacity"`
+		} `json:"HDD-1"`
 	} `json:"verbose"`
 }
 

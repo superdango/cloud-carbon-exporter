@@ -8,7 +8,6 @@ import (
 	"reflect"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	asset "cloud.google.com/go/asset/apiv1"
@@ -19,7 +18,7 @@ import (
 	"github.com/superdango/cloud-carbon-exporter/internal/cache"
 	machinetypes "github.com/superdango/cloud-carbon-exporter/internal/gcp/data/machine_types"
 	"github.com/superdango/cloud-carbon-exporter/model/carbon"
-	"github.com/superdango/cloud-carbon-exporter/model/energy/primitives"
+	"github.com/superdango/cloud-carbon-exporter/model/primitives"
 	"golang.org/x/sync/errgroup"
 
 	"google.golang.org/api/iterator"
@@ -31,7 +30,7 @@ type Asset string
 type AssetsDiscoveryMap map[Asset][]string
 
 type SubExplorer interface {
-	collectMetrics(ctx context.Context, metrics chan *cloudcarbonexporter.Metric) error
+	collectImpacts(ctx cloudcarbonexporter.Context, impacts chan *cloudcarbonexporter.Impact) error
 	init(ctx context.Context, explorer *Explorer) error
 }
 
@@ -45,13 +44,10 @@ type Explorer struct {
 	machineTypes machinetypes.MachineTypes
 
 	subExplorers map[Asset]SubExplorer
-
-	apiCallsCounter *atomic.Int64
 }
 
 func NewExplorer() *Explorer {
 	return &Explorer{
-		apiCallsCounter:    new(atomic.Int64),
 		carbonIntensityMap: carbon.NewGCPCarbonIntensityMap(),
 		machineTypes:       machinetypes.MustLoad(),
 		subExplorers: map[Asset]SubExplorer{
@@ -70,6 +66,12 @@ func (explorer *Explorer) SupportedServices() []string {
 		services = append(services, string(asset))
 	}
 	return services
+}
+
+func (explorer *Explorer) Tags() map[string]string {
+	return map[string]string{
+		"cloud_provider": "gcp",
+	}
 }
 
 func (explorer *Explorer) Init(ctx context.Context) (err error) {
@@ -129,7 +131,6 @@ func (explorer *Explorer) loadZones(ctx context.Context) error {
 	for {
 		zone, err := it.Next()
 		if err == iterator.Done {
-			explorer.apiCallsCounter.Add(1)
 			break
 		}
 		if err != nil {
@@ -184,40 +185,36 @@ func (explorer *Explorer) GetCachedDiscoveryMap(ctx context.Context) (AssetsDisc
 	return assets, nil
 }
 
-func (explorer *Explorer) CollectMetrics(ctx context.Context, metrics chan *cloudcarbonexporter.Metric, errs chan error) {
-	explorer.apiCallsCounter.Store(0) // reset api calls counter
-	energyMetrics := make(chan *cloudcarbonexporter.Metric)
+func (explorer *Explorer) CollectImpacts(ctx cloudcarbonexporter.Context, impacts chan *cloudcarbonexporter.Impact, errs chan error) {
+	rawImpacts := make(chan *cloudcarbonexporter.Impact)
 
 	wg := new(sync.WaitGroup)
 	wg.Add(1)
 
 	go func() {
 		defer wg.Done()
-		for energyMetric := range energyMetrics {
-			energyMetric.SetLabel("cloud_provider", "gcp")
-			energyMetric.Value *= primitives.GoodPUE
-			metrics <- energyMetric
-			metrics <- explorer.carbonIntensityMap.ComputeCO2eq(energyMetric)
+		for rawImpact := range rawImpacts {
+			location, found := rawImpact.Labels["location"]
+			if !found {
+				slog.Warn("impact location not found, skipping impact. please consider raising a bug.", "labels", rawImpact.Labels)
+				continue
+			}
+			rawImpact.Energy = rawImpact.Energy * primitives.GoodPUE
+			rawImpact.EnergyEmissions = explorer.carbonIntensityMap.EnergyEmissions(rawImpact.Energy, location)
+			impacts <- rawImpact
 		}
 	}()
 
 	go func() {
-		defer close(energyMetrics)
-		explorer.collectMetrics(ctx, energyMetrics, errs)
+		defer close(rawImpacts)
+		explorer.collectImpacts(ctx, rawImpacts, errs)
 	}()
 
 	wg.Wait()
 
-	metrics <- &cloudcarbonexporter.Metric{
-		Name: "api_calls",
-		Labels: map[string]string{
-			"provider": "gcp",
-		},
-		Value: float64(explorer.apiCallsCounter.Load()),
-	}
 }
 
-func (explorer *Explorer) collectMetrics(ctx context.Context, energyMetrics chan *cloudcarbonexporter.Metric, errs chan error) {
+func (explorer *Explorer) collectImpacts(ctx cloudcarbonexporter.Context, impacts chan *cloudcarbonexporter.Impact, errs chan error) {
 	discoveryMap, err := explorer.GetCachedDiscoveryMap(ctx)
 	if err != nil {
 		errs <- fmt.Errorf("failed to get cached discovery map: %w", err)
@@ -234,7 +231,7 @@ func (explorer *Explorer) collectMetrics(ctx context.Context, energyMetrics chan
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			errs <- subExplorer.collectMetrics(ctx, energyMetrics)
+			errs <- subExplorer.collectImpacts(ctx, impacts)
 		}()
 
 	}
@@ -258,7 +255,6 @@ func (explorer *Explorer) discoveryMapCacheValue(client *asset.Client) cache.Dyn
 		for {
 			asset, err := it.Next()
 			if err == iterator.Done {
-				explorer.apiCallsCounter.Add(1)
 				break
 			}
 

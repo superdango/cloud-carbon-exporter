@@ -10,29 +10,64 @@ import (
 	"net/http"
 	"slices"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"golang.org/x/sync/errgroup"
 )
 
+type Ctx struct {
+	context.Context
+	calls *atomic.Int64
+}
+
+type Context interface {
+	context.Context
+	IncrCalls()
+	Calls() int
+}
+
+func WrapCtx(ctx context.Context) Context {
+	c, ok := ctx.(*Ctx)
+	if ok {
+		return c
+	}
+
+	return &Ctx{
+		Context: ctx,
+		calls:   new(atomic.Int64),
+	}
+}
+
+func (c *Ctx) IncrCalls() {
+	c.calls.Add(1)
+}
+
+func (c *Ctx) Calls() int {
+	return int(c.calls.Load())
+}
+
 // OpenMetricsHandler implements the http.Handler interface
 type OpenMetricsHandler struct {
 	defaultTimeout time.Duration
 	explorer       Explorer
+	explorerName   string
 }
 
 // NewOpenMetricsHandler create a new OpenMetricsHandler
-func NewOpenMetricsHandler(explorer Explorer) *OpenMetricsHandler {
+func NewOpenMetricsHandler(explorerName string, explorer Explorer) *OpenMetricsHandler {
 	return &OpenMetricsHandler{
 		defaultTimeout: 10 * time.Second,
 		explorer:       explorer,
+		explorerName:   explorerName,
 	}
 }
 
 // ServeHTTP implements the http.Handler interface. It collects all metrics from the configured
 // collector and return them, formatted in the http response.
-func (rh *OpenMetricsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (handler *OpenMetricsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
+	impacts := make(chan *Impact)
 	metrics := make(chan *Metric)
 	errs := make(chan error)
 	errCount := 0
@@ -42,29 +77,49 @@ func (rh *OpenMetricsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		traceAttr = slog.String("logging.googleapis.com/trace", traceID)
 	}
 
+	baseLabels := map[string]string{
+		"explorer": handler.explorerName,
+	}
+
 	errg, errgctx := errgroup.WithContext(r.Context())
-	errgctx, cancel := context.WithTimeout(errgctx, rh.defaultTimeout)
+	errgctx, cancel := context.WithTimeout(errgctx, handler.defaultTimeout)
 	defer cancel()
 
 	errg.Go(func() error {
-		defer close(metrics)
+		defer close(impacts)
 		defer close(errs)
-		rh.explorer.CollectMetrics(errgctx, metrics, errs)
+
+		ctx := WrapCtx(errgctx)
+		handler.explorer.CollectImpacts(ctx, impacts, errs)
 
 		metrics <- &Metric{
-			Name: "collect_duration_ms",
-			Labels: map[string]string{
-				"action": "collect",
-			},
-			Value: float64(time.Since(start).Milliseconds()),
+			Name:   "collect_duration_ms",
+			Labels: baseLabels,
+			Value:  float64(time.Since(start).Milliseconds()),
 		}
 
 		metrics <- &Metric{
-			Name: "error_count",
-			Labels: map[string]string{
-				"action": "collect",
-			},
-			Value: float64(errCount),
+			Name:   "error_count",
+			Labels: baseLabels,
+			Value:  float64(errCount),
+		}
+
+		metrics <- &Metric{
+			Name:   "api_calls",
+			Labels: baseLabels,
+			Value:  float64(ctx.Calls()),
+		}
+
+		return nil
+	})
+
+	errg.Go(func() error {
+		defer close(metrics)
+		for impact := range impacts {
+			impact.Labels = MergeLabels(impact.Labels, baseLabels)
+			metrics <- NewEnergyMetric(impact.Energy).SetLabels(impact.Labels)
+			metrics <- NewEmissionsMetric(impact.EnergyEmissions).SetLabels(impact.Labels)
+			metrics <- NewEmbodiedEmissionsMetric(impact.EmbodiedEmissions).SetLabels(impact.Labels)
 		}
 
 		return nil
@@ -136,7 +191,7 @@ func writeMetric(w io.Writer, metric *Metric) error {
 	}
 	slices.SortFunc(labels, strings.Compare)
 
-	_, err := fmt.Fprintf(w, "%s{%s} %f\n", metric.Name, strings.Join(labels, ","), metric.Value)
+	_, err := fmt.Fprintf(w, "%s{%s} %0.10f\n", metric.Name, strings.Join(labels, ","), metric.Value)
 	if err != nil {
 		return fmt.Errorf("writing metric %s failed: %w", metric.Name, err)
 	}
@@ -151,6 +206,17 @@ type Metric struct {
 	Value  float64
 }
 
+type Impact struct {
+	// Labels for impact
+	Labels map[string]string
+	// Energy in watts
+	Energy Energy
+	// EnergyEmissions are emissions related to energy in kgCO2eq/day
+	EnergyEmissions EmissionsOverTime
+	// EmbodiedEmissions are emissions related to the manufacturing
+	EmbodiedEmissions EmissionsOverTime
+}
+
 // Clone return a deep copy of a metric.
 func (m Metric) Clone() Metric {
 	copiedLabel := make(map[string]string, len(m.Labels))
@@ -162,13 +228,23 @@ func (m Metric) Clone() Metric {
 	}
 }
 
-func (m *Metric) SetLabel(key, value string) *Metric {
+func (m *Metric) AddLabel(key, value string) *Metric {
 	m.Labels = MergeLabels(
 		m.Labels,
 		map[string]string{
 			key: value,
 		},
 	)
+	return m
+}
+
+func (m *Metric) SetLabels(l map[string]string) *Metric {
+	m.Labels = l
+	return m
+}
+
+func (m *Metric) SetValue(v float64) *Metric {
+	m.Value = v
 	return m
 }
 
@@ -183,4 +259,25 @@ func (m *Metric) SanitizeLabels() *Metric {
 	}
 	m.Labels = newLabels
 	return m
+}
+
+func NewEmbodiedEmissionsMetric(value EmissionsOverTime) *Metric {
+	return &Metric{
+		Name:  "estimated_embodied_emissions_kgCO2eq_day",
+		Value: value.KgCO2eq_day(),
+	}
+}
+
+func NewEnergyMetric(value Energy) *Metric {
+	return &Metric{
+		Name:  "estimated_watts",
+		Value: float64(value),
+	}
+}
+
+func NewEmissionsMetric(value EmissionsOverTime) *Metric {
+	return &Metric{
+		Name:  "estimated_usage_emissions_kgCO2eq_day",
+		Value: value.KgCO2eq_day(),
+	}
 }

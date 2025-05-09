@@ -28,8 +28,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/rds/types"
 	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
 	"github.com/superdango/cloud-carbon-exporter/internal/must"
-	"github.com/superdango/cloud-carbon-exporter/model/energy/cloud"
-	"github.com/superdango/cloud-carbon-exporter/model/energy/primitives"
+	"github.com/superdango/cloud-carbon-exporter/model/cloud"
+	"github.com/superdango/cloud-carbon-exporter/model/primitives"
 )
 
 type RDSInstanceExplorer struct {
@@ -46,7 +46,7 @@ func (rdsExplorer *RDSInstanceExplorer) support() string {
 	return "rds/instance"
 }
 
-func (rdsExplorer *RDSInstanceExplorer) collectMetrics(ctx context.Context, region string, metrics chan *cloudcarbonexporter.Metric) error {
+func (rdsExplorer *RDSInstanceExplorer) collectImpacts(ctx cloudcarbonexporter.Context, region string, impacts chan *cloudcarbonexporter.Impact) error {
 	if region == "global" {
 		return nil
 	}
@@ -60,40 +60,43 @@ func (rdsExplorer *RDSInstanceExplorer) collectMetrics(ctx context.Context, regi
 	})
 
 	for paginator.HasMorePages() {
+		ctx.IncrCalls()
 		output, err := paginator.NextPage(ctx)
 		if err != nil {
 			return &cloudcarbonexporter.ExplorerErr{Err: fmt.Errorf("failed to list region rds instance: %w", err), Operation: "service/rds:DescribeDBInstances"}
 		}
 
 		for _, instance := range output.DBInstances {
-			watts := 0.0
+			var energy cloudcarbonexporter.Energy
+			var embodiedEmission cloudcarbonexporter.EmissionsOverTime
 
 			instanceID := *instance.DBInstanceIdentifier
 			instanceType := strings.TrimPrefix(*instance.DBInstanceClass, "db.")
 
 			switch instanceType {
 			case "serverless":
-				serverlessWatts, err := rdsExplorer.serverlessInstanceToWatts(ctx, region, instance)
+				energy, embodiedEmission, err = rdsExplorer.serverlessInstanceImpacts(ctx, region, instance)
 				if err != nil {
-					return fmt.Errorf("failed to get watt for serverless rds instance '%s': %w", instanceID, err)
+					return fmt.Errorf("failed to get energy for serverless rds instance '%s': %w", instanceID, err)
 				}
-				watts += serverlessWatts
 			default:
-				classicInstanceWatt, err := rdsExplorer.classicInstanceToWatts(ctx, region, instance, instanceType)
+				energy, embodiedEmission, err = rdsExplorer.classicInstanceToEnergy(ctx, region, instance, instanceType)
 				if err != nil {
-					return fmt.Errorf("failed to get watt for classic rds instance '%s': %w", instanceID, err)
+					return fmt.Errorf("failed to get energy for classic rds instance '%s': %w", instanceID, err)
 				}
-				watts += classicInstanceWatt
 			}
 
-			storageWatts := cloud.EstimateSSDBlockStorageWatts(float64(*instance.AllocatedStorage))
+			storageEnergy := cloud.EstimateSSDBlockStorageEnergy(float64(*instance.AllocatedStorage))
+			storageEmbodied := cloud.EstimateSSDBlockStorageEmbodiedEmissions(float64(*instance.AllocatedStorage))
 			if isVolumeHDD(*instance.StorageType) {
-				storageWatts = cloud.EstimateHDDBlockStorageWatts(float64(*instance.AllocatedStorage))
+				storageEnergy = cloud.EstimateHDDBlockStorageEnergy(float64(*instance.AllocatedStorage))
+				storageEmbodied = cloud.EstimateHDDBlockStorageEmbodiedEmissions(float64(*instance.AllocatedStorage))
 			}
-			watts += storageWatts
+			energy += storageEnergy
 
-			metrics <- &cloudcarbonexporter.Metric{
-				Name: "estimated_watts",
+			impacts <- &cloudcarbonexporter.Impact{
+				Energy:            cloudcarbonexporter.Energy(energy),
+				EmbodiedEmissions: cloudcarbonexporter.CombineEmissionsOverTime(embodiedEmission, storageEmbodied),
 				Labels: cloudcarbonexporter.MergeLabels(
 					map[string]string{
 						"kind":        "rds/db_instance",
@@ -103,7 +106,6 @@ func (rdsExplorer *RDSInstanceExplorer) collectMetrics(ctx context.Context, regi
 					},
 					parseRDSTagList(instance.TagList),
 				),
-				Value: watts,
 			}
 		}
 	}
@@ -111,55 +113,61 @@ func (rdsExplorer *RDSInstanceExplorer) collectMetrics(ctx context.Context, regi
 	return nil
 }
 
-// classicInstanceToWatts estimates watts for classic instance using machine type and CPU usage
-func (rdsExplorer *RDSInstanceExplorer) classicInstanceToWatts(ctx context.Context, region string, instance types.DBInstance, instanceType string) (float64, error) {
+// classicInstanceToEnergy estimates energy for classic instance using machine type and CPU usage
+func (rdsExplorer *RDSInstanceExplorer) classicInstanceToEnergy(ctx cloudcarbonexporter.Context, region string, instance types.DBInstance, instanceType string) (cloudcarbonexporter.Energy, cloudcarbonexporter.EmissionsOverTime, error) {
 
 	instanceInfos, found := rdsExplorer.instanceTypeInfos[instanceType]
 	if !found {
-		return 0.0, fmt.Errorf("rds instance infos not found for type: %s", instanceType)
+		return 0.0, cloudcarbonexporter.ZeroEmissions, fmt.Errorf("rds instance infos not found for type: %s", instanceType)
 	}
 	cpuAverage, err := rdsExplorer.GetInstanceCPUAverage(ctx, region, *instance.DBInstanceIdentifier)
 	if err != nil {
-		return 0.0, fmt.Errorf("failed to get rds instance cpu average: %w", err)
+		return 0.0, cloudcarbonexporter.ZeroEmissions, fmt.Errorf("failed to get rds instance cpu average: %w", err)
 	}
-	watts := primitives.EstimateMemoryWatts(instanceInfos.Memory)
-	watts += primitives.
+	energy := primitives.EstimateMemoryEnergy(instanceInfos.Memory)
+	energy += primitives.
 		LookupProcessorByName(instanceInfos.PhysicalProcessor).
-		EstimateCPUWatts(instanceInfos.VCPU, cpuAverage)
+		EstimateCPUEnergy(instanceInfos.VCPU, cpuAverage)
 
-	return watts, err
+	cpuEmbodied := primitives.EstimateCPUEmbodiedEmissions(instanceInfos.VCPU)
+	memoryEmbodied := primitives.EstimateMemoryEmbodiedEmissions(instanceInfos.Memory)
+
+	return energy, cloudcarbonexporter.CombineEmissionsOverTime(cpuEmbodied, memoryEmbodied), err
 }
 
-// serverlessInstanceToWatts estimates watts for serverless instance using ACUs
-func (rdsExplorer *RDSInstanceExplorer) serverlessInstanceToWatts(ctx context.Context, region string, instance types.DBInstance) (float64, error) {
-	watts := 0.0
+// serverlessInstanceImpacts estimates energy and embodied emissions for serverless instance using ACUs
+func (rdsExplorer *RDSInstanceExplorer) serverlessInstanceImpacts(ctx cloudcarbonexporter.Context, region string, instance types.DBInstance) (cloudcarbonexporter.Energy, cloudcarbonexporter.EmissionsOverTime, error) {
+	energy := cloudcarbonexporter.Energy(0)
 	acuAverage, err := rdsExplorer.GetInstanceACUAverage(ctx, region, *instance.DBInstanceIdentifier)
 	if err != nil {
-		return 0.0, fmt.Errorf("failed to get rds instance cpu average: %w", err)
+		return 0.0, cloudcarbonexporter.ZeroEmissions, fmt.Errorf("failed to get rds instance cpu average: %w", err)
 	}
 
 	noACU := acuAverage == 0.0
 	if noACU {
-		return 0.0, nil
+		return 0.0, cloudcarbonexporter.ZeroEmissions, nil
 	}
 
 	cpuThreadsByACU := 0.5
 	memoryByACU := 2.0
 	threads := acuAverage * cpuThreadsByACU
 
-	watts += primitives.EstimateMemoryWatts(acuAverage * memoryByACU)
-	watts += primitives.LookupProcessorByName("Graviton4").EstimateCPUWatts(threads, 60)
+	energy += primitives.EstimateMemoryEnergy(acuAverage * memoryByACU)
+	energy += primitives.LookupProcessorByName("Graviton4").EstimateCPUEnergy(threads, 60)
 
-	return watts, err
+	cpuEmbodied := primitives.EstimateCPUEmbodiedEmissions(threads)
+	memoryEmbodied := primitives.EstimateMemoryEmbodiedEmissions(acuAverage * memoryByACU)
+
+	return energy, cloudcarbonexporter.CombineEmissionsOverTime(cpuEmbodied, memoryEmbodied), err
 }
 
 func (rc *RDSInstanceExplorer) load(ctx context.Context) error { return nil }
 
-func (rdsExplorer *RDSInstanceExplorer) GetInstanceCPUAverage(ctx context.Context, region string, instanceID string) (float64, error) {
+func (rdsExplorer *RDSInstanceExplorer) GetInstanceCPUAverage(ctx cloudcarbonexporter.Context, region string, instanceID string) (float64, error) {
 	key := fmt.Sprintf("%s/rds_instances_average_cpu", region)
 
 	rdsExplorer.cache.SetDynamicIfNotExists(ctx, key, func(ctx context.Context) (any, error) {
-		return rdsExplorer.ListInstanceCPUAverage(ctx, region)
+		return rdsExplorer.ListInstanceCPUAverage(cloudcarbonexporter.WrapCtx(ctx), region)
 	}, 5*time.Minute)
 
 	entry, err := rdsExplorer.cache.Get(ctx, key)
@@ -179,7 +187,7 @@ func (rdsExplorer *RDSInstanceExplorer) GetInstanceCPUAverage(ctx context.Contex
 }
 
 // ListInstanceCPUAverage returns the 10 minutes average cpu for all instances in the region
-func (ec2explorer *RDSInstanceExplorer) ListInstanceCPUAverage(ctx context.Context, region string) (map[string]float64, error) {
+func (ec2explorer *RDSInstanceExplorer) ListInstanceCPUAverage(ctx cloudcarbonexporter.Context, region string) (map[string]float64, error) {
 	metricName := "cpu_utilization_by_instance_id"
 	cloudwatchExpression := `SELECT AVG(CPUUtilization) FROM "AWS/RDS" GROUP BY DBInstanceIdentifier`
 	period := 10 * time.Minute
@@ -203,6 +211,7 @@ func (ec2explorer *RDSInstanceExplorer) ListInstanceCPUAverage(ctx context.Conte
 	})
 
 	for paginator.HasMorePages() {
+		ctx.IncrCalls()
 		page, err := paginator.NextPage(ctx)
 		if err != nil {
 			return nil, &cloudcarbonexporter.ExplorerErr{
@@ -220,11 +229,11 @@ func (ec2explorer *RDSInstanceExplorer) ListInstanceCPUAverage(ctx context.Conte
 	return instanceList, nil
 }
 
-func (rdsExplorer *RDSInstanceExplorer) GetInstanceACUAverage(ctx context.Context, region string, instanceID string) (float64, error) {
+func (rdsExplorer *RDSInstanceExplorer) GetInstanceACUAverage(ctx cloudcarbonexporter.Context, region string, instanceID string) (float64, error) {
 	key := fmt.Sprintf("%s/rds_serverless_instances_average_acu", region)
 
 	rdsExplorer.cache.SetDynamicIfNotExists(ctx, key, func(ctx context.Context) (any, error) {
-		return rdsExplorer.ListInstanceACUAverage(ctx, region)
+		return rdsExplorer.ListInstanceACUAverage(cloudcarbonexporter.WrapCtx(ctx), region)
 	}, 5*time.Minute)
 
 	entry, err := rdsExplorer.cache.Get(ctx, key)
@@ -244,7 +253,7 @@ func (rdsExplorer *RDSInstanceExplorer) GetInstanceACUAverage(ctx context.Contex
 }
 
 // ListInstanceCPUAverage returns the 10 minutes average ACU for all serverless instances in the region
-func (ec2explorer *RDSInstanceExplorer) ListInstanceACUAverage(ctx context.Context, region string) (map[string]float64, error) {
+func (ec2explorer *RDSInstanceExplorer) ListInstanceACUAverage(ctx cloudcarbonexporter.Context, region string) (map[string]float64, error) {
 	metricName := "acu_utilization_by_instance_id"
 	cloudwatchExpression := `SELECT AVG(ACUUtilization) FROM "AWS/RDS" GROUP BY DBInstanceIdentifier`
 	period := 10 * time.Minute
@@ -268,6 +277,7 @@ func (ec2explorer *RDSInstanceExplorer) ListInstanceACUAverage(ctx context.Conte
 	})
 
 	for paginator.HasMorePages() {
+		ctx.IncrCalls()
 		page, err := paginator.NextPage(ctx)
 		if err != nil {
 			return nil, &cloudcarbonexporter.ExplorerErr{

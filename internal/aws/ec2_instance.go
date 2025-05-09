@@ -30,7 +30,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	cloudcarbonexporter "github.com/superdango/cloud-carbon-exporter"
 	"github.com/superdango/cloud-carbon-exporter/internal/must"
-	"github.com/superdango/cloud-carbon-exporter/model/energy/primitives"
+	"github.com/superdango/cloud-carbon-exporter/model/primitives"
 )
 
 //go:embed data/instance_types/instance_types.json
@@ -89,7 +89,7 @@ func (ec2explorer *EC2InstanceExplorer) load(ctx context.Context) error {
 	return nil
 }
 
-func (ec2explorer *EC2InstanceExplorer) collectMetrics(ctx context.Context, region string, metrics chan *cloudcarbonexporter.Metric) error {
+func (ec2explorer *EC2InstanceExplorer) collectImpacts(ctx cloudcarbonexporter.Context, region string, impacts chan *cloudcarbonexporter.Impact) error {
 	if region == "global" {
 		return nil
 	}
@@ -103,7 +103,7 @@ func (ec2explorer *EC2InstanceExplorer) collectMetrics(ctx context.Context, regi
 	})
 
 	for paginator.HasMorePages() {
-		ec2explorer.apiCallsCounter.Add(1)
+		ctx.IncrCalls()
 		output, err := paginator.NextPage(ctx)
 		if err != nil {
 			return &cloudcarbonexporter.ExplorerErr{Err: fmt.Errorf("failed to list region ec2 instances: %w", err), Operation: "service/ec2:DescribeInstances"}
@@ -121,11 +121,22 @@ func (ec2explorer *EC2InstanceExplorer) collectMetrics(ctx context.Context, regi
 				}
 
 				processor := primitives.LookupProcessorByName(instanceType.PhysicalProcessor)
-				watts := processor.EstimateCPUWatts(instanceType.VCPU, intanceAverageCPU)
-				watts += primitives.EstimateMemoryWatts(instanceType.Memory)
+				energy := processor.EstimateCPUEnergy(instanceType.VCPU, intanceAverageCPU)
+				energy += primitives.EstimateMemoryEnergy(instanceType.Memory)
+				cpuEmbodied := primitives.EstimateCPUEmbodiedEmissions(instanceType.VCPU)
+				memoryEmbodied := primitives.EstimateMemoryEmbodiedEmissions(instanceType.Memory)
 
-				metrics <- &cloudcarbonexporter.Metric{
-					Name: "estimated_watts",
+				diskEmbodied := cloudcarbonexporter.ZeroEmissions
+				if instanceType.SSDCount > 0 {
+					diskEmbodied = cloudcarbonexporter.CombineEmissionsOverTime(diskEmbodied, primitives.EstimateEmbodiedSSDEmissions(instanceType.SSDSize))
+				}
+				if instanceType.HDDCount > 0 {
+					diskEmbodied = cloudcarbonexporter.CombineEmissionsOverTime(diskEmbodied, primitives.EstimateEmbodiedHDDEmissions(instanceType.HDDCount))
+				}
+
+				impacts <- &cloudcarbonexporter.Impact{
+					Energy:            energy,
+					EmbodiedEmissions: cloudcarbonexporter.CombineEmissionsOverTime(cpuEmbodied, memoryEmbodied, diskEmbodied),
 					Labels: cloudcarbonexporter.MergeLabels(
 						parseEC2Tags(instance.Tags),
 						map[string]string{
@@ -135,7 +146,6 @@ func (ec2explorer *EC2InstanceExplorer) collectMetrics(ctx context.Context, regi
 							"instance_id": *instance.InstanceId,
 						},
 					),
-					Value: watts,
 				}
 			}
 		}
@@ -144,11 +154,11 @@ func (ec2explorer *EC2InstanceExplorer) collectMetrics(ctx context.Context, regi
 	return nil
 }
 
-func (ec2explorer *EC2InstanceExplorer) GetInstanceCPUAverage(ctx context.Context, region string, instanceID string) (float64, error) {
+func (ec2explorer *EC2InstanceExplorer) GetInstanceCPUAverage(ctx cloudcarbonexporter.Context, region string, instanceID string) (float64, error) {
 	key := fmt.Sprintf("%s/instances_average_cpu", region)
 
 	ec2explorer.cache.SetDynamicIfNotExists(ctx, key, func(ctx context.Context) (any, error) {
-		return ec2explorer.ListInstanceCPUAverage(ctx, region)
+		return ec2explorer.ListInstanceCPUAverage(cloudcarbonexporter.WrapCtx(ctx), region)
 	}, 5*time.Minute)
 
 	entry, err := ec2explorer.cache.Get(ctx, key)
@@ -168,7 +178,7 @@ func (ec2explorer *EC2InstanceExplorer) GetInstanceCPUAverage(ctx context.Contex
 }
 
 // ListInstanceCPUAverage returns the 10 minutes average cpu for all instances in the region
-func (ec2explorer *EC2InstanceExplorer) ListInstanceCPUAverage(ctx context.Context, region string) (map[string]float64, error) {
+func (ec2explorer *EC2InstanceExplorer) ListInstanceCPUAverage(ctx cloudcarbonexporter.Context, region string) (map[string]float64, error) {
 	metricName := "cpu_utilization_by_instance_id"
 	cloudwatchExpression := `SELECT AVG(CPUUtilization) FROM "AWS/EC2" GROUP BY InstanceId`
 	period := 10 * time.Minute
@@ -192,7 +202,7 @@ func (ec2explorer *EC2InstanceExplorer) ListInstanceCPUAverage(ctx context.Conte
 	})
 
 	for paginator.HasMorePages() {
-		ec2explorer.apiCallsCounter.Add(1)
+		ctx.IncrCalls()
 		page, err := paginator.NextPage(ctx)
 		if err != nil {
 			return nil, &cloudcarbonexporter.ExplorerErr{
