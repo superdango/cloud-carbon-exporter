@@ -90,7 +90,6 @@ func extractProviderProcessorsTDP(ctx context.Context, apiBoavizta string, cloud
 		})
 
 		if impact.Verbose.SSD_1.Capacity.Value+impact.Verbose.HDD_1.Capacity.Value > 0 {
-			slog.Warn("ignoring", "name", impact.ArchetypeName)
 			continue
 		}
 		w2.Write([]string{
