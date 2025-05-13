@@ -46,7 +46,7 @@ Try our live demo with our Grafana dashboard: https://demo.carbondriven.dev/publ
   <img alt="the cloud carbon exporter takes Cloud API to export energy and carbon data to monitoring systems" src="./docs/schema-light.png">
 </picture>
 
-**Multi Cloud** · We want to support as much cloud platform as possible. From hyperscalers to edge datacenters to regional provider. [List of supported services](https://github.com/superdango/cloud-carbon-exporter/wiki/Supported-Services)
+**Multi Cloud** · We want to support as much cloud platforms as possible. From hyperscalers to edge datacenters to regional provider. [List of supported services](https://github.com/superdango/cloud-carbon-exporter/wiki/Supported-Services)
 
 **Dangofish Model** · This tool will prioritize the number of supported resources over the precision of the exported metrics. Estimating precisely the energy consumption of a resource is a hard task. The complexity and opacity of a Cloud service increase the margin of error but trends should be respected. Model calculations are based on public data - mixed with our own hypothesis documented in [primitives model](https://github.com/superdango/cloud-carbon-exporter/blob/main/model/primitives/README.md) and [cloud model](https://github.com/superdango/cloud-carbon-exporter/blob/main/model/cloud/README.md)
 
