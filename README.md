@@ -37,7 +37,7 @@ On the screenshot above, you can visualize and understand easily:
 
 You can easily customize the content of this dashboard using the data returned by the exporter.
 
-Try our live demo with our Grafana dashboard: https://demo.carbondriven.dev/public-dashboards/04a3c6d5961c4463b91a3333d488e584
+Try our live demo with our Grafana dashboard: [https://snapshots.raintank.io](https://snapshots.raintank.io/dashboard/snapshot/xbU6hGRemC8oNoO7GWNPqpYPg0ZvDwQP)
 
 ## Technical Overview
 
